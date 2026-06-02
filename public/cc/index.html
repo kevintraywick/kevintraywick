@@ -266,10 +266,12 @@
         el.draggable = true
         el.dataset.index = i
 
-        const label = f.name.replace(/\.[^.]+$/, '')
+        const label = f.label || f.name.replace(/\.[^.]+$/, '')
         el.textContent = label.length > 20 ? label.slice(0, 18) + '...' : label
+        el.title = label + ' — double-click to rename'
 
         el.addEventListener('click', () => { index = i; render() })
+        el.addEventListener('dblclick', e => { e.preventDefault(); renameThumb(i) })
         el.addEventListener('dragstart', onThumbDragStart)
         el.addEventListener('dragover', onThumbDragOver)
         el.addEventListener('dragenter', onThumbDragEnter)
@@ -349,6 +351,23 @@
       document.querySelectorAll('.thumb').forEach(t => {
         t.classList.remove('dragging', 'drag-over')
       })
+    }
+
+    // --- Rename a thumbnail ---
+    function renameThumb(i) {
+      const f = files[i]
+      if (!f) return
+      const current = f.label || f.name.replace(/\.[^.]+$/, '')
+      const next = prompt('Rename tile:', current)
+      if (next === null) return // cancelled
+      const trimmed = next.trim()
+      if (trimmed === '') {
+        delete f.label // revert to original filename
+      } else {
+        f.label = trimmed
+      }
+      saveState()
+      render()
     }
 
     // --- Drop zone (add files) ---
@@ -447,7 +466,7 @@
       saveState()
 
       undoStack.push({ file: removed, position: removedIndex })
-      showToast(`Deleted "${removed.name.replace(/\.[^.]+$/, '')}"`)
+      showToast(`Deleted "${removed.label || removed.name.replace(/\.[^.]+$/, '')}"`)
       render()
     }
 
