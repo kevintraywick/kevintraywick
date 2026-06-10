@@ -229,22 +229,76 @@
     const STORAGE_KEY = 'cc_flipbook'
     let files = []
     let index = 0
+    let deletedServerNames = [] // files.json entries the user has deleted
     let undoStack = [] // { file, index, position }
     let undoTimer = null
+
+    // A "server file" lives in files.json (no embedded data, no external url)
+    function isServerFile(f) { return !f.dataUrl && !f.url }
 
     // --- Prevent browser default drop behavior (navigating/downloading) ---
     document.addEventListener('dragover', e => e.preventDefault())
     document.addEventListener('drop', e => e.preventDefault())
 
-    // --- Persistence ---
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ files, index }))
+    // --- Persistence (IndexedDB — localStorage's ~5MB quota silently drops
+    //     large screenshot data URLs) ---
+    const DB_NAME = 'cc_flipbook'
+    let db = null
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1)
+        req.onupgradeneeded = () => req.result.createObjectStore('state')
+        req.onsuccess = () => resolve(req.result)
+        req.onerror = () => reject(req.error)
+      })
     }
 
-    function loadState() {
+    function idbGet() {
+      return new Promise((resolve, reject) => {
+        const req = db.transaction('state', 'readonly').objectStore('state').get('main')
+        req.onsuccess = () => resolve(req.result)
+        req.onerror = () => reject(req.error)
+      })
+    }
+
+    function idbPut(value) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('state', 'readwrite')
+        tx.objectStore('state').put(value, 'main')
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => reject(tx.error)
+      })
+    }
+
+    function saveState() {
+      const state = { files, index, deletedServerNames }
+      if (db) {
+        idbPut(state).catch(() => showToast('⚠️ Save failed — changes may not persist', false))
+        return
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      } catch {
+        showToast('⚠️ Storage full — changes may not persist', false)
+      }
+    }
+
+    async function loadState() {
+      try { db = await openDB() } catch {}
+      if (db) {
+        try {
+          const saved = await idbGet()
+          if (saved && Array.isArray(saved.files)) return saved
+        } catch {}
+      }
+      // Migrate legacy localStorage state into IndexedDB
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY))
-        if (saved && saved.files && saved.files.length) return saved
+        if (saved && Array.isArray(saved.files)) {
+          if (db) idbPut(saved).then(() => localStorage.removeItem(STORAGE_KEY)).catch(() => {})
+          return saved
+        }
       } catch {}
       return null
     }
@@ -434,6 +488,37 @@
       render()
     }
 
+    // --- Image compression: these are quick-reference pages, so readability
+    //     beats fidelity — downscale and re-encode as WebP to save disk space ---
+    const IMG_MAX_DIM = 2000
+    const IMG_WEBP_QUALITY = 0.8
+
+    function compressImage(dataUrl) {
+      return new Promise(resolve => {
+        const img = new Image()
+        img.onload = () => {
+          try {
+            const scale = Math.min(1, IMG_MAX_DIM / Math.max(img.width, img.height))
+            const canvas = document.createElement('canvas')
+            canvas.width = Math.max(1, Math.round(img.width * scale))
+            canvas.height = Math.max(1, Math.round(img.height * scale))
+            const ctx = canvas.getContext('2d')
+            // White backdrop: JPEG fallback has no alpha and would render transparency black
+            ctx.fillStyle = '#fff'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+            let out = canvas.toDataURL('image/webp', IMG_WEBP_QUALITY)
+            // Safari can't encode WebP (returns PNG) — fall back to JPEG
+            if (!out.startsWith('data:image/webp')) out = canvas.toDataURL('image/jpeg', IMG_WEBP_QUALITY)
+            // Keep the original if compression came out bigger
+            resolve(out.length < dataUrl.length ? out : dataUrl)
+          } catch { resolve(dataUrl) }
+        }
+        img.onerror = () => resolve(dataUrl)
+        img.src = dataUrl
+      })
+    }
+
     function handleFiles(fileList) {
       Array.from(fileList).forEach(file => {
         const ext = file.name.split('.').pop().toLowerCase()
@@ -443,8 +528,13 @@
         else if (ext === 'url') type = 'url'
 
         const reader = new FileReader()
-        reader.onload = () => {
-          files.push({ name: file.name, type, dataUrl: reader.result })
+        reader.onload = async () => {
+          let dataUrl = reader.result
+          // Skip svg (vector, tiny) and gif (would lose animation)
+          if (type === 'image' && !['svg', 'gif'].includes(ext)) {
+            dataUrl = await compressImage(dataUrl)
+          }
+          files.push({ name: file.name, type, dataUrl })
           index = files.length - 1
           saveState()
           render()
@@ -461,6 +551,9 @@
       const removed = files[index]
       const removedIndex = index
 
+      // Remember deleted server files so the files.json merge doesn't re-add them on reload
+      if (isServerFile(removed)) deletedServerNames.push(removed.name)
+
       files.splice(index, 1)
       if (index >= files.length) index = Math.max(0, files.length - 1)
       saveState()
@@ -473,6 +566,10 @@
     function undoDelete() {
       if (!undoStack.length) return
       const { file, position } = undoStack.pop()
+      if (isServerFile(file)) {
+        const i = deletedServerNames.lastIndexOf(file.name)
+        if (i !== -1) deletedServerNames.splice(i, 1)
+      }
       const insertAt = Math.min(position, files.length)
       files.splice(insertAt, 0, file)
       index = insertAt
@@ -481,9 +578,10 @@
       render()
     }
 
-    function showToast(msg) {
+    function showToast(msg, withUndo = true) {
       const toast = document.getElementById('toast')
       document.getElementById('toast-msg').textContent = msg
+      toast.querySelector('button').style.display = withUndo ? '' : 'none'
       toast.style.display = 'flex'
       clearTimeout(undoTimer)
       undoTimer = setTimeout(hideToast, 5000)
@@ -546,32 +644,27 @@
       if (e.key === 'z' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); undoDelete() }
     })
 
-    // --- Init: merge server files with localStorage ---
-    fetch('files.json')
-      .then(r => r.json())
-      .then(serverFiles => {
-        const saved = loadState()
-        if (saved) {
-          // Merge: keep saved order/additions, add any new server files
-          const savedNames = new Set(saved.files.filter(f => !f.dataUrl).map(f => f.name))
-          const newServerFiles = serverFiles.filter(f => !savedNames.has(f.name))
-          files = [...saved.files, ...newServerFiles]
-          index = Math.min(saved.index, files.length - 1)
-        } else {
-          files = serverFiles
-        }
-        if (index < 0) index = 0
-        render()
-      })
-      .catch(() => {
-        // If files.json fails, try localStorage only
-        const saved = loadState()
-        if (saved) {
-          files = saved.files
-          index = Math.min(saved.index, files.length - 1)
-        }
-        render()
-      })
+    // --- Init: merge server files with saved state ---
+    async function init() {
+      const saved = await loadState()
+      let serverFiles = []
+      try { serverFiles = await fetch('files.json').then(r => r.json()) } catch {}
+
+      if (saved) {
+        deletedServerNames = saved.deletedServerNames || []
+        // Merge: keep saved order/additions, add only genuinely new server files
+        const savedNames = new Set(saved.files.filter(isServerFile).map(f => f.name))
+        const deleted = new Set(deletedServerNames)
+        const newServerFiles = serverFiles.filter(f => !savedNames.has(f.name) && !deleted.has(f.name))
+        files = [...saved.files, ...newServerFiles]
+        index = Math.min(saved.index || 0, files.length - 1)
+      } else {
+        files = serverFiles
+      }
+      if (index < 0) index = 0
+      render()
+    }
+    init()
   </script>
 </body>
 </html>
