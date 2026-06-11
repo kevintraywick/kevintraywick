@@ -37,7 +37,25 @@ body::after{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 header{
-  text-align:center;padding:64px 5vw 12px;
+  padding:64px 5vw 12px;
+}
+.hero-wrap{
+  max-width:1050px;margin:0 auto;
+  display:grid;grid-template-columns:1fr 330px;gap:46px;
+  align-items:stretch;
+}
+.hero-text{text-align:center;}
+.hero-art{
+  border-radius:22px;overflow:hidden;
+  border:2px dashed var(--stitch);
+  box-shadow:0 14px 34px rgba(43,31,21,.18);
+  opacity:0;animation:heroFade 1.6s ease .25s forwards;
+}
+.hero-art img{width:100%;height:100%;object-fit:cover;display:block;}
+@keyframes heroFade{to{opacity:1;}}
+@media (max-width:820px){
+  .hero-wrap{grid-template-columns:1fr;gap:28px;}
+  .hero-art{height:300px;}
 }
 .kicker{
   display:inline-block;font-family:'Ranchers',cursive;font-size:15px;
@@ -109,14 +127,21 @@ footer a{color:var(--leather);}
 <body>
 
 <header>
-  <div><span class="kicker">For Investors</span></div>
-  <h1 class="wordmark">rodeo</h1>
-  <div class="tagline">saddle up.</div>
-  <p class="lede">
-    A dating app for people who live — or love — the western life. Spontaneous and
-    lighthearted, built around the <strong>Soft Yes</strong>: local events that put the
-    right people in the same public place, no hard ask required.
-  </p>
+  <div class="hero-wrap">
+    <div class="hero-text">
+      <div><span class="kicker">For Investors</span></div>
+      <h1 class="wordmark">rodeo</h1>
+      <div class="tagline">saddle up.</div>
+      <p class="lede">
+        A dating app for people who live — or love — the western life. Spontaneous and
+        lighthearted, built around the <strong>Soft Yes</strong>: local events that put the
+        right people in the same public place, no hard ask required.
+      </p>
+    </div>
+    <figure class="hero-art">
+      <img src="cowgirl.jpg" alt="A cowgirl in denim leaning on a corral fence at golden hour, horses behind her">
+    </figure>
+  </div>
 </header>
 
 <main>
