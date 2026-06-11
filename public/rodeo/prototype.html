@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>rodeo — saddle up. | Interactive Investor Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Ranchers&family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#f6eddc;
+  --paper:#fdf7ea;
+  --ink:#2b1f15;
+  --ink-soft:#5a4733;
+  --leather:#8a4b2a;
+  --rust:#c75b39;
+  --sunset:#e8843c;
+  --gold:#e2a93b;
+  --denim:#2e4057;
+  --denim-deep:#1f2c3d;
+  --sage:#7a8450;
+  --stitch:rgba(138,75,42,.55);
+  --radius:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Bitter',Georgia,serif;
+  background:var(--cream);
+  color:var(--ink);
+  line-height:1.6;
+  overflow-x:hidden;
+}
+/* grain over everything */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+h1,h2,h3,.display{font-family:'Ranchers',cursive;font-weight:400;letter-spacing:.02em;}
+.wordmark{font-family:'Rye',serif;}
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 5vw;position:sticky;top:0;z-index:50;
+  background:linear-gradient(var(--cream) 75%,rgba(246,237,220,0));
+}
+.topbar .wordmark{font-size:30px;color:var(--leather);text-decoration:none;}
+.topbar nav a{
+  font-family:'Ranchers',cursive;font-size:17px;color:var(--ink-soft);
+  text-decoration:none;margin-left:26px;letter-spacing:.04em;
+}
+.topbar nav a:hover{color:var(--rust);}
+
+/* ---------- hero ---------- */
+.hero{
+  position:relative;
+  padding:40px 5vw 70px;
+  display:grid;grid-template-columns:minmax(300px,520px) minmax(420px,1fr);
+  gap:40px;align-items:start;max-width:1300px;margin:0 auto;
+}
+.hero-copy{padding-top:40px;}
+.kicker{
+  display:inline-block;font-family:'Ranchers',cursive;font-size:15px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--paper);
+  background:var(--rust);padding:5px 14px;border-radius:999px;
+  transform:rotate(-2deg);margin-bottom:18px;
+}
+.hero h1{
+  font-size:clamp(54px,7vw,92px);line-height:.95;color:var(--ink);
+}
+.hero h1 .rope{color:var(--rust);}
+.hero .tagline{
+  font-family:'Rye',serif;font-size:clamp(22px,2.6vw,32px);
+  color:var(--leather);margin:14px 0 22px;
+}
+.hero p.lede{font-size:18px;max-width:46ch;color:var(--ink-soft);}
+.hero-ctas{margin-top:28px;display:flex;gap:14px;flex-wrap:wrap;}
+.btn{
+  font-family:'Ranchers',cursive;font-size:19px;letter-spacing:.05em;
+  border:none;cursor:pointer;border-radius:14px;padding:13px 26px;
+  text-decoration:none;display:inline-block;transition:transform .15s,box-shadow .15s;
+}
+.btn:active{transform:translateY(2px);}
+.btn-primary{
+  background:var(--rust);color:var(--paper);
+  box-shadow:0 5px 0 #8d3c22;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 7px 0 #8d3c22;}
+.btn-ghost{
+  background:transparent;color:var(--leather);
+  border:2px dashed var(--stitch);
+}
+.btn-ghost:hover{background:rgba(138,75,42,.07);}
+
+/* ---------- demo zone ---------- */
+.demo-zone{
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+}
+.demo-frame-wrap{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;justify-content:center;}
+
+/* phone */
+.phone{
+  width:372px;height:768px;flex:0 0 auto;
+  background:#171310;border-radius:54px;padding:14px;
+  box-shadow:0 30px 60px rgba(43,31,21,.35),0 4px 0 #000 inset;
+  position:relative;
+}
+.phone::before{ /* speaker notch */
+  content:"";position:absolute;top:26px;left:50%;transform:translateX(-50%);
+  width:118px;height:26px;background:#171310;border-radius:14px;z-index:30;
+}
+.screen{
+  width:100%;height:100%;border-radius:42px;overflow:hidden;position:relative;
+  background:var(--paper);
+  user-select:none;-webkit-user-select:none;touch-action:none;
+}
+
+/* in-phone shared */
+.app-top{
+  position:absolute;top:0;left:0;right:0;height:88px;z-index:20;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 20px 8px;pointer-events:none;
+  background:linear-gradient(var(--paper) 55%,rgba(253,247,234,0));
+}
+.app-top .wordmark{font-size:24px;color:var(--leather);}
+.app-top .me{
+  width:34px;height:34px;border-radius:50%;border:2px solid var(--leather);
+  overflow:hidden;background:var(--denim);
+}
+.app-top .me svg{width:100%;height:100%;display:block;}
+
+/* onboarding */
+.scr{position:absolute;inset:0;display:none;}
+.scr.active{display:block;}
+#scrOnboard{background:linear-gradient(180deg,#fdf7ea, #f6e8cf);overflow-y:auto;padding:64px 24px 28px;}
+#scrOnboard .wordmark{font-size:42px;color:var(--leather);text-align:center;display:block;}
+#scrOnboard .ob-tag{font-family:'Rye',serif;text-align:center;color:var(--rust);font-size:15px;margin-bottom:18px;}
+.ob-h{font-family:'Ranchers',cursive;font-size:21px;color:var(--ink);margin:18px 0 8px;}
+.ob-field{
+  background:#fff;border:2px dashed var(--stitch);border-radius:12px;
+  padding:10px 14px;font-family:'Bitter',serif;font-size:16px;color:var(--ink);width:100%;
+}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.pslot{
+  aspect-ratio:3/4;border-radius:10px;overflow:hidden;position:relative;
+  background:#efe3cb;border:2px dashed var(--stitch);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--leather);font-size:26px;font-family:'Ranchers',cursive;
+}
+.pslot.filled{border-style:solid;}
+.pslot svg{position:absolute;inset:0;width:100%;height:100%;}
+.pslot .badge-main{
+  position:absolute;bottom:5px;left:5px;z-index:2;background:var(--rust);color:#fff;
+  font-size:10px;font-family:'Ranchers',cursive;padding:2px 7px;border-radius:99px;
+}
+.pro-row{
+  margin-top:10px;background:var(--denim-deep);color:#f0e6d2;border-radius:12px;
+  padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:13.5px;
+}
+.pro-row .lock{font-size:20px;}
+.pro-row b{color:var(--gold);font-family:'Ranchers',cursive;letter-spacing:.04em;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  font-size:13px;padding:6px 12px;border-radius:999px;background:#fff;
+  border:1.5px solid var(--stitch);color:var(--ink-soft);
+}
+.chip.on{background:var(--sunset);border-color:var(--sunset);color:#fff;font-weight:600;}
+.ob-go{width:100%;margin-top:22px;font-size:23px;}
+
+/* ---------- deck / stage ---------- */
+#scrDeck{background:var(--paper);}
+.stage{
+  position:absolute;inset:0;width:300%;height:100%;
+  display:flex;transition:transform .32s cubic-bezier(.2,.8,.25,1);
+}
+.panel{width:33.3333%;height:100%;position:relative;flex:0 0 auto;}
+
+/* deck panel */
+.card-holder{position:absolute;inset:78px 16px 86px;}
+.card{
+  position:absolute;inset:0;border-radius:24px;overflow:hidden;
+  box-shadow:0 14px 30px rgba(43,31,21,.28);
+  background:#0e1b2a;
+  transition:transform .3s cubic-bezier(.2,.8,.25,1),opacity .3s;
+}
+.card.under{transform:scale(.94) translateY(14px);opacity:.6;filter:saturate(.8);}
+.card.fly-up{transform:translateY(-130%) rotate(-4deg)!important;opacity:0;}
+.card .art{position:absolute;inset:0;}
+.card .art svg{width:100%;height:100%;display:block;}
+.card .scrim{
+  position:absolute;left:0;right:0;bottom:0;height:55%;
+  background:linear-gradient(rgba(14,12,10,0),rgba(20,14,9,.88));
+}
+.card .info{position:absolute;left:0;right:0;bottom:0;padding:18px 18px 16px;color:#fbf3e3;}
+.card .info h3{font-size:30px;line-height:1;}
+.card .info .loc{font-size:13.5px;opacity:.85;margin:3px 0 9px;}
+.card .info .chips .chip{
+  background:rgba(251,243,227,.14);border-color:rgba(251,243,227,.35);color:#fbf3e3;font-size:11.5px;padding:4px 10px;
+}
+.card .hintline{
+  position:absolute;top:14px;left:0;right:0;text-align:center;
+  font-family:'Ranchers',cursive;font-size:12.5px;letter-spacing:.1em;
+  color:rgba(251,243,227,.85);text-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+
+/* event card flavor */
+.card.event .evt-flag{
+  position:absolute;top:16px;left:-6px;background:var(--gold);color:#3a2a07;
+  font-family:'Ranchers',cursive;font-size:13px;letter-spacing:.08em;
+  padding:5px 14px 5px 18px;border-radius:0 99px 99px 0;box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.card.event .evt-flag.spons{background:#f0e6d2;color:var(--leather);}
+.card.event .info h3{font-size:26px;}
+.evt-btn{
+  width:100%;margin-top:12px;font-family:'Ranchers',cursive;font-size:18px;
+  padding:13px;border:none;border-radius:13px;cursor:pointer;
+  background:var(--sunset);color:#fff;box-shadow:0 4px 0 #a85a22;transition:all .15s;
+}
+.evt-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #a85a22;}
+.evt-btn.done{background:var(--sage);box-shadow:0 4px 0 #55603a;}
+.evt-sub{font-size:12px;opacity:.8;margin-top:8px;text-align:center;}
+.mirror-note{
+  background:rgba(226,169,59,.18);border:1.5px dashed rgba(226,169,59,.7);
+  border-radius:10px;padding:8px 10px;font-size:12.5px;margin-bottom:10px;color:#ffe9bd;
+}
+
+/* end card */
+.card.endcard{background:linear-gradient(180deg,#2e4057,#1f2c3d);display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;}
+.card.endcard .inner{color:#f0e6d2;}
+.card.endcard h3{font-size:30px;margin-bottom:8px;}
+
+/* bottom gesture bar */
+.gesture-bar{
+  position:absolute;left:0;right:0;bottom:0;height:74px;z-index:20;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:linear-gradient(rgba(253,247,234,0),var(--paper) 45%);
+  pointer-events:none;
+}
+.gpill{
+  pointer-events:auto;cursor:pointer;border:none;
+  font-family:'Ranchers',cursive;font-size:14px;letter-spacing:.05em;
+  background:#fff;color:var(--leather);border:1.5px solid var(--stitch);
+  padding:8px 14px;border-radius:999px;box-shadow:0 2px 0 rgba(138,75,42,.25);
+}
+.gpill:active{transform:translateY(1px);}
+
+/* profile panel */
+.panel.profile{overflow-y:auto;background:var(--paper);}
+.pr-hero{position:relative;height:46%;}
+.pr-hero svg{width:100%;height:100%;display:block;}
+.pr-hero .scrim2{position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(rgba(0,0,0,0),rgba(24,16,9,.75));}
+.pr-hero .nm{position:absolute;bottom:12px;left:18px;color:#fbf3e3;}
+.pr-hero .nm h3{font-size:30px;line-height:1;}
+.pr-hero .nm .loc{font-size:13px;opacity:.9;}
+.pr-body{padding:16px 18px 110px;}
+.pr-sec{font-family:'Ranchers',cursive;color:var(--rust);font-size:15px;letter-spacing:.08em;text-transform:uppercase;margin:14px 0 6px;}
+.pr-bio{font-size:15px;color:var(--ink-soft);}
+.share-box{
+  background:#fff;border:2px dashed var(--stitch);border-radius:14px;padding:12px;
+}
+.share-box .chip.on{background:var(--gold);border-color:var(--gold);color:#3a2a07;}
+.ig-chip{
+  display:inline-flex;align-items:center;gap:8px;margin-top:4px;cursor:pointer;
+  background:linear-gradient(45deg,#7b3fa0,#d62976,#fa7e1e);color:#fff;
+  font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:999px;border:none;
+}
+.lasso-cta{
+  position:absolute;left:18px;right:18px;bottom:84px;z-index:5;
+  font-size:21px;text-align:center;
+  background:var(--rust);color:#fff;box-shadow:0 5px 0 #8d3c22;
+}
+/* lasso panel */
+.panel.lasso{background:linear-gradient(180deg,#fdf7ea,#f3e4c6);display:flex;flex-direction:column;}
+.ls-head{
+  padding:74px 18px 10px;display:flex;align-items:center;gap:12px;
+  border-bottom:2px dashed var(--stitch);
+}
+.ls-head .av{width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid var(--leather);flex:0 0 auto;}
+.ls-head .av svg{width:100%;height:100%;display:block;}
+.ls-head h3{font-size:20px;color:var(--ink);}
+.ls-head .sub{font-size:12px;color:var(--ink-soft);}
+.thread{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px;}
+.thread .empty{
+  margin:auto;text-align:center;color:var(--ink-soft);font-size:14px;opacity:.85;max-width:30ch;
+}
+.thread .empty .big{font-size:34px;display:block;margin-bottom:6px;}
+.bubble{
+  max-width:78%;padding:9px 13px;border-radius:16px;font-size:14.5px;line-height:1.4;
+  animation:popin .25s cubic-bezier(.2,.8,.25,1);
+}
+@keyframes popin{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.bubble.me{align-self:flex-end;background:var(--rust);color:#fff;border-bottom-right-radius:4px;}
+.bubble.them{align-self:flex-start;background:#fff;border:1.5px solid var(--stitch);color:var(--ink);border-bottom-left-radius:4px;}
+.bubble.typing span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--leather);margin:0 1.5px;animation:blink 1s infinite;}
+.bubble.typing span:nth-child(2){animation-delay:.2s}.bubble.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+.quick-wrap{padding:10px 14px 16px;border-top:2px dashed var(--stitch);background:rgba(253,247,234,.7);}
+.qbtn{
+  width:100%;margin-bottom:8px;cursor:pointer;text-align:left;
+  font-family:'Bitter',serif;font-size:14.5px;font-weight:600;
+  background:#fff;color:var(--ink);border:1.5px solid var(--stitch);
+  border-radius:13px;padding:11px 14px;display:flex;align-items:center;gap:9px;
+  transition:transform .12s, background .12s;
+}
+.qbtn:active{transform:scale(.97);}
+.qbtn .emo{font-size:18px;}
+.qbtn.ai{border-color:var(--gold);background:linear-gradient(90deg,#fff,#fdf3da);position:relative;}
+.qbtn.ai .reroll{
+  margin-left:auto;flex:0 0 auto;border:none;background:var(--gold);color:#3a2a07;
+  width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.panel.profile,.thread{touch-action:pan-y;}
+.qbtn.write{background:var(--denim);border-color:var(--denim);color:#f0e6d2;}
+.ai-note{font-size:11px;color:var(--ink-soft);text-align:center;margin-top:2px;}
+.ai-note b{color:var(--leather);}
+
+/* compose sheet */
+.sheet{
+  position:absolute;left:0;right:0;bottom:-100%;height:62%;z-index:40;
+  background:var(--paper);border-radius:26px 26px 0 0;
+  box-shadow:0 -10px 30px rgba(43,31,21,.3);
+  transition:bottom .3s cubic-bezier(.2,.8,.25,1);
+  padding:18px;display:flex;flex-direction:column;gap:10px;
+}
+.sheet.open{bottom:0;}
+.sheet h3{font-size:21px;color:var(--ink);}
+.sheet textarea{
+  flex:1;resize:none;border:2px dashed var(--stitch);border-radius:14px;
+  padding:12px;font-family:'Bitter',serif;font-size:15px;background:#fff;color:var(--ink);
+}
+.sheet .row{display:flex;gap:10px;}
+.sheet .row .btn{flex:1;text-align:center;}
+.go-btn{background:var(--rust);color:#fff;box-shadow:0 4px 0 #8d3c22;font-size:21px;}
+.cancel-btn{background:transparent;border:2px dashed var(--stitch);color:var(--ink-soft);}
+
+/* interstitial */
+.interstitial{
+  position:absolute;inset:0;z-index:50;display:none;
+  background:rgba(31,28,22,.92);color:#f0e6d2;
+  padding:60px 24px 28px;text-align:center;flex-direction:column;
+}
+.interstitial.open{display:flex;}
+.interstitial .hold{font-family:'Rye',serif;font-size:20px;color:var(--gold);}
+.ad-card{
+  margin:18px 0;background:#fdf7ea;color:var(--ink);border-radius:18px;padding:22px 18px;
+  border:3px solid var(--gold);
+}
+.ad-card .spons-tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);}
+.ad-card h3{font-size:26px;color:var(--leather);margin:6px 0;}
+.ad-card p{font-size:14px;color:var(--ink-soft);}
+.interstitial .cont{margin-top:auto;font-size:19px;}
+.interstitial .fine{font-size:11px;opacity:.65;margin-top:10px;}
+
+/* toast + lasso anim */
+.toast{
+  position:absolute;top:96px;left:50%;transform:translateX(-50%) translateY(-12px);
+  background:var(--ink);color:#f6eddc;font-size:13.5px;padding:9px 16px;border-radius:999px;
+  opacity:0;transition:all .3s;z-index:60;white-space:nowrap;max-width:90%;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.lasso-fx{
+  position:absolute;inset:0;z-index:55;display:none;align-items:center;justify-content:center;
+  pointer-events:none;flex-direction:column;gap:8px;
+}
+.lasso-fx.show{display:flex;}
+.lasso-fx .ring{
+  width:120px;height:120px;border-radius:50%;
+  border:6px dashed var(--gold);
+  animation:throw .9s cubic-bezier(.2,.8,.3,1) forwards;
+}
+.lasso-fx .word{
+  font-family:'Ranchers',cursive;font-size:24px;color:var(--leather);
+  background:var(--paper);padding:4px 16px;border-radius:99px;border:2px solid var(--gold);
+  animation:popin .4s .25s both;
+}
+@keyframes throw{
+  0%{transform:scale(.2) rotate(0);opacity:0}
+  40%{opacity:1}
+  100%{transform:scale(1.6) rotate(200deg);opacity:0}
+}
+
+/* ---------- narrator / investor lens ---------- */
+.lens{
+  width:330px;max-width:90vw;flex:0 0 auto;position:sticky;top:90px;
+  background:var(--denim-deep);color:#e9dfc8;border-radius:var(--radius);
+  padding:22px 22px 18px;box-shadow:0 14px 30px rgba(31,44,61,.3);
+}
+.lens::before{
+  content:"INVESTOR LENS";font-family:'Ranchers',cursive;font-size:13px;letter-spacing:.22em;
+  color:var(--gold);display:block;margin-bottom:8px;
+}
+.lens h4{font-family:'Ranchers',cursive;font-size:22px;color:#fff;margin-bottom:6px;}
+.lens p{font-size:14.5px;line-height:1.55;opacity:.92;}
+.lens .lens-extra{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(233,223,200,.3);font-size:12.5px;color:var(--gold);}
+.demo-controls{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;}
+.demo-controls .btn{font-size:15px;padding:9px 16px;}
+.btn-reset{background:transparent;color:#e9dfc8;border:2px dashed rgba(233,223,200,.4);}
+.btn-reset:hover{background:rgba(233,223,200,.1);}
+.key-hints{margin-top:12px;font-size:12px;opacity:.6;}
+.key-hints kbd{
+  background:rgba(233,223,200,.15);border:1px solid rgba(233,223,200,.3);
+  border-radius:5px;padding:1px 6px;font-family:inherit;
+}
+
+/* ---------- page sections ---------- */
+section.block{max-width:1150px;margin:0 auto;padding:80px 5vw 20px;}
+.block .kicker{margin-bottom:14px;}
+.block h2{font-size:clamp(36px,4.5vw,56px);line-height:1;margin-bottom:14px;}
+.block .lede{font-size:18px;color:var(--ink-soft);max-width:62ch;}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-top:34px;}
+.idea{
+  background:var(--paper);border:2px dashed var(--stitch);border-radius:var(--radius);
+  padding:22px;position:relative;transition:transform .2s;
+}
+.idea:hover{transform:translateY(-4px) rotate(-.5deg);}
+.idea .emo{font-size:32px;}
+.idea h3{font-size:22px;margin:8px 0 6px;color:var(--leather);}
+.idea p{font-size:14.5px;color:var(--ink-soft);}
+.idea .tag{
+  position:absolute;top:-12px;right:14px;background:var(--gold);color:#3a2a07;
+  font-family:'Ranchers',cursive;font-size:12px;padding:3px 10px;border-radius:99px;
+}
+.idea.hero-idea{background:var(--denim-deep);border-style:solid;border-color:var(--denim-deep);color:#e9dfc8;grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;}
+.idea.hero-idea h3{color:var(--gold);font-size:26px;}
+.idea.hero-idea p{color:#e9dfc8;font-size:16px;max-width:75ch;}
+.idea.hero-idea .emo{font-size:54px;}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:34px;counter-reset:step;}
+.step{
+  background:#fff;border-radius:var(--radius);padding:22px;border:2px solid var(--cream);
+  box-shadow:0 6px 16px rgba(43,31,21,.08);position:relative;
+}
+.step::before{
+  counter-increment:step;content:counter(step);
+  font-family:'Ranchers',cursive;font-size:42px;color:var(--sunset);opacity:.9;
+  display:block;line-height:1;
+}
+.step h3{font-size:19px;margin:8px 0 4px;}
+.step p{font-size:13.5px;color:var(--ink-soft);}
+.step .gest{font-family:'Ranchers',cursive;color:var(--rust);font-size:14px;letter-spacing:.06em;}
+
+.money{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:34px;}
+.mcard{
+  border-radius:var(--radius);padding:26px;color:#f6eddc;position:relative;overflow:hidden;
+}
+.mcard h3{font-size:24px;margin-bottom:8px;}
+.mcard p{font-size:14.5px;opacity:.92;}
+.mcard .mnum{font-family:'Ranchers',cursive;font-size:13px;letter-spacing:.18em;opacity:.7;}
+.mcard.m1{background:linear-gradient(140deg,#c75b39,#8a4b2a);}
+.mcard.m2{background:linear-gradient(140deg,#2e4057,#1f2c3d);}
+.mcard.m3{background:linear-gradient(140deg,#7a8450,#4d5433);}
+.free-banner{
+  margin-top:26px;background:var(--gold);border-radius:var(--radius);padding:22px 26px;
+  display:flex;gap:16px;align-items:center;color:#3a2a07;
+}
+.free-banner .emo{font-size:36px;}
+.free-banner h3{font-size:24px;}
+.free-banner p{font-size:14.5px;}
+
+footer{
+  margin-top:90px;padding:40px 5vw 50px;background:var(--denim-deep);color:#cbbfa4;
+  text-align:center;font-size:13.5px;
+}
+footer .wordmark{font-size:34px;color:var(--gold);display:block;margin-bottom:6px;}
+footer .fine{opacity:.6;font-size:12px;margin-top:12px;max-width:70ch;margin-left:auto;margin-right:auto;}
+
+@media (max-width:1020px){
+  .hero{grid-template-columns:1fr;}
+  .lens{position:static;width:372px;}
+}
+@media (max-width:430px){
+  .phone{transform:scale(.86);transform-origin:top center;margin-bottom:-100px;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="wordmark" href="#top">rodeo</a>
+  <nav>
+    <a href="#demo">Live Demo</a>
+    <a href="#softyes">The Soft Yes</a>
+    <a href="#how">How It Works</a>
+    <a href="#money">Revenue</a>
+  </nav>
+</header>
+
+<!-- ================= HERO + DEMO ================= -->
+<div class="hero" id="top">
+  <div class="hero-copy">
+    <span class="kicker">Interactive Investor Prototype</span>
+    <h1>Meet someone<br>worth the <span class="rope">ride.</span></h1>
+    <div class="tagline">saddle up.</div>
+    <p class="lede">
+      <strong>rodeo</strong> is a dating app for people who live — or love — the western life:
+      ranchers, rodeo fans, two-steppers, and city folks with country hearts.
+      It's spontaneous and lighthearted, but thoughtful about the hardest part of dating apps:
+      actually meeting. Our answer is the <strong>Soft Yes</strong> — local events that let two
+      people end up at the same public place without anyone having to make the first move.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="#demo">🤠 Try the demo</a>
+      <a class="btn btn-ghost" href="#softyes">Read the big idea</a>
+    </div>
+  </div>
+
+  <div class="demo-zone" id="demo">
+    <div class="demo-frame-wrap">
+      <!-- ============ PHONE ============ -->
+      <div class="phone">
+        <div class="screen" id="screen">
+
+          <!-- onboarding -->
+          <div class="scr active" id="scrOnboard">
+            <span class="wordmark">rodeo</span>
+            <div class="ob-tag">saddle up.</div>
+
+            <div class="ob-h">Howdy — what do we call you?</div>
+            <input class="ob-field" value="Guy One" readonly>
+
+            <div class="ob-h">Your photos <span style="font-size:13px;color:var(--ink-soft);font-family:'Bitter',serif;">(up to 9, free)</span></div>
+            <div class="photo-grid" id="obPhotos"></div>
+            <div class="pro-row">
+              <span class="lock">🔒</span>
+              <div>Want a <b>video intro</b> or 10+ photos? That's <b>Rodeo&nbsp;Pro</b> — one of the few things we ever charge for.</div>
+            </div>
+
+            <div class="ob-h">What's your speed?</div>
+            <div class="chips">
+              <span class="chip on">Blue heeler dad 🐕</span>
+              <span class="chip on">Two-steppin' 🎶</span>
+              <span class="chip on">Friday rodeos 🐂</span>
+              <span class="chip on">Smoked brisket 🔥</span>
+              <span class="chip">Trail rides</span>
+              <span class="chip">Barrel racing</span>
+              <span class="chip">Truck projects</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">
+              ✨ Your interests stay <b>on your phone</b> and power rodeo's local AI — it writes your icebreakers, not the cloud.
+            </p>
+
+            <button class="btn btn-primary ob-go" id="btnSaddleUp">Saddle Up →</button>
+          </div>
+
+          <!-- deck + profile + lasso -->
+          <div class="scr" id="scrDeck">
+            <div class="app-top">
+              <span class="wordmark">rodeo</span>
+              <div class="me" id="meAvatar"></div>
+            </div>
+
+            <div class="stage" id="stage">
+              <!-- PANEL 0 : deck -->
+              <div class="panel">
+                <div class="card-holder" id="cardHolder"></div>
+              </div>
+              <!-- PANEL 1 : profile -->
+              <div class="panel profile" id="panelProfile"></div>
+              <!-- PANEL 2 : lasso -->
+              <div class="panel lasso" id="panelLasso"></div>
+            </div>
+
+            <div class="gesture-bar">
+              <button class="gpill" data-act="back">→ Back</button>
+              <button class="gpill" data-act="up">↑ Next rider</button>
+              <button class="gpill" data-act="fwd">← Look closer</button>
+            </div>
+          </div>
+
+          <!-- compose sheet -->
+          <div class="sheet" id="composeSheet">
+            <h3>✍️ Write something personal</h3>
+            <textarea id="composeText" placeholder="Make it yours, partner…"></textarea>
+            <div class="row">
+              <button class="btn cancel-btn" id="composeCancel">Hold up</button>
+              <button class="btn go-btn" id="composeGo">GO 🪢</button>
+            </div>
+          </div>
+
+          <!-- outbound ad interstitial -->
+          <div class="interstitial" id="interstitial">
+            <div class="hold">Hold your horses…</div>
+            <div class="ad-card">
+              <div class="spons-tag">A word from a partner</div>
+              <h3>🥾 Hartley Boot Co.</h3>
+              <p>20% off bootcut everything this weekend. Code <b>RODEO20</b>.</p>
+            </div>
+            <button class="btn btn-primary cont" id="interstitialGo">Continue to Instagram →</button>
+            <div class="fine">Outbound links are supported by partners — it's how rodeo stays free, with no subscription. Ever.</div>
+          </div>
+
+          <div class="lasso-fx" id="lassoFx"><div class="ring"></div><div class="word">Lasso thrown! 🪢</div></div>
+          <div class="toast" id="toast"></div>
+        </div>
+      </div>
+
+      <!-- ============ INVESTOR LENS ============ -->
+      <aside class="lens">
+        <h4 id="lensTitle">Start here</h4>
+        <p id="lensBody">Tap <b>“Saddle Up”</b> in the phone to begin. This panel narrates what investors are looking at on every screen — the product mechanic and the business mechanic.</p>
+        <div class="lens-extra" id="lensExtra">Drag the phone screen like a real app, use the pill buttons, or your keyboard.</div>
+        <div class="demo-controls">
+          <button class="btn btn-reset" id="btnReset">↺ Reset demo</button>
+        </div>
+        <div class="key-hints">
+          Keyboard: <kbd>↑</kbd> next rider &nbsp;·&nbsp; <kbd>←</kbd> look closer &nbsp;·&nbsp; <kbd>→</kbd> back
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SOFT YES ================= -->
+<section class="block" id="softyes">
+  <span class="kicker">The Big Idea</span>
+  <h2>The Soft Yes™ — meeting without the hard ask</h2>
+  <p class="lede">
+    Every dating app ends at the same cliff: two strangers must agree to meet, alone, on the
+    strength of a chat window. That ask is heavy — especially for women. <strong>rodeo replaces the
+    hard ask with a soft one.</strong> Local events flow right into the deck. Tapping
+    <em>“I think I'll go”</em> isn't a date, isn't a like, isn't a commitment — it's interest in a
+    <em>place</em>, not a person. But quietly, it puts compatible people at the same rodeo,
+    the same honky-tonk, the same chili cook-off — in public, with friends, with exits.
+  </p>
+
+  <div class="cardgrid">
+    <div class="idea hero-idea">
+      <span class="emo">🪢</span>
+      <div>
+        <h3>How the loop closes</h3>
+        <p>
+          When Guy One taps <em>“I think I'll go”</em> on Friday's rodeo, that signal travels to the
+          feeds of people who've already shown interest in him. They see the same event card — but
+          theirs reads <em>“Some folks you might take a shine to are going. You going?”</em> One more
+          tap and two people have a reason to be in the same arena, no like sent, no rejection
+          risked, no pressure to pair off. If they spot each other there, great. If not, nothing was
+          lost — they still had a good Friday night. <strong>The worst case of a Soft Yes is a fun
+          evening out.</strong> That's a first for dating apps.
+        </p>
+      </div>
+    </div>
+
+    <div class="idea">
+      <span class="emo">🔥</span><span class="tag">Roadmap</span>
+      <h3>The Campfire</h3>
+      <p>Everyone who soft-yes'd an event joins a group chat that opens 24h before and closes 24h after. Group banter is lower stakes than DMs — and gives people a reason to say "I'm by the funnel cake stand."</p>
+    </div>
+    <div class="idea">
+      <span class="emo">📍</span><span class="tag">Roadmap</span>
+      <h3>Check-in Sparks</h3>
+      <p>Check in at the venue and rodeo quietly tells you when someone compatible checks in too — with a one-tap "tip your hat" 🤠 wave that expires when the event ends. Spontaneity, fenced in by time and place.</p>
+    </div>
+    <div class="idea">
+      <span class="emo">👯</span><span class="tag">Roadmap</span>
+      <h3>Ride with a Posse</h3>
+      <p>Soft-yes an event <em>with friends</em>. Groups meeting groups in public is the oldest, safest social pattern there is — we just put rails under it.</p>
+    </div>
+    <div class="idea">
+      <span class="emo">💃</span><span class="tag">Roadmap</span>
+      <h3>Save a Dance</h3>
+      <p>At live-music events, a digital dance card: offer one two-step, no chat required. A dance is three minutes long and ends on its own — the perfect-size first meeting.</p>
+    </div>
+    <div class="idea">
+      <span class="emo">🐎</span><span class="tag">Roadmap</span>
+      <h3>The Two-Step Intro</h3>
+      <p>When two people soft-yes the same event twice in a season, rodeo offers each a private, pre-written wave. Mutual context first, introduction second — the reverse of every other app.</p>
+    </div>
+    <div class="idea">
+      <span class="emo">🛡️</span><span class="tag">Always on</span>
+      <h3>Public-first by design</h3>
+      <p>Every rodeo mechanic points to daylight: public venues, crowds, time-boxed chats, no location shared between users — only shared <em>destinations</em>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section class="block" id="how">
+  <span class="kicker">Mechanics</span>
+  <h2>One thumb. Three moves.</h2>
+  <p class="lede">rodeo's whole interface fits in a pocket and a porch swing. No tab bars, no rabbit holes.</p>
+  <div class="steps">
+    <div class="step">
+      <h3>Pass, kindly</h3>
+      <div class="gest">SWIPE ↑</div>
+      <p>Flick up and the next rider slides in. No "nope" stamp, no judgment — just movin' along.</p>
+    </div>
+    <div class="step">
+      <h3>Look closer</h3>
+      <div class="gest">SWIPE ←</div>
+      <p>Curious? Swipe left into their full profile — photos, story, and what you two already share.</p>
+    </div>
+    <div class="step">
+      <h3>Throw a Lasso</h3>
+      <div class="gest">SWIPE ← AGAIN</div>
+      <p>One more swipe opens the Lasso board: three one-tap openers (two written by on-device AI) plus a "write something personal" composer.</p>
+    </div>
+    <div class="step">
+      <h3>Or just… go</h3>
+      <div class="gest">TAP "I THINK I'LL GO"</div>
+      <p>Event cards ride in the same deck. A Soft Yes puts you where the right people already are.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MONETIZATION ================= -->
+<section class="block" id="money">
+  <span class="kicker">Business Model</span>
+  <h2>Free to ride. Paid by the trail.</h2>
+  <p class="lede">No subscription, no swipe limits, no pay-to-be-seen. rodeo monetizes the <em>edges</em> of the experience — the places money doesn't get between two people.</p>
+  <div class="money">
+    <div class="mcard m1">
+      <div class="mnum">REVENUE 01</div>
+      <h3>🎪 Promoted Events</h3>
+      <p>Venues, rodeos, and festivals pay to ride in the deck alongside the organic local calendar — clearly flagged "Sponsored." It's advertising users <em>thank us for</em>, because every event makes the product work better.</p>
+    </div>
+    <div class="mcard m2">
+      <div class="mnum">REVENUE 02</div>
+      <h3>🔗 Outbound Interstitials</h3>
+      <p>When a user taps out to a profile's Instagram or other link, the trip out passes one sponsored card. Brands reach a precisely western audience; users lose two seconds, not two dollars.</p>
+    </div>
+    <div class="mcard m3">
+      <div class="mnum">REVENUE 03</div>
+      <h3>🎥 Rodeo Pro Media</h3>
+      <p>Nine photos free, forever. Power users pay once for more: 10+ photos and video intros. Vanity upgrades — never visibility, never reach, never messages.</p>
+    </div>
+  </div>
+  <div class="free-banner">
+    <span class="emo">🤝</span>
+    <div>
+      <h3>The promise: the app never charges you to meet someone.</h3>
+      <p>That promise is the marketing. In a category infamous for paywalled affection, "free to love, supported by the town square" is a story local press, venues, and users all want to tell.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="wordmark">rodeo</span>
+  saddle up. — investor prototype, v0.1
+  <p class="fine">
+    All people shown are illustrated placeholders ("Guy One," "Woman One," …) — no real persons,
+    no copyrighted photography. Sponsor names are fictional. The on-device AI openers are simulated
+    in this demo; in production they're generated locally on the user's phone from mutual profile interests.
+  </p>
+</footer>
+
+<script>
+/* ============================================================
+   rodeo — interactive prototype
+   ============================================================ */
+
+/* ---------- illustrated placeholder portraits (SVG) ---------- */
+function portrait(p, idx){
+  const id = 'g' + idx + Math.round(Math.random()*1e5);
+  const [c1,c2,c3] = p.sky;
+  const hair = p.hair==='ponytail'
+    ? `<path d="M186 252 C210 270 212 320 198 352 C190 330 188 300 178 278 Z" fill="${p.sil}"/>`
+    : (p.hair==='bun' ? `<circle cx="150" cy="186" r="14" fill="${p.sil}"/>` : '');
+  const brim = p.hat==='wide' ? 88 : 72;
+  return `
+  <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${c1}"/><stop offset=".55" stop-color="${c2}"/><stop offset="1" stop-color="${c3}"/>
+      </linearGradient>
+    </defs>
+    <rect width="300" height="400" fill="url(#${id})"/>
+    <circle cx="150" cy="170" r="64" fill="${p.sun}" opacity=".9"/>
+    <circle cx="150" cy="170" r="86" fill="${p.sun}" opacity=".18"/>
+    <circle cx="58" cy="64" r="2" fill="#fff" opacity=".7"/><circle cx="244" cy="48" r="1.6" fill="#fff" opacity=".6"/>
+    <circle cx="210" cy="92" r="1.4" fill="#fff" opacity=".5"/><circle cx="84" cy="110" r="1.3" fill="#fff" opacity=".45"/>
+    <path d="M0 300 Q70 268 150 292 T300 286 V400 H0 Z" fill="${p.hill}" opacity=".75"/>
+    <path d="M0 330 Q90 300 170 322 T300 318 V400 H0 Z" fill="${p.hill2}"/>
+    ${hair}
+    <circle cx="150" cy="248" r="48" fill="${p.sil}"/>
+    <path d="M150 218 m-${brim} 0 a${brim} 17 0 1 0 ${brim*2} 0 a${brim} 17 0 1 0 -${brim*2} 0" fill="${p.sil}"/>
+    <path d="M114 220 C112 176 188 176 186 220 Z" fill="${p.sil}"/>
+    <path d="M28 400 C70 308 230 308 272 400 Z" fill="${p.sil}"/>
+  </svg>`;
+}
+function eventArt(e){
+  const id='e'+Math.round(Math.random()*1e5);
+  return `
+  <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${e.sky[0]}"/><stop offset=".6" stop-color="${e.sky[1]}"/><stop offset="1" stop-color="${e.sky[2]}"/>
+    </linearGradient></defs>
+    <rect width="300" height="400" fill="url(#${id})"/>
+    <circle cx="150" cy="190" r="70" fill="#ffd98a" opacity=".85"/>
+    <path d="M0 310 Q80 280 160 300 T300 296 V400 H0 Z" fill="#3c2f22" opacity=".8"/>
+    <path d="M0 336 Q100 308 180 328 T300 324 V400 H0 Z" fill="#241a10"/>
+    <text x="150" y="218" font-size="84" text-anchor="middle">${e.emoji}</text>
+  </svg>`;
+}
+
+/* ---------- demo data ---------- */
+const YOU = {
+  name:'Guy One',
+  sky:['#2e4057','#7d5a7e','#e8843c'], sun:'#ffd98a', hill:'#4d5433', hill2:'#241a10',
+  sil:'#1d140c', hat:'wide', hair:'none',
+  interests:['Blue heeler dad 🐕','Two-steppin’ 🎶','Friday rodeos 🐂','Smoked brisket 🔥']
+};
+
+const CANDIDATES = [
+  {
+    id:'w1', name:'Woman One', age:27, loc:'Bandera, TX · 12 mi',
+    bio:'Barrel racer on weekends, vet-clinic front desk on weekdays. My blue heeler thinks he runs the ranch — he’s not wrong.',
+    interests:['Blue heeler mom 🐕','Barrel racing 🏇','Live music 🎶','Camp coffee ☕'],
+    shared:['Blue heeler people 🐕','Live music 🎶'],
+    ig:'@womanone.ranch',
+    sky:['#1f2c3d','#9a5a6e','#e8843c'], sun:'#ffd98a', hill:'#55603a', hill2:'#241a10',
+    sil:'#201409', hat:'wide', hair:'ponytail',
+    ai:[
+      'Hey — is that a blue heeler? I’ve got one too, and he absolutely runs my house.',
+      'Two heeler people on the same app? Reckon the dogs already decided for us.',
+      'My heeler would like to formally challenge yours to a fetch-off.'
+    ],
+    reply:'Well howdy yourself 😄 A heeler man, huh? This could be trouble.'
+  },
+  {
+    id:'w2', name:'Woman Two', age:30, loc:'Stephenville, TX · 38 mi',
+    bio:'Vet tech, rodeo-raised, will judge your two-step — kindly, and then fix it. Looking for somebody who laughs easy.',
+    interests:['Two-steppin’ 🎶','Vet life 🩺','Friday rodeos 🐂','Wildflower season 🌼'],
+    shared:['Two-steppin’ 🎶','Friday rodeos 🐂'],
+    ig:'@womantwo.twosteps',
+    sky:['#22303f','#b06a4e','#f0a04a'], sun:'#ffe3a3', hill:'#5d6741', hill2:'#1e150c',
+    sil:'#1c130a', hat:'cattleman', hair:'bun',
+    ai:[
+      'I hear you two-step. Fair warning: I lead with enthusiasm and apologize with barbecue.',
+      'Friday rodeo AND a two-step partner? You may be the whole checklist.',
+      'My two-step’s a 7/10. I’m told you grade on a curve?'
+    ],
+    reply:'Ha! Enthusiasm and barbecue will get you everywhere 🤠'
+  },
+  {
+    id:'w3', name:'Woman Three', age:25, loc:'Cheyenne, WY · 6 mi',
+    bio:'Ranch-raised, fourth generation. Sunday trail rides are church. If my truck’s muddy, I’ve had a good week.',
+    interests:['Trail rides 🐎','Friday rodeos 🐂','Truck projects 🔧','Sunrise hikes 🌄'],
+    shared:['Friday rodeos 🐂'],
+    ig:'@womanthree.trails',
+    sky:['#1c2735','#6e5a8a','#d8743c'], sun:'#ffce7a', hill:'#4d5433', hill2:'#1c130a',
+    sil:'#1f150b', hat:'wide', hair:'ponytail',
+    ai:[
+      'Friday rodeo regular too? I’ll be the one cheering too loud at the team roping.',
+      'Cheyenne’s a small town — bet we’ve already been at the same Friday rodeo twice.',
+      'I save my best heckling for the Friday rodeo. You been?'
+    ],
+    reply:'Cheering too loud is the only correct way 🐂'
+  },
+  {
+    id:'w4', name:'Woman Four', age:29, loc:'Nashville, TN · 22 mi',
+    bio:'City girl gone country and not lookin’ back. Learning to ride, fluent in live music, dangerous around brisket.',
+    interests:['Live music 🎶','Learning to ride 🐴','Smoked brisket 🔥','Line dancing 💃'],
+    shared:['Smoked brisket 🔥','Live music 🎶'],
+    ig:'@womanfour.nash',
+    sky:['#242c3a','#8a5a7e','#e08a4a'], sun:'#ffda96', hill:'#5a6440', hill2:'#221809',
+    sil:'#1d130b', hat:'cattleman', hair:'ponytail',
+    ai:[
+      'It says you’re dangerous around brisket. I smoke a 12-hour brisket. We may have a situation.',
+      'Brisket person to brisket person: oak or hickory? This determines everything.',
+      'I’ll trade brisket secrets for live-music recommendations. Fair?'
+    ],
+    reply:'Oak. Obviously. Okay you have my attention 🔥'
+  }
+];
+
+const EVENTS = [
+  {
+    id:'e1', name:'Friday Night Rodeo', venue:'Cheyenne Fairgrounds', when:'Fri · 7:00 PM',
+    sponsored:true, emoji:'🐂', sky:['#1f2c3d','#7d5a7e','#e8843c'],
+    blurb:'Bulls, barrels, and the best corn dogs in the county. Gates at 6.'
+  },
+  {
+    id:'e2', name:'Live at the Rusty Spur', venue:'The Rusty Spur Saloon', when:'Sat · 8:00 PM',
+    sponsored:false, emoji:'🎸', sky:['#241f33','#6e4a6e','#c75b39'],
+    blurb:'The Creek Bend Boys, two-step floor open all night, no cover.'
+  }
+];
+
+/* ---------- investor lens copy ---------- */
+const LENS = {
+  onboard:{t:'Profiles in 60 seconds',b:'Up to nine photos free — generosity is the brand. The two paywalls live here and only here: extra photos and video intros (<b>Rodeo Pro</b>). Interests do double duty: matching signal <i>and</i> fuel for the on-device AI that writes icebreakers later.',x:'💰 Revenue stream #3 introduced before the user ever swipes — as an upgrade, never a toll.'},
+  deck:{t:'The deck: swipe up to mosey on',b:'One vertical gesture moves the line along — deliberately judgment-free (no ❌ button anywhere in rodeo). Swiping <b>left</b> means curiosity. Event cards ride in the same stream as people, which is what makes the Soft Yes possible.',x:'👆 Try it: drag the card up, or drag left on someone interesting.'},
+  event:{t:'A Soft Yes, not a hard ask',b:'This is rodeo’s core innovation. "I think I’ll go" expresses interest in a <b>place</b>, not a person — a yes so soft nobody can be rejected by it. It quietly routes compatible people to the same public venue.',x:'💰 Sponsored events (flagged honestly) are revenue stream #1 — ads users are glad to see.'},
+  mirror:{t:'The other side of the Soft Yes',b:'Because someone this user might like said "I think I’ll go," this card resurfaces with a nudge: <i>folks you might take a shine to are going</i>. Two taps, two people, one public arena — and nobody had to send or answer a like.',x:'🛡️ Safety by architecture: rodeo never shares user locations — only shared destinations.'},
+  profile:{t:'Look closer (swipe ←)',b:'The full story: bio, interests, and — front and center — <b>what you already share</b>, computed on-device. The Instagram link looks like a feature (it is) and works like a business (tap it).',x:'💰 Tap the Instagram chip to see revenue stream #2: the outbound interstitial.'},
+  lasso:{t:'The Lasso 🪢 — openers, solved',b:'The blank-box problem kills conversions on every app. rodeo gives three one-tap openers: a classic <b>Howdy</b>, plus lines written by a <b>local, on-device AI</b> from genuinely shared interests — personal out of the gate, private by design. The fourth button opens a composer for the poets.',x:'✨ Tap the gold ↻ — the AI redrafts the line. No two openers in rodeo are alike.'},
+  compose:{t:'Write something personal',b:'For users who want their own words, the composer is one tap away. Hit <b>GO</b> and the lasso flies.',x:''},
+  interstitial:{t:'Revenue stream #2, live',b:'The user keeps their free trip to Instagram; a partner pays for the two seconds in between. Precisely targeted western audience, zero paywall between people.',x:'💰 Outbound interstitials monetize exits, never connections.'},
+  end:{t:'That’s the herd for tonight',b:'A deliberately finite deck — rodeo is a porch-swing app, not a slot machine. Sessions end warm, with tomorrow’s events as the reason to return.',x:'↺ Reset the demo to ride again.'}
+};
+
+/* ---------- state ---------- */
+let deck=[], idx=0, depth=0, started=false;
+const threads={};      // candidate id -> [{who,text}]
+const aiPick={};       // candidate id -> current ai line index
+let mirrorQueued=false;
+
+const $=s=>document.querySelector(s);
+const stage=$('#stage'), holder=$('#cardHolder'),
+      panelProfile=$('#panelProfile'), panelLasso=$('#panelLasso'),
+      toastEl=$('#toast'), fx=$('#lassoFx'), sheet=$('#composeSheet'),
+      interstitial=$('#interstitial');
+
+function buildDeck(){
+  return [
+    {type:'person', p:CANDIDATES[0]},
+    {type:'event',  e:EVENTS[0]},
+    {type:'person', p:CANDIDATES[1]},
+    {type:'person', p:CANDIDATES[2]},
+    {type:'event',  e:EVENTS[1]},
+    {type:'person', p:CANDIDATES[3]},
+    {type:'end'}
+  ];
+}
+const current=()=>deck[idx];
+
+/* ---------- lens ---------- */
+function narrate(key){
+  const L=LENS[key]; if(!L) return;
+  $('#lensTitle').textContent=L.t;
+  $('#lensBody').innerHTML=L.b;
+  const ex=$('#lensExtra');
+  ex.style.display=L.x?'block':'none';
+  ex.innerHTML=L.x;
+}
+
+/* ---------- toast / fx ---------- */
+let toastTimer;
+function toast(msg){
+  toastEl.textContent=msg;toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2400);
+}
+function lassoAnim(){
+  fx.classList.remove('show');void fx.offsetWidth;fx.classList.add('show');
+  setTimeout(()=>fx.classList.remove('show'),1100);
+}
+
+/* ---------- rendering ---------- */
+function personCardHTML(p,i){
+  return `
+    <div class="art">${portrait(p,i)}</div>
+    <div class="scrim"></div>
+    <div class="hintline">↑ NEXT RIDER&nbsp;&nbsp;·&nbsp;&nbsp;← LOOK CLOSER</div>
+    <div class="info">
+      <h3>${p.name}, ${p.age}</h3>
+      <div class="loc">📍 ${p.loc}</div>
+      <div class="chips">${p.interests.slice(0,3).map(t=>`<span class="chip">${t}</span>`).join('')}</div>
+    </div>`;
+}
+function eventCardHTML(item){
+  const e=item.e, mirror=item.type==='event-mirror';
+  const going=e.going;
+  let btnLabel, sub, note='';
+  if(mirror){
+    note=`<div class="mirror-note">🪢 <b>3 folks you might take a shine to</b> are thinkin’ of going. You going too?</div>`;
+    btnLabel = going?'🤠 You’re both on the list':'Count me in 🤠';
+    sub='A Soft Yes — nobody has to like anybody. Y’all just end up at the same place.';
+  }else{
+    btnLabel = going?'🪢 You’re going!':'🤠 I think I’ll go';
+    sub='Tap it and folks who’ve taken a shine to you will hear the same music.';
+  }
+  return `
+    <div class="art">${eventArt(e)}</div>
+    <div class="scrim"></div>
+    <div class="evt-flag ${e.sponsored?'spons':''}">${e.sponsored?'★ SPONSORED · LOCAL EVENT':'LOCAL EVENT'}</div>
+    <div class="hintline">↑ NEXT&nbsp;&nbsp;·&nbsp;&nbsp;EVENTS RIDE IN THE DECK</div>
+    <div class="info">
+      ${note}
+      <h3>${e.name}</h3>
+      <div class="loc">📍 ${e.venue} &nbsp;·&nbsp; 🗓 ${e.when}</div>
+      <div style="font-size:13px;opacity:.85;">${e.blurb}</div>
+      <button class="evt-btn ${going?'done':''}" data-evt="${e.id}" data-mirror="${mirror?1:0}">${btnLabel}</button>
+      <div class="evt-sub">${sub}</div>
+    </div>`;
+}
+function endCardHTML(){
+  return `<div class="inner">
+    <div style="font-size:54px;">🌵</div>
+    <h3>That’s the herd for tonight</h3>
+    <p style="font-size:14px;opacity:.85;margin-bottom:16px;">New riders and weekend events roll in tomorrow. Don’t be a stranger.</p>
+    <button class="evt-btn" data-act="reset" style="max-width:220px;">↺ Ride again</button>
+  </div>`;
+}
+
+function renderDeck(){
+  holder.innerHTML='';
+  // under-card peek
+  const next=deck[idx+1];
+  if(next){
+    const u=document.createElement('div');
+    u.className='card under '+(next.type==='end'?'endcard':(next.type==='person'?'':'event'));
+    u.innerHTML = next.type==='person'?personCardHTML(next.p,idx+1)
+               : next.type==='end'?endCardHTML():eventCardHTML(next);
+    holder.appendChild(u);
+  }
+  const item=current();
+  const c=document.createElement('div');
+  c.className='card '+(item.type==='end'?'endcard':(item.type==='person'?'':'event'));
+  c.id='topCard';
+  c.innerHTML = item.type==='person'?personCardHTML(item.p,idx)
+             : item.type==='end'?endCardHTML():eventCardHTML(item);
+  holder.appendChild(c);
+
+  if(item.type==='person') narrate('deck');
+  else if(item.type==='event') narrate('event');
+  else if(item.type==='event-mirror') narrate('mirror');
+  else narrate('end');
+}
+
+function renderProfile(p){
+  panelProfile.innerHTML=`
+    <div class="pr-hero">${portrait(p,'pr')}
+      <div class="scrim2"></div>
+      <div class="nm"><h3>${p.name}, ${p.age}</h3><div class="loc">📍 ${p.loc}</div></div>
+    </div>
+    <div class="pr-body">
+      <div class="pr-sec">Their story</div>
+      <p class="pr-bio">${p.bio}</p>
+      <div class="pr-sec">What y’all share</div>
+      <div class="share-box"><div class="chips">${p.shared.map(t=>`<span class="chip on">${t}</span>`).join('')}</div>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin-top:8px;">✨ Spotted by rodeo’s on-device AI — your profiles never leave your phones to find this.</p>
+      </div>
+      <div class="pr-sec">Into</div>
+      <div class="chips">${p.interests.map(t=>`<span class="chip">${t}</span>`).join('')}</div>
+      <div class="pr-sec">Elsewhere</div>
+      <button class="ig-chip" data-act="ig">📸 ${p.ig} on Instagram</button>
+    </div>
+    <button class="btn lasso-cta" data-act="fwd">Throw a Lasso 🪢 &nbsp;(or swipe ←)</button>`;
+}
+
+function aiLine(p){
+  if(aiPick[p.id]==null) aiPick[p.id]=Math.floor(Math.random()*p.ai.length);
+  return p.ai[aiPick[p.id]];
+}
+function renderLasso(p){
+  const th=threads[p.id]||[];
+  panelLasso.innerHTML=`
+    <div class="ls-head">
+      <div class="av">${portrait(p,'ls')}</div>
+      <div><h3>Lasso · ${p.name}</h3><div class="sub">Messages stay friendly, partner. 🤝</div></div>
+    </div>
+    <div class="thread" id="thread">
+      ${th.length?th.map(m=>`<div class="bubble ${m.who}">${m.text}</div>`).join('')
+        :`<div class="empty"><span class="big">🪢</span>No messages yet.<br>Break the ice — three of these are one tap.</div>`}
+    </div>
+    <div class="quick-wrap">
+      <button class="qbtn" data-quick="Howdy 🤠"><span class="emo">🤠</span> Howdy</button>
+      <button class="qbtn ai" data-quick="__ai__"><span class="emo">✨</span> <span id="aiText">${aiLine(p)}</span>
+        <span class="reroll" data-act="reroll" role="button" title="Redraft with on-device AI">↻</span>
+      </button>
+      <button class="qbtn" data-quick="I’d love to chat. ☕"><span class="emo">💬</span> I’d love to chat</button>
+      <button class="qbtn write" data-act="compose"><span class="emo">✍️</span> Write something personal…</button>
+      <div class="ai-note">✨ openers drafted <b>on your phone</b> by rodeo’s local AI from what y’all share — no two alike</div>
+    </div>`;
+}
+
+/* ---------- navigation ---------- */
+function setStage(animate=true){
+  stage.style.transition=animate?'':'none';
+  stage.style.transform=`translateX(${-depth*(100/3)}%)`;
+}
+function maxDepth(){ return current().type==='person'?2:0; }
+
+function goDepth(d){
+  d=Math.max(0,Math.min(maxDepth(),d));
+  if(d===depth){setStage();return;}
+  depth=d;
+  const p=current().p;
+  if(depth>=1&&p) renderProfile(p);
+  if(depth===2&&p) renderLasso(p);
+  setStage();
+  if(depth===0) renderDeck();
+  else if(depth===1) narrate('profile');
+  else narrate('lasso');
+}
+
+function advance(){
+  if(depth!==0) return;
+  if(current().type==='end'){return;}
+  const top=$('#topCard');
+  if(top) top.classList.add('fly-up');
+  setTimeout(()=>{ idx=Math.min(idx+1,deck.length-1); renderDeck(); },280);
+}
+
+function resetDemo(showOnboard=true){
+  deck=buildDeck(); idx=0; depth=0; started=!showOnboard; mirrorQueued=false;
+  for(const k in threads) delete threads[k];
+  for(const k in aiPick) delete aiPick[k];
+  EVENTS.forEach(e=>e.going=false);
+  sheet.classList.remove('open'); interstitial.classList.remove('open');
+  setStage(false);
+  $('#scrOnboard').classList.toggle('active',showOnboard);
+  $('#scrDeck').classList.toggle('active',!showOnboard);
+  if(showOnboard){
+    $('#lensTitle').textContent='Start here';
+    $('#lensBody').innerHTML='Tap <b>“Saddle Up”</b> in the phone to begin. This panel narrates what investors are looking at on every screen — the product mechanic and the business mechanic.';
+    $('#lensExtra').style.display='block';
+    $('#lensExtra').innerHTML='Drag the phone screen like a real app, use the pill buttons, or your keyboard.';
+  } else { renderDeck(); }
+}
+
+/* ---------- messaging ---------- */
+function sendMessage(p,text){
+  if(!threads[p.id]) threads[p.id]=[];
+  const th=threads[p.id];
+  const first=th.length===0;
+  th.push({who:'me',text});
+  renderLasso(p);
+  lassoAnim();
+  toast(`Lasso thrown to ${p.name} 🪢`);
+  if(first&&p.reply){
+    setTimeout(()=>{
+      if(current().p!==p||depth!==2) {th.push({who:'them',text:p.reply});return;}
+      const tEl=$('#thread');
+      const typing=document.createElement('div');
+      typing.className='bubble them typing';typing.innerHTML='<span></span><span></span><span></span>';
+      tEl.appendChild(typing);tEl.scrollTop=tEl.scrollHeight;
+      setTimeout(()=>{
+        th.push({who:'them',text:p.reply});
+        if(current().p===p&&depth===2){renderLasso(p);const t2=$('#thread');t2.scrollTop=t2.scrollHeight;}
+      },1500);
+    },1200);
+  }
+}
+
+/* ---------- soft yes ---------- */
+function softYes(evtId,isMirror){
+  const e=EVENTS.find(x=>x.id===evtId);
+  if(!e) return;
+  if(isMirror){
+    const item=current();
+    if(item&&item.e){
+      if(item.e.going){toast('You’re already on the list 🤠');return;}
+      item.e.going=true;
+    }
+    e.going=true;
+    renderDeck();
+    toast('We’ll let ’em know you’ll be there. No likes required. 🪢');
+    return;
+  }
+  if(e.going){toast('You’re already on the list 🤠');return;}
+  e.going=true;
+  renderDeck();
+  {
+    toast('You’re on the list! Folks who like you will hear about it.');
+    if(!mirrorQueued){
+      mirrorQueued=true;
+      // a couple cards later, show the mirrored side of the Soft Yes
+      const at=Math.min(idx+2,deck.length-1);
+      deck.splice(at,0,{type:'event-mirror',e:{...e,id:e.id+'-m',going:false,sponsored:false}});
+    }
+  }
+}
+
+/* ---------- gestures ---------- */
+const screenEl=$('#screen');
+let drag=null;
+screenEl.addEventListener('pointerdown',ev=>{
+  if(!started) return;
+  if(sheet.classList.contains('open')||interstitial.classList.contains('open')) return;
+  if(ev.target.closest('button')||ev.target.closest('.thread')) return;
+  drag={x:ev.clientX,y:ev.clientY,axis:null,sc:panelProfile.scrollTop};
+  screenEl.setPointerCapture(ev.pointerId);
+});
+screenEl.addEventListener('pointermove',ev=>{
+  if(!drag) return;
+  const dx=ev.clientX-drag.x, dy=ev.clientY-drag.y;
+  if(!drag.axis){
+    if(Math.abs(dx)<14&&Math.abs(dy)<14) return;
+    drag.axis=Math.abs(dx)>Math.abs(dy)?'h':'v';
+  }
+  if(drag.axis==='v'&&depth===0){
+    const top=$('#topCard');
+    if(top&&dy<0){top.style.transition='none';top.style.transform=`translateY(${dy}px) rotate(${dy/60}deg)`;}
+  }else if(drag.axis==='v'&&depth===1){
+    panelProfile.scrollTop=drag.sc-dy;
+  }else if(drag.axis==='h'){
+    const W=screenEl.clientWidth;
+    let off=-depth*W+dx;
+    off=Math.max(-2*W,Math.min(0,off));
+    stage.style.transition='none';
+    stage.style.transform=`translateX(${off}px)`;
+  }
+});
+function endDrag(ev){
+  if(!drag) return;
+  const dx=ev.clientX-drag.x, dy=ev.clientY-drag.y, axis=drag.axis;
+  drag=null;
+  if(axis==='v'&&depth===0){
+    const top=$('#topCard');
+    if(top){top.style.transition='';top.style.transform='';}
+    if(dy<-90) advance();
+  }else if(axis==='h'){
+    if(dx<-70){
+      if(depth>=maxDepth()&&depth===0&&current().type!=='person'){
+        setStage();
+        if(current().type!=='end') toast('Events don’t have profiles — tap the button instead 🤠');
+      } else goDepth(depth+1);
+    }
+    else if(dx>70) goDepth(depth-1);
+    else setStage();
+  }
+}
+screenEl.addEventListener('pointerup',endDrag);
+screenEl.addEventListener('pointercancel',()=>{
+  if(!drag) return;drag=null;
+  const top=$('#topCard');if(top){top.style.transition='';top.style.transform='';}
+  setStage();
+});
+
+/* ---------- clicks ---------- */
+document.addEventListener('click',ev=>{
+  const t=ev.target;
+
+  if(t.id==='btnSaddleUp'){
+    started=true;
+    $('#scrOnboard').classList.remove('active');
+    $('#scrDeck').classList.add('active');
+    renderDeck();setStage(false);
+    toast('Welcome to the rodeo, Guy One 🤠');
+    return;
+  }
+  if(t.id==='btnReset'||t.dataset.act==='reset'){resetDemo(true);return;}
+
+  const pill=t.closest('[data-act]');
+  if(pill){
+    const act=pill.dataset.act;
+    if(act==='up'){advance();return;}
+    if(act==='fwd'){
+      if(depth===0&&current().type!=='person'){toast('Events don’t have profiles — tap the button instead 🤠');return;}
+      goDepth(depth+1);return;
+    }
+    if(act==='back'){goDepth(depth-1);return;}
+    if(act==='ig'){narrate('interstitial');interstitial.classList.add('open');return;}
+    if(act==='compose'){narrate('compose');sheet.classList.add('open');$('#composeText').focus();return;}
+    if(act==='reroll'){
+      ev.stopPropagation();
+      const p=current().p;if(!p)return;
+      aiPick[p.id]=(aiPick[p.id]+1)%p.ai.length;
+      $('#aiText').textContent=p.ai[aiPick[p.id]];
+      toast('✨ Redrafted on-device');
+      return;
+    }
+  }
+
+  const evtBtn=t.closest('[data-evt]');
+  if(evtBtn){softYes(evtBtn.dataset.evt.replace(/-m$/,''),evtBtn.dataset.mirror==='1');return;}
+
+  const q=t.closest('[data-quick]');
+  if(q){
+    const p=current().p;if(!p)return;
+    let msg=q.dataset.quick;
+    if(msg==='__ai__') msg='✨ '+p.ai[aiPick[p.id]];
+    sendMessage(p,msg);
+    return;
+  }
+
+  if(t.id==='composeCancel'){sheet.classList.remove('open');narrate('lasso');return;}
+  if(t.id==='composeGo'){
+    const txt=$('#composeText').value.trim();
+    if(!txt){toast('Write a little somethin’ first, partner ✍️');return;}
+    const p=current().p;
+    sheet.classList.remove('open');$('#composeText').value='';
+    if(p) sendMessage(p,txt);
+    narrate('lasso');
+    return;
+  }
+  if(t.id==='interstitialGo'){
+    interstitial.classList.remove('open');
+    toast('Off to Instagram 📸 (demo) — partner paid the toll, not you.');
+    narrate('profile');
+    return;
+  }
+});
+
+/* keyboard */
+document.addEventListener('keydown',ev=>{
+  if(!started) return;
+  if(ev.target.tagName==='TEXTAREA'||ev.target.tagName==='INPUT') return;
+  if(ev.key==='ArrowUp'){ev.preventDefault();advance();}
+  if(ev.key==='ArrowLeft'){
+    ev.preventDefault();
+    if(depth===0&&current().type!=='person'){toast('Events don’t have profiles — tap the button instead 🤠');return;}
+    goDepth(depth+1);
+  }
+  if(ev.key==='ArrowRight'){ev.preventDefault();goDepth(depth-1);}
+});
+
+/* ---------- boot ---------- */
+(function boot(){
+  // your avatar in top bar
+  $('#meAvatar').innerHTML=portrait(YOU,'me');
+  // onboarding photo grid: 1 main portrait + 2 filled + empties
+  const grid=$('#obPhotos');
+  const fills=[YOU,
+    {...YOU,sky:['#22303f','#b06a4e','#f0a04a']},
+    {...YOU,sky:['#1c2735','#5a6e8a','#d8743c'],hat:'cattleman'}];
+  for(let i=0;i<9;i++){
+    const d=document.createElement('div');
+    d.className='pslot'+(i<3?' filled':'');
+    if(i<3){d.innerHTML=portrait(fills[i],'ob'+i)+(i===0?'<span class="badge-main">MAIN</span>':'');}
+    else d.textContent='+';
+    grid.appendChild(d);
+  }
+  deck=buildDeck();
+})();
+</script>
+</body>
+</html>

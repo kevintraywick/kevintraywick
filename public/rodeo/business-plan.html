@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rodeo — Saddle Up | Business Plan & Market Evaluation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Bitter:ital,wght@0,400;0,600;0,800;1,400&display=swap');
+
+  :root{
+    --leather:#6B4423;
+    --leather-dk:#4A2E17;
+    --tan:#D9A24B;
+    --tan-lt:#E8C583;
+    --cream:#F7F1E3;
+    --cream-dk:#EBE0C7;
+    --denim:#33536E;
+    --denim-dk:#243B4F;
+    --rust:#B23A1E;
+    --rust-dk:#8A2C16;
+    --ink:#2B2118;
+    --sage:#6F7B53;
+    --paper:#FBF7EC;
+    --shadow:0 18px 50px rgba(43,33,24,.28);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  html,body{height:100%;}
+  body{
+    font-family:'Bitter',Georgia,serif;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(217,162,75,.12), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(51,83,110,.14), transparent 45%),
+      var(--ink);
+    color:var(--ink);
+    overflow:hidden;
+  }
+
+  /* ---------- Deck frame ---------- */
+  #deck{position:relative;height:100vh;width:100vw;display:flex;align-items:center;justify-content:center;}
+  .slide{
+    position:absolute;inset:0;margin:auto;
+    width:min(1080px,94vw);height:min(660px,92vh);
+    background:var(--paper);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    padding:46px 56px 60px;
+    opacity:0;transform:translateY(18px) scale(.98);
+    transition:opacity .45s ease, transform .45s ease;
+    pointer-events:none;
+    overflow:hidden;
+    border:1px solid rgba(107,68,35,.25);
+    display:flex;flex-direction:column;
+  }
+  .slide.active{opacity:1;transform:none;pointer-events:auto;}
+  .slide::before{
+    content:"";position:absolute;inset:10px;border:2px dashed rgba(107,68,35,.28);
+    border-radius:12px;pointer-events:none;
+  }
+
+  /* rope/stitch top bar */
+  .slide .stitch{position:absolute;top:0;left:0;right:0;height:8px;
+    background:repeating-linear-gradient(90deg,var(--tan) 0 14px,transparent 14px 24px);
+    opacity:.8;border-radius:18px 18px 0 0;}
+
+  h1,h2,h3{font-family:'Bitter',Georgia,serif;line-height:1.12;}
+  .kicker{font-family:'Rye',serif;letter-spacing:.5px;color:var(--rust);
+    font-size:15px;text-transform:uppercase;margin-bottom:10px;}
+  h2.title{font-size:34px;font-weight:800;color:var(--leather-dk);margin-bottom:6px;}
+  h2.title .u{border-bottom:4px solid var(--tan);padding-bottom:2px;}
+  p{font-size:16px;line-height:1.5;color:#3a3026;}
+  .lead{font-size:18px;color:#3a3026;}
+  .muted{color:#6c5f4f;font-size:13px;}
+
+  .content{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .scroll{overflow:auto;}
+
+  /* footer */
+  .foot{position:absolute;bottom:14px;left:56px;right:56px;display:flex;
+    justify-content:space-between;align-items:center;font-size:11px;color:#9b8c77;
+    font-family:'Bitter',serif;letter-spacing:.4px;}
+  .brandmark{font-family:'Rye',serif;color:var(--rust);}
+
+  /* ---------- Title slide ---------- */
+  .cover{background:
+      radial-gradient(circle at 50% 30%, rgba(217,162,75,.25), transparent 55%),
+      linear-gradient(160deg,var(--denim-dk),var(--leather-dk));
+    color:var(--cream);text-align:center;align-items:center;justify-content:center;}
+  .cover::before{border-color:rgba(232,197,131,.4);}
+  .cover .logo{font-family:'Rye',serif;font-size:78px;color:var(--tan-lt);
+    text-shadow:0 6px 0 rgba(0,0,0,.25);letter-spacing:2px;}
+  .cover .tag{font-family:'Rye',serif;font-size:26px;color:var(--cream);margin-top:4px;}
+  .cover .sub{margin-top:22px;font-size:17px;color:#e9ddc4;max-width:560px;}
+  .cover .badge{margin-top:26px;display:inline-flex;gap:10px;align-items:center;
+    background:rgba(247,241,227,.12);border:1px solid rgba(232,197,131,.5);
+    padding:10px 20px;border-radius:40px;font-size:13px;color:var(--cream);letter-spacing:.5px;}
+  .star{color:var(--tan);}
+
+  /* ---------- layout helpers ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .card{background:var(--cream);border:1px solid rgba(107,68,35,.2);border-radius:12px;
+    padding:16px 18px;box-shadow:0 4px 14px rgba(43,33,24,.06);}
+  .card h3{font-size:16px;color:var(--leather-dk);margin-bottom:6px;}
+  .card p{font-size:13.5px;line-height:1.45;}
+  .card .big{font-size:30px;font-weight:800;color:var(--rust);font-family:'Bitter',serif;}
+  .card .lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#897a64;}
+
+  .pill{display:inline-block;background:var(--tan);color:var(--leather-dk);
+    font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.4px;
+    text-transform:uppercase;}
+  .pill.denim{background:var(--denim);color:#fff;}
+  .pill.rust{background:var(--rust);color:#fff;}
+  .pill.sage{background:var(--sage);color:#fff;}
+
+  ul.clean{list-style:none;display:flex;flex-direction:column;gap:9px;}
+  ul.clean li{position:relative;padding-left:24px;font-size:14.5px;line-height:1.4;color:#3a3026;}
+  ul.clean li::before{content:"★";position:absolute;left:0;top:1px;color:var(--tan);font-size:13px;}
+  ul.clean li b{color:var(--leather-dk);}
+
+  /* score ring */
+  .scorewrap{display:flex;align-items:center;gap:22px;}
+  .ring{width:130px;height:130px;flex:none;}
+
+  /* funnel */
+  .funnel{display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:6px;}
+  .fbar{color:#fff;text-align:center;padding:13px 8px;border-radius:8px;
+    box-shadow:0 4px 10px rgba(43,33,24,.12);}
+  .fbar .n{font-size:22px;font-weight:800;}
+  .fbar .t{font-size:11.5px;letter-spacing:.4px;opacity:.95;}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table th,table td{padding:9px 10px;text-align:left;border-bottom:1px solid rgba(107,68,35,.16);}
+  table th{background:var(--leather-dk);color:var(--cream);font-weight:600;font-size:12px;
+    text-transform:uppercase;letter-spacing:.4px;}
+  table th:first-child{border-radius:8px 0 0 0;}
+  table th:last-child{border-radius:0 8px 0 0;}
+  table tr:nth-child(even) td{background:rgba(217,162,75,.07);}
+  table td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
+  .col-con{color:var(--denim);} .col-real{color:var(--sage);font-weight:700;} .col-agg{color:var(--rust);}
+
+  /* bar chart */
+  .bars{display:flex;align-items:flex-end;gap:26px;height:210px;padding:10px 6px 0;}
+  .barcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;height:100%;}
+  .bar{width:62%;border-radius:8px 8px 0 0;position:relative;transition:height .6s ease;
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.12);}
+  .bar .val{position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+    font-size:12px;font-weight:800;color:var(--ink);white-space:nowrap;}
+  .barlbl{font-size:12px;color:#5b4e3d;text-align:center;font-weight:600;}
+
+  .legend{display:flex;gap:18px;justify-content:center;font-size:12px;margin-top:6px;color:#5b4e3d;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+  /* swot */
+  .swot{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:100%;}
+  .swot .q{border-radius:12px;padding:14px 16px;}
+  .swot h3{font-size:15px;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+  .swot ul{list-style:none;display:flex;flex-direction:column;gap:5px;}
+  .swot li{font-size:12.3px;line-height:1.35;padding-left:14px;position:relative;}
+  .swot li::before{content:"›";position:absolute;left:0;color:var(--leather);font-weight:800;}
+  .s-s{background:rgba(111,123,83,.14);border:1px solid rgba(111,123,83,.4);}
+  .s-w{background:rgba(178,58,30,.10);border:1px solid rgba(178,58,30,.35);}
+  .s-o{background:rgba(51,83,110,.10);border:1px solid rgba(51,83,110,.35);}
+  .s-t{background:rgba(107,68,35,.10);border:1px solid rgba(107,68,35,.35);}
+
+  /* flaws */
+  .flaw{display:flex;gap:16px;align-items:flex-start;background:var(--cream);
+    border-left:5px solid var(--rust);border-radius:10px;padding:14px 18px;margin-bottom:12px;}
+  .flaw .no{font-family:'Rye',serif;font-size:30px;color:var(--rust);line-height:1;flex:none;width:42px;}
+  .flaw h3{font-size:16px;color:var(--leather-dk);margin-bottom:3px;}
+  .flaw p{font-size:13px;}
+
+  /* budget bars (horizontal) */
+  .hbar{margin-bottom:13px;}
+  .hbar .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+  .hbar .top b{color:var(--leather-dk);}
+  .hbar .track{height:18px;background:var(--cream-dk);border-radius:10px;overflow:hidden;}
+  .hbar .fill{height:100%;border-radius:10px;}
+
+  /* steps */
+  .flow{display:flex;align-items:stretch;gap:0;margin-top:8px;}
+  .step{flex:1;background:var(--cream);border:1px solid rgba(107,68,35,.2);
+    padding:12px 12px;text-align:center;position:relative;}
+  .step:first-child{border-radius:10px 0 0 10px;}
+  .step:last-child{border-radius:0 10px 10px 0;}
+  .step .ic{font-size:22px;}
+  .step h4{font-size:12.5px;color:var(--leather-dk);margin:5px 0 3px;}
+  .step p{font-size:11px;line-height:1.3;color:#5b4e3d;}
+  .step:not(:last-child)::after{content:"→";position:absolute;right:-9px;top:50%;
+    transform:translateY(-50%);color:var(--tan);font-weight:800;z-index:2;font-size:16px;}
+
+  /* ---------- nav ---------- */
+  #nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+    display:flex;align-items:center;gap:14px;z-index:50;
+    background:rgba(43,33,24,.82);padding:8px 16px;border-radius:40px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(4px);}
+  #nav button{background:var(--tan);border:none;color:var(--leather-dk);
+    width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;font-weight:800;
+    display:flex;align-items:center;justify-content:center;transition:.2s;}
+  #nav button:hover{background:var(--tan-lt);}
+  #nav button:disabled{opacity:.35;cursor:default;}
+  #counter{color:var(--cream);font-size:13px;font-family:'Bitter',serif;min-width:54px;text-align:center;letter-spacing:.5px;}
+  .dots{display:flex;gap:6px;}
+  .dots i{width:8px;height:8px;border-radius:50%;background:rgba(247,241,227,.35);cursor:pointer;transition:.2s;}
+  .dots i.on{background:var(--tan);transform:scale(1.25);}
+
+  .hint{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);
+    color:rgba(247,241,227,.55);font-size:11px;font-family:'Bitter',serif;z-index:40;letter-spacing:.5px;}
+
+  @media print{
+    body{overflow:visible;background:#fff;}
+    #deck{height:auto;display:block;}
+    .slide{position:relative;opacity:1;transform:none;pointer-events:auto;
+      page-break-after:always;margin:0 auto 24px;box-shadow:none;height:660px;}
+    #nav,.hint{display:none;}
+  }
+</style>
+</head>
+<body>
+<div id="deck">
+
+  <!-- 1. COVER -->
+  <section class="slide cover active">
+    <div class="logo">Rodeo</div>
+    <div class="tag">“ Saddle Up ”</div>
+    <div class="sub">A business plan & market evaluation for a dating + social app built for cowboys, cowgirls, western enthusiasts, country-music lovers, and the farming-as-a-lifestyle crowd.</div>
+    <div class="badge"><span class="star">★</span> Market Evaluation · Unit Economics · Viral Growth Strategy · June 2026</div>
+  </section>
+
+  <!-- 2. EXECUTIVE SUMMARY / SCORE -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Executive Summary</div>
+    <h2 class="title">The <span class="u">verdict</span> up front</h2>
+    <div class="content" style="margin-top:14px;">
+      <div class="scorewrap">
+        <svg class="ring" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#EBE0C7" stroke-width="13"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#B23A1E" stroke-width="13"
+            stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="94"
+            transform="rotate(-90 60 60)"/>
+          <text x="60" y="58" text-anchor="middle" font-size="34" font-weight="800" fill="#4A2E17" font-family="Bitter,serif">7</text>
+          <text x="60" y="78" text-anchor="middle" font-size="13" fill="#897a64" font-family="Bitter,serif">/ 10 viability</text>
+        </svg>
+        <div>
+          <p class="lead"><b>A passionate, underserved identity community with a genuine viral wedge — gated by a hard cold-start problem.</b></p>
+          <p style="margin-top:8px;">Rodeo targets a culturally distinct, emotionally loyal audience that mainstream apps treat as an afterthought, and pairs dating with a social/UGC layer purpose-built to go viral on TikTok. The model works <i>only</i> if community-driven virality keeps acquisition cheap and solves rural liquidity — both achievable but unproven.</p>
+        </div>
+      </div>
+      <div class="grid4" style="margin-top:20px;">
+        <div class="card"><div class="lbl">US dating market '25</div><div class="big">$3.2B</div><p class="muted">growing to ~$6.1B by 2034</p></div>
+        <div class="card"><div class="lbl">Serviceable niche</div><div class="big">~8.5M</div><p class="muted">country-affinity US singles online</p></div>
+        <div class="card"><div class="lbl">Yr-3 revenue (realistic)</div><div class="big">$8.5M</div><p class="muted">~450K active · 7% paying</p></div>
+        <div class="card"><div class="lbl">Seed needed</div><div class="big">$1.5–2.5M</div><p class="muted">launch + 18mo runway</p></div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Executive Summary</span></div>
+  </section>
+
+  <!-- 3. THE OPPORTUNITY -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">The Opportunity</div>
+    <h2 class="title">Country culture is <span class="u">surging</span> — dating hasn't caught up</h2>
+    <div class="content" style="margin-top:14px;">
+      <div class="grid2">
+        <ul class="clean">
+          <li><b>Country music is booming.</b> 150M+ Americans listen regularly, and Gen Z + millennials now make up ~63% of the fan base — discovery is driven by TikTok.</li>
+          <li><b>The identity is broad.</b> It spans rodeo athletes, ranchers, the 1.9M US farm families, western-wear enthusiasts, line-dancers, and the much larger "country at heart" crowd.</li>
+          <li><b>Incumbents are generic.</b> Tinder, Hinge and Bumble optimize for dense cities; they have no cultural identity and bury rural users in low-match feeds.</li>
+          <li><b>The one true niche player is dated.</b> FarmersOnly (est. 2005) has ~1.5M members and a reputation as a punchline — wide open for a modern, brand-led challenger.</li>
+        </ul>
+        <div>
+          <div class="card" style="margin-bottom:14px;">
+            <h3>Why a niche can win</h3>
+            <p>Premium niche dating apps command <b>LTV of $60–$300+</b> vs. $15–$50 for mainstream, because shared identity drives higher intent, trust, and willingness to pay.</p>
+          </div>
+          <div class="card">
+            <h3>The cultural tailwind</h3>
+            <p>Beyoncé's <i>Cowboy Carter</i>, the "coastal cowgirl" trend, Yellowstone, and a global western-wear moment have made cowboy identity aspirational and <b>highly shareable</b> — exactly the fuel a social-first app needs.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Market Context</span></div>
+  </section>
+
+  <!-- 4. TAM SAM SOM -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Phase 1 · Market Sizing</div>
+    <h2 class="title">TAM · SAM · <span class="u">SOM</span></h2>
+    <div class="content" style="margin-top:10px;">
+      <div class="grid2" style="grid-template-columns:1.05fr 1fr;align-items:center;">
+        <div class="funnel">
+          <div class="fbar" style="width:100%;background:var(--leather-dk);">
+            <div class="n">~22M</div><div class="t">TAM · US single adults who identify with country / western / rural culture</div>
+          </div>
+          <div class="fbar" style="width:80%;background:var(--denim);">
+            <div class="n">~8.5M</div><div class="t">SAM · smartphone users, dating age (18–55), use dating apps</div>
+          </div>
+          <div class="fbar" style="width:55%;background:var(--rust);">
+            <div class="n">~400K</div><div class="t">SOM · realistically obtainable registered users by Year 3 (~4–5% of SAM)</div>
+          </div>
+        </div>
+        <div>
+          <ul class="clean">
+            <li><b>TAM build-up:</b> ~262M US adults → ~25% strongly self-identify with country/western/rural culture → ~35% single & open to dating ≈ <b>22M</b>.</li>
+            <li><b>SAM filter:</b> of those, the share who own smartphones, are prime dating age, and already use digital dating ≈ <b>8.5M</b> reachable users.</li>
+            <li><b>SOM target:</b> a focused, geography-by-geography launch realistically captures <b>~400K registered / ~30K paying</b> by Year 3.</li>
+            <li class="muted" style="font-size:12px;">Directional estimates triangulated from US Census, USDA, CMA, and online-dating market data. Refine with paid-survey validation pre-launch.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>TAM / SAM / SOM</span></div>
+  </section>
+
+  <!-- 5. AUDIENCE SEGMENTS -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">The Audience</div>
+    <h2 class="title">Five concentric <span class="u">circles</span> of "country"</h2>
+    <div class="content" style="margin-top:16px;">
+      <div class="grid3" style="gap:14px;">
+        <div class="card"><span class="pill rust">Core</span><h3 style="margin-top:8px;">Working West</h3><p>Ranchers, rodeo athletes, the 1.9M farm families, ag & equine pros. Small in number, fiercely authentic — the credibility anchor.</p></div>
+        <div class="card"><span class="pill">Lifestyle</span><h3 style="margin-top:8px;">Western Enthusiasts</h3><p>Riders, hunters, truck & outdoors culture, western-wear, county-fair and rodeo-goers who live the aesthetic.</p></div>
+        <div class="card"><span class="pill denim">Culture</span><h3 style="margin-top:8px;">Country-Music Lovers</h3><p>The biggest pool: concert-goers, line-dancers, festival crowds (Stagecoach, CMA Fest). Younger, urban-adjacent, very online.</p></div>
+        <div class="card"><span class="pill sage">Values</span><h3 style="margin-top:8px;">Small-Town & Faith</h3><p>Rural and small-town singles who want shared values, family orientation, and a slower, more genuine dating culture.</p></div>
+        <div class="card"><span class="pill">Aspirational</span><h3 style="margin-top:8px;">"Country at Heart"</h3><p>The coastal-cowgirl / Yellowstone-fan crowd adopting the identity. Huge, trend-driven, the viral on-ramp.</p></div>
+        <div class="card" style="background:var(--leather-dk);color:var(--cream);">
+          <h3 style="color:var(--tan-lt);">Strategy</h3><p style="color:#ece1c8;">Anchor credibility in the <b>Core</b>, monetize the <b>Lifestyle/Values</b> middle, and acquire at scale through the <b>Culture/Aspirational</b> outer rings on TikTok.</p></div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Target Segments</span></div>
+  </section>
+
+  <!-- 6. COMPETITION -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Phase 1 · Competitor Density</div>
+    <h2 class="title">The <span class="u">landscape</span></h2>
+    <div class="content scroll" style="margin-top:12px;">
+      <table>
+        <thead><tr><th>Player</th><th>Type</th><th>Scale</th><th>Weakness Rodeo exploits</th></tr></thead>
+        <tbody>
+          <tr><td><b>Tinder</b></td><td>Mainstream swipe</td><td>~75M MAU global</td><td>No identity; rural feeds are thin; "hookup" reputation repels values-driven users.</td></tr>
+          <tr><td><b>Hinge</b></td><td>Intent / relationships</td><td>Match Group</td><td>Urban, coastal, professional skew; expensive; no cultural belonging.</td></tr>
+          <tr><td><b>Bumble</b></td><td>Women-first</td><td>~50M MAU</td><td>Generic; declining growth; no community/social layer.</td></tr>
+          <tr><td><b>FarmersOnly</b></td><td>Niche (rural)</td><td>~1.5M members</td><td>Dated UX, meme reputation, no social feed, weak mobile, aging base. <b>The one to beat.</b></td></tr>
+          <tr><td><b>Christian Mingle / Stir</b></td><td>Niche (values / single parents)</td><td>Mid</td><td>Overlap on values, but not country-identity; no UGC virality.</td></tr>
+          <tr><td><b>Stable / Yee-haw clones</b></td><td>Tiny western apps</td><td>&lt;50K</td><td>Thin liquidity, no brand, no marketing engine. No real moat.</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:12px;">White space: <b>a modern, mobile-first, brand-led country app with a built-in social feed.</b> No incumbent combines authentic cultural identity + TikTok-native virality + a real product.</p>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Competition</span></div>
+  </section>
+
+  <!-- 7. PRODUCT: DATING + SOCIAL -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">The Product</div>
+    <h2 class="title">Not just dating — a <span class="u">community</span></h2>
+    <div class="content" style="margin-top:14px;">
+      <div class="grid2">
+        <div class="card">
+          <h3>🤠 The Dating Core</h3>
+          <ul class="clean" style="margin-top:8px;">
+            <li>Identity-rich profiles: rodeo events, music, "city or country", boots-or-sneakers, faith optional.</li>
+            <li>Verified-only matching to fight scammers (see Safety).</li>
+            <li>Geo + interest matching that fixes rural thin-feed problem with smart radius.</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color:var(--rust);">
+          <h3>📣 The Social Layer — "The Bunkhouse"</h3>
+          <ul class="clean" style="margin-top:8px;">
+            <li>A short-video + photo feed: ranch life, two-step tutorials, rodeo clips, truck builds, fits.</li>
+            <li>Open to all — you don't have to be single to post or follow. Keeps people in the app.</li>
+            <li>Every post is an acquisition asset and a reason to stay after you've matched.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;background:var(--leather-dk);color:var(--cream);">
+        <h3 style="color:var(--tan-lt);">Why the social layer is the whole strategy</h3>
+        <p style="color:#ece1c8;">A pure dating app dies when users match and leave (the churn paradox) and has to <i>buy</i> every new user. A social layer turns Rodeo into a <b>destination</b> — it generates free, shareable content, lowers CAC, and gives matched couples a reason to stick around. The dating drives intent; the feed drives growth.</p>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Product</span></div>
+  </section>
+
+  <!-- 8. VIRAL ENGINE -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Phase 3 · The Viral Engine</div>
+    <h2 class="title">Going viral <span class="u">inside the herd</span></h2>
+    <div class="content" style="margin-top:12px;">
+      <div class="grid2">
+        <ul class="clean">
+          <li><b>#SaddleUpChallenge.</b> A branded TikTok challenge with an original sound — a two-step duet, a "transition from city to country" fit-change, a "how we met on Rodeo" reveal. Designed natively for the For You page.</li>
+          <li><b>Creator army.</b> Partner 50–150 country/rodeo/ranch micro-influencers (10K–250K followers) on affiliate codes. 90% of people trust UGC; only 4% trust brand ads — and TikTok UGC outperforms brand video by 22%.</li>
+          <li><b>Success-story flywheel.</b> Turn "good churn" into fuel: couples film "We met on Rodeo" wedding/proposal clips → testimonial UGC that recruits the next wave.</li>
+          <li><b>"Bring your posse" referral.</b> Group invites for line-dance nights and local meetups; both sides get premium time. Referred users retain +37% and have +16% LTV.</li>
+        </ul>
+        <div>
+          <div class="card" style="margin-bottom:12px;">
+            <h3>The economics of organic</h3>
+            <p>TikTok carries the cheapest reach in social: <b>~$9 CPM, ~$1 CPC.</b> A challenge that takes off produces tens of thousands of installs at near-zero marginal cost — the single biggest lever on Rodeo's CAC.</p>
+          </div>
+          <div class="card">
+            <h3>Content the niche already makes</h3>
+            <p>Rodeo doesn't manufacture trends — it <b>captures</b> ones already exploding (#CountryTok, line-dance, ranch-life, cowboy aesthetic) and gives them a home and a reason to tag the brand.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Viral Strategy</span></div>
+  </section>
+
+  <!-- 9. CHURN PARADOX -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Phase 3 · The Churn Paradox</div>
+    <h2 class="title">When success means they <span class="u">delete you</span></h2>
+    <div class="content" style="margin-top:12px;">
+      <p class="lead" style="margin-bottom:14px;">Every dating app's curse: a great match removes <b>two</b> paying users. Hinge leans into "good churn" (50K dates/week). Rodeo turns that exit into a growth engine.</p>
+      <div class="grid4">
+        <div class="card"><h3>1 · Stay for the feed</h3><p>The Bunkhouse social layer keeps matched & coupled users active long after they stop swiping — retention decoupled from dating.</p></div>
+        <div class="card"><h3>2 · Couples & alumni mode</h3><p>Event listings, date-night ideas, and a "Rodeo couples" community give departing users a reason to keep the app.</p></div>
+        <div class="card"><h3>3 · Success = marketing</h3><p>Built-in "we met on Rodeo" sharing at the moment of churn converts a lost user into a testimonial that acquires more.</p></div>
+        <div class="card"><h3>4 · Referral at exit</h3><p>Off-boarding flow rewards users for bringing single friends in — the loop closes instead of leaking.</p></div>
+      </div>
+      <div class="card" style="margin-top:16px;background:rgba(111,123,83,.14);border-color:var(--sage);">
+        <p><b>Reframe:</b> Rodeo is measured not by how long it traps a user, but by how efficiently each happy departure produces its replacement. Community + referral makes that loop net-positive.</p>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Retention</span></div>
+  </section>
+
+  <!-- 10. GO TO MARKET -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Go-To-Market</div>
+    <h2 class="title">Win <span class="u">one town</span> at a time</h2>
+    <div class="content" style="margin-top:14px;">
+      <p class="lead" style="margin-bottom:14px;">Density beats reach. Rodeo launches market-by-market to create real local liquidity (and real dates) before expanding — the opposite of spreading thin nationally.</p>
+      <div class="flow">
+        <div class="step"><div class="ic">📍</div><h4>1. Plant the flag</h4><p>Launch in one country stronghold — Nashville, Fort Worth, Tulsa, or Bozeman.</p></div>
+        <div class="step"><div class="ic">🎟️</div><h4>2. Own the events</h4><p>Activate at rodeos, PBR, festivals, honky-tonks, county fairs. IRL = content.</p></div>
+        <div class="step"><div class="ic">📱</div><h4>3. Seed creators</h4><p>Local micro-influencers + #SaddleUp challenge drive the first install wave.</p></div>
+        <div class="step"><div class="ic">💞</div><h4>4. Liquidity & dates</h4><p>Dense matches → real success stories → testimonial UGC.</p></div>
+        <div class="step"><div class="ic">🐎</div><h4>5. Saddle up next town</h4><p>Replicate the playbook outward across the South & Mountain West.</p></div>
+      </div>
+      <div class="grid3" style="margin-top:18px;">
+        <div class="card"><div class="lbl">Beachhead states</div><p style="margin-top:4px;">Texas · Tennessee · Oklahoma · Montana — highest country-identity density.</p></div>
+        <div class="card"><div class="lbl">Liquidity tactic</div><p style="margin-top:4px;">Cap launch radius; throw "Rodeo Nights" at local bars to manufacture density.</p></div>
+        <div class="card"><div class="lbl">Women-first seeding</div><p style="margin-top:4px;">Recruit the harder-to-acquire side first via line-dance & equestrian creators.</p></div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Go-To-Market</span></div>
+  </section>
+
+  <!-- 11. MARKETING BUDGET -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Phase 2 · Marketing Costs</div>
+    <h2 class="title">Where the <span class="u">marketing dollars</span> go</h2>
+    <div class="content" style="margin-top:12px;">
+      <div class="grid2" style="grid-template-columns:1.15fr .85fr;">
+        <div>
+          <p class="muted" style="margin-bottom:10px;">Illustrative Year-1 marketing budget — <b>$600K</b> (of a ~$1.5–2.5M seed). Weighted toward community & creators, not expensive broad paid media.</p>
+          <div class="hbar"><div class="top"><span>Influencers & creator partnerships</span><b>35% · $210K</b></div><div class="track"><div class="fill" style="width:100%;background:var(--rust);"></div></div></div>
+          <div class="hbar"><div class="top"><span>Paid social (TikTok / Meta)</span><b>30% · $180K</b></div><div class="track"><div class="fill" style="width:86%;background:var(--denim);"></div></div></div>
+          <div class="hbar"><div class="top"><span>Events & experiential (rodeos, festivals)</span><b>20% · $120K</b></div><div class="track"><div class="fill" style="width:57%;background:var(--tan);"></div></div></div>
+          <div class="hbar"><div class="top"><span>Referral incentives</span><b>10% · $60K</b></div><div class="track"><div class="fill" style="width:29%;background:var(--sage);"></div></div></div>
+          <div class="hbar"><div class="top"><span>In-house UGC content studio</span><b>5% · $30K</b></div><div class="track"><div class="fill" style="width:15%;background:var(--leather);"></div></div></div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:12px;"><div class="lbl">Blended target CAC</div><div class="big">$35–45</div><p class="muted">per paying user (realistic case)</p></div>
+          <div class="card" style="margin-bottom:12px;"><div class="lbl">If virality underperforms</div><div class="big" style="color:var(--denim);">$60+</div><p class="muted">paid-only premium-niche CAC — breaks the model</p></div>
+          <div class="card"><div class="lbl">Beyond marketing</div><p style="margin-top:4px;font-size:12.5px;">Other core costs: app dev/maintenance, cloud & infra, trust-&-safety/moderation, ID-verification vendor, payments (15–30% app-store fee), salaries.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Marketing Budget</span></div>
+  </section>
+
+  <!-- 12. UNIT ECONOMICS -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Phase 2 · Unit Economics</div>
+    <h2 class="title">CAC, LTV & the <span class="u">3× rule</span></h2>
+    <div class="content" style="margin-top:12px;">
+      <div class="grid3" style="margin-bottom:14px;">
+        <div class="card"><div class="lbl">LTV per paying user</div><div class="big">~$130</div><p class="muted">$17/mo ARPPU × ~78% margin × ~10 mo</p></div>
+        <div class="card"><div class="lbl">CAC per paying user</div><div class="big">~$40</div><p class="muted">blended, realistic case</p></div>
+        <div class="card" style="background:rgba(111,123,83,.14);border-color:var(--sage);"><div class="lbl">LTV : CAC</div><div class="big" style="color:var(--sage);">3.3×</div><p class="muted">clears the 3× viability bar — barely</p></div>
+      </div>
+      <table>
+        <thead><tr><th>Scenario</th><th>Virality / channel mix</th><th>CAC</th><th>LTV</th><th>LTV:CAC</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td><b>Conservative</b></td><td>Mostly paid, weak organic</td><td class="num">$65</td><td class="num">$130</td><td class="num">2.0×</td><td><span class="pill rust">High-risk flag</span></td></tr>
+          <tr><td><b>Realistic</b></td><td>Healthy creator + referral loop</td><td class="num">$40</td><td class="num">$130</td><td class="num">3.3×</td><td><span class="pill sage">Viable</span></td></tr>
+          <tr><td><b>Aggressive</b></td><td>Challenge goes viral, low CPI</td><td class="num">$22</td><td class="num">$150</td><td class="num">6.8×</td><td><span class="pill">Breakout</span></td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:12px;"><b>The whole business turns on one number:</b> CAC. Rodeo's social/viral engine is not a nice-to-have — it is the only thing standing between a 3.3× winner and a 2.0× money-loser.</p>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Unit Economics</span></div>
+  </section>
+
+  <!-- 13. FINANCIAL SCENARIOS -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Phase 2 · Financial Sensitivity</div>
+    <h2 class="title">Three <span class="u">growth scenarios</span> — Year 3</h2>
+    <div class="content" style="margin-top:10px;">
+      <div class="grid2" style="grid-template-columns:1.1fr .9fr;align-items:center;">
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Metric (Year 3)</th><th>Conservative</th><th>Realistic</th><th>Aggressive</th></tr></thead>
+            <tbody>
+              <tr><td>Active users</td><td class="num col-con">180K</td><td class="num col-real">450K</td><td class="num col-agg">1.2M</td></tr>
+              <tr><td>Paying %</td><td class="num col-con">5%</td><td class="num col-real">7%</td><td class="num col-agg">9%</td></tr>
+              <tr><td>Paying subs</td><td class="num col-con">9.0K</td><td class="num col-real">31.5K</td><td class="num col-agg">108K</td></tr>
+              <tr><td>Subscription rev</td><td class="num col-con">$1.6M</td><td class="num col-real">$6.4M</td><td class="num col-agg">$24.6M</td></tr>
+              <tr><td>Ad / other rev</td><td class="num col-con">$0.7M</td><td class="num col-real">$2.1M</td><td class="num col-agg">$6.5M</td></tr>
+              <tr><td><b>Total revenue</b></td><td class="num col-con">$2.3M</td><td class="num col-real">$8.5M</td><td class="num col-agg">$31.1M</td></tr>
+              <tr><td>Marketing spend</td><td class="num col-con">$1.2M</td><td class="num col-real">$2.5M</td><td class="num col-agg">$7.0M</td></tr>
+              <tr><td>Other opex</td><td class="num col-con">$1.8M</td><td class="num col-real">$3.5M</td><td class="num col-agg">$8.0M</td></tr>
+              <tr><td><b>EBITDA</b></td><td class="num col-con">–$0.7M</td><td class="num col-real">$2.5M</td><td class="num col-agg">$16.1M</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="bars">
+            <div class="barcol"><div class="bar" style="height:14%;background:var(--denim);"><span class="val">$2.3M</span></div><div class="barlbl">Conserv.</div></div>
+            <div class="barcol"><div class="bar" style="height:42%;background:var(--sage);"><span class="val">$8.5M</span></div><div class="barlbl">Realistic</div></div>
+            <div class="barcol"><div class="bar" style="height:96%;background:var(--rust);"><span class="val">$31.1M</span></div><div class="barlbl">Aggressive</div></div>
+          </div>
+          <p class="muted" style="text-align:center;margin-top:8px;">Year-3 total revenue. Realistic case turns EBITDA-positive; conservative still needs runway.</p>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Financial Sensitivity</span></div>
+  </section>
+
+  <!-- 14. STARTUP COSTS / FUNDING -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Costs & Capital</div>
+    <h2 class="title">What it takes to <span class="u">get out of the gate</span></h2>
+    <div class="content" style="margin-top:12px;">
+      <div class="grid2">
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Launch cost (Year 0–1)</th><th>Estimate</th></tr></thead>
+            <tbody>
+              <tr><td>App build — iOS, Android, backend</td><td class="num">$250K</td></tr>
+              <tr><td>Brand, design & identity</td><td class="num">$25K</td></tr>
+              <tr><td>Legal, entity, privacy compliance</td><td class="num">$30K</td></tr>
+              <tr><td>Trust & safety / ID-verification setup</td><td class="num">$40K</td></tr>
+              <tr><td>Launch + Year-1 marketing</td><td class="num">$600K</td></tr>
+              <tr><td>Team (lean, 6–8 ppl, 12 mo)</td><td class="num">$650K</td></tr>
+              <tr><td>Infra, tooling, contingency</td><td class="num">$120K</td></tr>
+              <tr><td><b>Total first-year need</b></td><td class="num"><b>~$1.7M</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:12px;"><div class="lbl">Recommended seed raise</div><div class="big">$1.5–2.5M</div><p class="muted">launch + 18-month runway to prove the viral loop & reach a clean LTV:CAC</p></div>
+          <div class="card" style="margin-bottom:12px;"><div class="lbl">Path to profitability</div><p style="margin-top:4px;font-size:13px;">Realistic case: <b>EBITDA-positive in Year 3.</b> Conservative case requires a bridge / Series A to extend runway.</p></div>
+          <div class="card"><div class="lbl">Capital-efficiency lever</div><p style="margin-top:4px;font-size:13px;">Every point of organic/viral mix directly reduces the raise needed. A working challenge could cut Year-1 paid spend by 30–40%.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Startup Costs</span></div>
+  </section>
+
+  <!-- 15. LEGAL & SAFETY -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Phase 4 · Legal, Safety & Operations</div>
+    <h2 class="title">Trust is the <span class="u">product</span></h2>
+    <div class="content" style="margin-top:14px;">
+      <div class="grid2">
+        <div class="card">
+          <h3>🔐 Data privacy & compliance</h3>
+          <ul class="clean" style="margin-top:8px;">
+            <li><b>GDPR / CCPA / state acts.</b> Dating data is "sensitive" — explicit consent, data-minimization, deletion rights, clear retention policy.</li>
+            <li><b>Sensitive attributes.</b> Faith, orientation, location handled with extra care and encryption.</li>
+            <li><b>Payments.</b> PCI-compliant processing; transparent subscription & auto-renew disclosures (FTC scrutiny is rising).</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color:var(--rust);">
+          <h3>🛡️ Safety framework</h3>
+          <ul class="clean" style="margin-top:8px;">
+            <li><b>Verification-first.</b> AI face-match + optional ID upload — verified badge becomes a trust signal and a paid upsell.</li>
+            <li><b>Anti-scam / anti-bot.</b> Romance-scam detection, device fingerprinting, photo-reverse-check. Rural/older users are prime catfish targets.</li>
+            <li><b>Moderation & reporting.</b> Human + AI moderation of the social feed; fast block/report; optional background-check integration.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;background:var(--leather-dk);color:var(--cream);">
+        <p style="color:#ece1c8;"><b>Why this is a moat, not a cost:</b> FarmersOnly's reputation suffers from bots and fakes. A visibly safer, verified community is exactly how Rodeo differentiates with a trust-oriented, values-driven audience — and supports premium pricing.</p>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Legal & Safety</span></div>
+  </section>
+
+  <!-- 16. SWOT -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Strategic Position</div>
+    <h2 class="title">SWOT <span class="u">matrix</span></h2>
+    <div class="content" style="margin-top:12px;">
+      <div class="swot">
+        <div class="q s-s"><h3>💪 Strengths</h3><ul>
+          <li>Passionate, loyal, underserved identity community</li>
+          <li>Iconic brand & tagline — "Rodeo / Saddle Up" is instantly ownable</li>
+          <li>Built-in social/UGC layer engineered for virality</li>
+          <li>Premium-niche LTV potential ($60–300+)</li>
+        </ul></div>
+        <div class="q s-w"><h3>⚠️ Weaknesses</h3><ul>
+          <li>Niche caps the absolute TAM ceiling</li>
+          <li>Cold-start liquidity is brutal in low-density rural geographies</li>
+          <li>Model depends on virality that can't be guaranteed</li>
+          <li>Tiny team vs. Match Group's resources</li>
+        </ul></div>
+        <div class="q s-o"><h3>🚀 Opportunities</h3><ul>
+          <li>Country music's youth + global surge (TikTok-driven)</li>
+          <li>FarmersOnly is dated and beatable</li>
+          <li>Rich events ecosystem (rodeos, festivals) for cheap reach</li>
+          <li>Brand extensions: merch, events, ticketing, travel</li>
+        </ul></div>
+        <div class="q s-t"><h3>🌩️ Threats</h3><ul>
+          <li>Match / Bumble could clone a "country mode"</li>
+          <li>CAC inflation if organic underperforms</li>
+          <li>Safety / scam incident = reputational damage</li>
+          <li>Platform dependency (Apple/Google fees, TikTok algo shifts)</li>
+        </ul></div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>SWOT</span></div>
+  </section>
+
+  <!-- 17. FATAL FLAWS -->
+  <section class="slide">
+    <span class="stitch"></span>
+    <div class="kicker">Risk · The Hard Truths</div>
+    <h2 class="title">Three <span class="u">fatal flaws</span> to disarm</h2>
+    <div class="content" style="margin-top:14px;">
+      <div class="flaw"><div class="no">1</div><div>
+        <h3>The rural cold-start problem</h3>
+        <p>Low population density is the <i>hardest</i> version of the chicken-and-egg problem. Without enough nearby users — especially women — matches fail and the app dies in its first 90 days. <b>Mitigation:</b> launch dense market-by-market, seed the women's side first, manufacture liquidity with IRL events.</p>
+      </div></div>
+      <div class="flaw"><div class="no">2</div><div>
+        <h3>Virality is a strategy, not a guarantee</h3>
+        <p>The unit economics only clear 3× if community/viral marketing keeps blended CAC low. If the challenge flops, premium-niche paid CAC ($60+) breaks the model. <b>Mitigation:</b> fund a real creator program, treat the social feed as core product, and gate scale-up on a proven LTV:CAC.</p>
+      </div></div>
+      <div class="flaw"><div class="no">3</div><div>
+        <h3>The niche ceiling & the incumbent shadow</h3>
+        <p>TAM caps growth, and if the concept proves out, Match Group can bolt a "Country" mode onto Tinder with vastly deeper pockets. <b>Mitigation:</b> win on authentic brand + community (hard to copy), move fast to own the cultural identity, and build switching costs through the social graph.</p>
+      </div></div>
+    </div>
+    <div class="foot"><span class="brandmark">Rodeo · Saddle Up</span><span>Fatal Flaws</span></div>
+  </section>
+
+  <!-- 18. CLOSE -->
+  <section class="slide cover">
+    <div class="kicker" style="color:var(--tan-lt);">The Bottom Line</div>
+    <div class="logo" style="font-size:58px;">Saddle Up</div>
+    <div class="sub" style="margin-top:10px;max-width:640px;">
+      Rodeo is a <b>7/10</b> bet: a real, loyal, underserved audience and a genuine viral wedge, gated by a hard cold-start problem and a heavy dependence on community-driven growth. Win one town, prove the loop, keep CAC honest — and the niche becomes a moat.
+    </div>
+    <div class="grid3" style="margin-top:26px;width:min(760px,90%);">
+      <div class="card" style="background:rgba(247,241,227,.12);border-color:rgba(232,197,131,.4);"><div class="lbl" style="color:var(--tan-lt);">Next 90 days</div><p style="color:#ece1c8;font-size:12.5px;">Survey-validate TAM, lock the beachhead city, recruit first 50 creators.</p></div>
+      <div class="card" style="background:rgba(247,241,227,.12);border-color:rgba(232,197,131,.4);"><div class="lbl" style="color:var(--tan-lt);">Prove it</div><p style="color:#ece1c8;font-size:12.5px;">Ship MVP + Bunkhouse, run #SaddleUpChallenge, measure real CAC & liquidity.</p></div>
+      <div class="card" style="background:rgba(247,241,227,.12);border-color:rgba(232,197,131,.4);"><div class="lbl" style="color:var(--tan-lt);">Raise on proof</div><p style="color:#ece1c8;font-size:12.5px;">Take the seed once LTV:CAC ≥ 3× is demonstrated in one market.</p></div>
+    </div>
+    <div class="badge" style="margin-top:24px;"><span class="star">★</span> Rodeo · Saddle Up · Business Plan & Market Evaluation</div>
+  </section>
+
+</div>
+
+<div class="hint">← → arrow keys to navigate · press F for fullscreen</div>
+<div id="nav">
+  <button id="prev" aria-label="Previous">‹</button>
+  <span id="counter">1 / 18</span>
+  <button id="next" aria-label="Next">›</button>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  let i = 0;
+
+  slides.forEach((_, idx)=>{
+    const d = document.createElement('i');
+    d.addEventListener('click', ()=>go(idx));
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function go(n){
+    i = Math.max(0, Math.min(slides.length-1, n));
+    slides.forEach((s,idx)=>s.classList.toggle('active', idx===i));
+    dots.forEach((d,idx)=>d.classList.toggle('on', idx===i));
+    counter.textContent = (i+1)+' / '+slides.length;
+    prevBtn.disabled = i===0;
+    nextBtn.disabled = i===slides.length-1;
+  }
+  prevBtn.addEventListener('click', ()=>go(i-1));
+  nextBtn.addEventListener('click', ()=>go(i+1));
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ') {e.preventDefault();go(i+1);}
+    if(e.key==='ArrowLeft'||e.key==='PageUp') {e.preventDefault();go(i-1);}
+    if(e.key==='Home') go(0);
+    if(e.key==='End') go(slides.length-1);
+    if(e.key.toLowerCase()==='f'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+  });
+  // swipe
+  let x0=null;
+  document.addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(x0===null) return;
+    const dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?go(i+1):go(i-1); }
+    x0=null;
+  });
+  go(0);
+</script>
+</body>
+</html>

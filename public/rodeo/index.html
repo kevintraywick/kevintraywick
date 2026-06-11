@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>rodeo — saddle up.</title>
+<meta name="description" content="rodeo — a dating app for the western life. Interactive prototype and business plan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Ranchers&family=Bitter:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#f6eddc;
+  --paper:#fdf7ea;
+  --ink:#2b1f15;
+  --ink-soft:#5a4733;
+  --leather:#8a4b2a;
+  --rust:#c75b39;
+  --sunset:#e8843c;
+  --gold:#e2a93b;
+  --denim:#2e4057;
+  --denim-deep:#1f2c3d;
+  --stitch:rgba(138,75,42,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Bitter',Georgia,serif;
+  background:var(--cream);
+  color:var(--ink);
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  line-height:1.6;
+}
+/* grain */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+header{
+  text-align:center;padding:64px 5vw 12px;
+}
+.kicker{
+  display:inline-block;font-family:'Ranchers',cursive;font-size:15px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--paper);
+  background:var(--rust);padding:5px 14px;border-radius:999px;
+  transform:rotate(-2deg);margin-bottom:20px;
+}
+.wordmark{
+  font-family:'Rye',serif;font-size:clamp(64px,10vw,110px);
+  color:var(--leather);line-height:1;
+}
+.tagline{
+  font-family:'Rye',serif;font-size:clamp(20px,3vw,28px);
+  color:var(--rust);margin-top:8px;
+}
+.lede{
+  max-width:54ch;margin:18px auto 0;font-size:17px;color:var(--ink-soft);
+}
+main{
+  flex:1;display:flex;gap:30px;flex-wrap:wrap;justify-content:center;align-items:stretch;
+  padding:44px 5vw 30px;max-width:1050px;margin:0 auto;width:100%;
+}
+.card{
+  flex:1 1 360px;max-width:460px;display:flex;flex-direction:column;
+  background:var(--paper);border-radius:22px;overflow:hidden;
+  border:2px dashed var(--stitch);
+  box-shadow:0 14px 34px rgba(43,31,21,.16);
+  text-decoration:none;color:var(--ink);
+  transition:transform .22s cubic-bezier(.2,.8,.25,1),box-shadow .22s;
+}
+.card:hover{
+  transform:translateY(-7px) rotate(-.6deg);
+  box-shadow:0 24px 48px rgba(43,31,21,.26);
+}
+.card .art{position:relative;height:230px;}
+.card .art svg{width:100%;height:100%;display:block;}
+.card .flag{
+  position:absolute;top:16px;left:-6px;background:var(--gold);color:#3a2a07;
+  font-family:'Ranchers',cursive;font-size:13px;letter-spacing:.1em;
+  padding:5px 16px 5px 18px;border-radius:0 99px 99px 0;box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+.card .body{padding:24px 26px 26px;display:flex;flex-direction:column;flex:1;}
+.card h2{
+  font-family:'Ranchers',cursive;font-weight:400;font-size:34px;line-height:1;
+  color:var(--leather);margin-bottom:8px;
+}
+.card p{font-size:15px;color:var(--ink-soft);flex:1;}
+.card .cta{
+  margin-top:20px;align-self:flex-start;
+  font-family:'Ranchers',cursive;font-size:19px;letter-spacing:.05em;
+  background:var(--rust);color:var(--paper);
+  padding:11px 24px;border-radius:13px;box-shadow:0 5px 0 #8d3c22;
+  transition:transform .15s,box-shadow .15s;
+}
+.card:hover .cta{transform:translateY(-2px);box-shadow:0 7px 0 #8d3c22;}
+.card.plan .cta{background:var(--denim);box-shadow:0 5px 0 #16202e;}
+.card.plan:hover .cta{box-shadow:0 7px 0 #16202e;}
+.card.plan h2{color:var(--denim);}
+footer{
+  text-align:center;padding:26px 5vw 40px;font-size:12.5px;color:var(--ink-soft);opacity:.75;
+}
+footer a{color:var(--leather);}
+@media (max-width:560px){
+  header{padding-top:44px;}
+  main{padding-top:30px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div><span class="kicker">For Investors</span></div>
+  <h1 class="wordmark">rodeo</h1>
+  <div class="tagline">saddle up.</div>
+  <p class="lede">
+    A dating app for people who live — or love — the western life. Spontaneous and
+    lighthearted, built around the <strong>Soft Yes</strong>: local events that put the
+    right people in the same public place, no hard ask required.
+  </p>
+</header>
+
+<main>
+  <!-- ============ PROTOTYPE CARD ============ -->
+  <a class="card proto" href="prototype.html">
+    <div class="art">
+      <svg viewBox="0 0 460 230" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1f2c3d"/><stop offset=".55" stop-color="#9a5a6e"/><stop offset="1" stop-color="#e8843c"/>
+          </linearGradient>
+        </defs>
+        <rect width="460" height="230" fill="url(#sky1)"/>
+        <circle cx="230" cy="150" r="62" fill="#ffd98a" opacity=".9"/>
+        <circle cx="230" cy="150" r="88" fill="#ffd98a" opacity=".16"/>
+        <circle cx="80" cy="42" r="2" fill="#fff" opacity=".7"/><circle cx="380" cy="30" r="1.6" fill="#fff" opacity=".6"/>
+        <circle cx="330" cy="64" r="1.4" fill="#fff" opacity=".5"/><circle cx="120" cy="76" r="1.3" fill="#fff" opacity=".45"/>
+        <path d="M0 178 Q110 150 230 168 T460 162 V230 H0 Z" fill="#4d5433" opacity=".75"/>
+        <path d="M0 198 Q140 172 250 190 T460 186 V230 H0 Z" fill="#241a10"/>
+        <!-- phone -->
+        <g transform="translate(178,52)">
+          <rect x="0" y="0" width="104" height="200" rx="18" fill="#171310"/>
+          <rect x="6" y="6" width="92" height="188" rx="13" fill="#fdf7ea"/>
+          <text x="52" y="64" text-anchor="middle" font-size="26" font-family="Rye,serif" fill="#8a4b2a">rodeo</text>
+          <text x="52" y="86" text-anchor="middle" font-size="11" font-family="Rye,serif" fill="#c75b39">saddle up.</text>
+          <rect x="18" y="104" width="68" height="40" rx="9" fill="#e8843c" opacity=".9"/>
+          <text x="52" y="129" text-anchor="middle" font-size="17" fill="#fff">🤠</text>
+          <rect x="18" y="152" width="68" height="13" rx="6.5" fill="#2e4057" opacity=".85"/>
+          <rect x="18" y="171" width="68" height="13" rx="6.5" fill="#c75b39" opacity=".75"/>
+        </g>
+      </svg>
+      <span class="flag">★ INTERACTIVE</span>
+    </div>
+    <div class="body">
+      <h2>The Prototype</h2>
+      <p>
+        Ride the app itself: swipe through the deck, throw a Lasso 🪢 with AI-drafted
+        openers, and watch the Soft Yes work both sides of a local event — with an
+        investor's commentary track running alongside every screen.
+      </p>
+      <span class="cta">🤠 Try the demo →</span>
+    </div>
+  </a>
+
+  <!-- ============ BUSINESS PLAN CARD ============ -->
+  <a class="card plan" href="business-plan.html">
+    <div class="art">
+      <svg viewBox="0 0 460 230" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#243b4f"/><stop offset=".6" stop-color="#33536e"/><stop offset="1" stop-color="#6F7B53"/>
+          </linearGradient>
+        </defs>
+        <rect width="460" height="230" fill="url(#sky2)"/>
+        <circle cx="350" cy="60" r="34" fill="#f7f1e3" opacity=".85"/>
+        <circle cx="338" cy="52" r="9" fill="#243b4f" opacity=".25"/>
+        <circle cx="360" cy="68" r="6" fill="#243b4f" opacity=".2"/>
+        <circle cx="90" cy="40" r="2" fill="#fff" opacity=".7"/><circle cx="170" cy="26" r="1.5" fill="#fff" opacity=".6"/>
+        <circle cx="420" cy="130" r="1.4" fill="#fff" opacity=".5"/><circle cx="40" cy="96" r="1.3" fill="#fff" opacity=".5"/>
+        <path d="M0 188 Q120 162 240 178 T460 172 V230 H0 Z" fill="#2b3a2a" opacity=".7"/>
+        <path d="M0 206 Q150 184 260 200 T460 196 V230 H0 Z" fill="#16202e"/>
+        <!-- slide deck pages -->
+        <g transform="translate(120,58) rotate(-4)">
+          <rect x="14" y="14" width="190" height="124" rx="10" fill="#ebe0c7"/>
+          <rect x="7" y="7" width="190" height="124" rx="10" fill="#f3ecd9"/>
+          <rect x="0" y="0" width="190" height="124" rx="10" fill="#fbf7ec" stroke="#6b4423" stroke-opacity=".3"/>
+          <rect x="10" y="10" width="170" height="104" rx="6" fill="none" stroke="#6b4423" stroke-opacity=".3" stroke-dasharray="5 4" stroke-width="1.5"/>
+          <text x="95" y="44" text-anchor="middle" font-size="24" font-family="Rye,serif" fill="#6b4423">rodeo</text>
+          <rect x="34" y="58" width="122" height="7" rx="3.5" fill="#b23a1e" opacity=".75"/>
+          <rect x="44" y="72" width="102" height="7" rx="3.5" fill="#33536e" opacity=".6"/>
+          <rect x="30" y="88" width="28" height="16" rx="3" fill="#d9a24b"/>
+          <rect x="64" y="84" width="28" height="20" rx="3" fill="#b23a1e" opacity=".8"/>
+          <rect x="98" y="78" width="28" height="26" rx="3" fill="#33536e" opacity=".85"/>
+          <rect x="132" y="70" width="28" height="34" rx="3" fill="#6F7B53"/>
+        </g>
+      </svg>
+      <span class="flag">SLIDE DECK</span>
+    </div>
+    <div class="body">
+      <h2>The Business Plan</h2>
+      <p>
+        The full case: market and audience research, the Soft Yes thesis, revenue
+        streams that never paywall a connection, and the road from prototype to
+        saddle-sore success — presented as a navigable deck.
+      </p>
+      <span class="cta">📊 Read the plan →</span>
+    </div>
+  </a>
+</main>
+
+<footer>
+  rodeo — saddle up. &nbsp;·&nbsp; an investor preview hosted at <a href="https://kevintraywick.com">kevintraywick.com</a>
+</footer>
+
+</body>
+</html>
