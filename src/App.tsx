@@ -6,6 +6,7 @@ import bubbleImg from './assets/bubble.png'
 import penImg from './assets/pen.png'
 import andImg from './assets/and.png'
 import windImg from './assets/windstorm.png'
+import backWorkoutImg from './assets/back-workout-card.png'
 import { FeedOverlay } from './components/FeedOverlay'
 import Blog from './pages/Blog'
 import BlogEntry from './pages/BlogEntry'
@@ -37,11 +38,11 @@ function Homepage() {
       <a href="sms:+12068608292" className="overflow-hidden" {...hover('Text me here')}>
         <img src={bubbleImg} alt="Text Me" className="w-full h-full object-cover" />
       </a>
-      {/* Coming soon — position 3 (r1c3) */}
-      <div className="relative flex items-center justify-center bg-white">
-        <span style={{ ...kFont, fontSize: 'clamp(28px, 5vw, 72px)', lineHeight: 1.1 }}>
-          coming soon
-        </span>
+      {/* Back Workout PDF — position 3 (r1c3) */}
+      <div className="relative overflow-hidden">
+        <a href="/workout/back-workout.pdf" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('20-minute back workout')}>
+          <img src={backWorkoutImg} alt="A 20-Minute Workout to Keep Your Body Limber" className="w-full h-full object-cover" />
+        </a>
         <CornerDot slug="cs1" />
       </div>
 
