@@ -127,6 +127,53 @@ const BILL_SCHEMA = {
 const app = express();
 app.use(express.json());
 
+/* ---------- emoji gate ----------
+ * The whole site sits behind a 3-emoji sequence (see gate.html). The check is
+ * server-side: nothing in the served pages reveals the code, and passing it
+ * sets a signed long-lived cookie. Change GATE_CODE to change the combination
+ * (which also invalidates everyone's cookies). */
+const GATE_CODE = process.env.GATE_CODE || '🏠🦉🗝️'; // dev default — production sets GATE_CODE
+const GATE_SECRET = process.env.GATE_SECRET ||
+  crypto.createHash('sha256').update('weldon-gate:' + GATE_CODE).digest('hex');
+const GATE_TOKEN = crypto.createHmac('sha256', GATE_SECRET).update('weldon-open').digest('hex');
+
+function hasGateCookie(req) {
+  const m = /(?:^|;\s*)weldon_gate=([^;]+)/.exec(req.headers.cookie || '');
+  if (!m) return false;
+  const got = Buffer.from(m[1]);
+  const want = Buffer.from(GATE_TOKEN);
+  return got.length === want.length && crypto.timingSafeEqual(got, want);
+}
+
+const gateTries = new Map(); // ip -> {count, resetAt}
+function gateLimited(ip) {
+  const now = Date.now();
+  const e = gateTries.get(ip);
+  if (!e || now > e.resetAt) { gateTries.set(ip, { count: 1, resetAt: now + 10 * 60_000 }); return false; }
+  e.count++;
+  return e.count > 20; // 20 tries per 10 minutes per IP
+}
+
+app.post('/api/gate', (req, res) => {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '?';
+  if (gateLimited(ip)) return res.status(429).send('too many tries');
+  const picks = Array.isArray(req.body?.picks) ? req.body.picks.join('') : '';
+  if (picks !== GATE_CODE) return res.status(403).send('nope');
+  const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
+  res.setHeader('Set-Cookie',
+    `weldon_gate=${GATE_TOKEN}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${secure}`);
+  res.json({ ok: true });
+});
+
+app.use((req, res, next) => {
+  if (req.path === '/gate.html' || req.path === '/api/gate') return next();
+  if (hasGateCookie(req)) return next();
+  if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
+    return res.status(401).send('locked');
+  }
+  res.redirect('/gate.html');
+});
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: UPLOADS,
