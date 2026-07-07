@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Location — 160 Weldon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./"><span class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-apricot"></i><i class="sw-mint"></i></span>160 Weldon</a>
+    <a class="navlink" href="./">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html">Utilities</a>
+    <a class="navlink" href="forecast.html">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="projects.html">Projects</a>
+    <a class="navlink" href="location.html" aria-current="page">Location</a>
+    <a class="navlink" href="photos.html">Photos</a>
+  </nav>
+</div>
+
+<div class="page-title">
+  <p class="eyebrow"><i style="background:var(--chip-mint)"></i>Where it sits</p>
+  <h1>160 Weldon Dr, Martin, Tennessee</h1>
+  <p>Weakley County, West Tennessee, 38237. Zoom and pan freely; switch between the street map and the satellite view.</p>
+</div>
+
+<main class="wrap">
+  <div class="map-toggle" role="group" aria-label="Map style">
+    <button class="pill on" id="btn-map">Map</button>
+    <button class="pill" id="btn-sat">Satellite</button>
+  </div>
+  <div id="map" aria-label="Interactive map of 160 Weldon Dr"></div>
+  <div class="section-gap"></div>
+  <p class="card-sub">Street map © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors · satellite imagery © Esri &amp; partners</p>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr</span>
+    <div class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i></div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function () {
+  const HOUSE = [36.3658682, -88.8551280]; // geocoded from OpenStreetMap
+
+  const map = L.map('map', { scrollWheelZoom: true }).setView(HOUSE, 17);
+
+  const street = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors',
+  });
+  const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
+  });
+
+  street.addTo(map);
+  L.marker(HOUSE).addTo(map).bindPopup('<strong>160 Weldon Dr</strong><br>Martin, TN 38237').openPopup();
+
+  const btnMap = document.getElementById('btn-map');
+  const btnSat = document.getElementById('btn-sat');
+  function setLayer(which) {
+    if (which === 'sat') { map.removeLayer(street); satellite.addTo(map); }
+    else { map.removeLayer(satellite); street.addTo(map); }
+    btnMap.classList.toggle('on', which === 'map');
+    btnSat.classList.toggle('on', which === 'sat');
+  }
+  btnMap.onclick = () => setLayer('map');
+  btnSat.onclick = () => setLayer('sat');
+})();
+</script>
+</body>
+</html>

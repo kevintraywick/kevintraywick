@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>160 Weldon — house dashboard</title>
+<meta name="description" content="The record book for 160 Weldon Dr — expenses, utilities, projects, and the 5-year outlook.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./">160 Weldon</a>
+    <a class="navlink" href="./" aria-current="page">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html">Utilities</a>
+    <a class="navlink" href="forecast.html">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="projects.html">Projects</a>
+    <a class="navlink" href="location.html">Location</a>
+    <a class="navlink" href="photos.html">Photos</a>
+  </nav>
+  <div class="hero-inner">
+    <p class="eyebrow">160 Weldon Dr · Martin, Tennessee · Dashboard</p>
+    <h1>160Weldon</h1>
+    <p class="sub">Utilities, projects, and the five-year outlook — the whole record book at a glance.</p>
+    <div class="chiprail" title="The house's own paints" aria-hidden="true">
+      <i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tiles overlap">
+    <div class="tile">
+      <div class="t-label">Monthly run-rate</div>
+      <div class="t-value" id="tile-runrate">—</div>
+      <div class="t-note">utilities + insurance, latest averages</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">2025 project spend</div>
+      <div class="t-value" id="tile-2025">—</div>
+      <div class="t-note">one-time purchases this year</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">2024 project spend</div>
+      <div class="t-value" id="tile-2024">—</div>
+      <div class="t-note">incl. the new water heater</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">Open projects</div>
+      <div class="t-value" id="tile-open">—</div>
+      <div class="t-note" id="tile-open-note">—</div>
+    </div>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <div class="grid">
+    <section class="card span-7">
+      <div class="card-head">
+        <div>
+          <h2>Utility bills by month</h2>
+          <p class="card-sub">2024–2025 · gaps are months not yet entered</p>
+        </div>
+        <a class="more" href="utilities.html">All utilities →</a>
+      </div>
+      <div id="chart-utilities"></div>
+    </section>
+
+    <section class="card span-5">
+      <div class="card-head">
+        <div>
+          <h2>Where project money went</h2>
+          <p class="card-sub">2024–2025 one-time purchases</p>
+        </div>
+        <a class="more" href="expenses.html">Ledger →</a>
+      </div>
+      <div id="chart-categories"></div>
+    </section>
+
+    <section class="card span-7">
+      <div class="card-head">
+        <div>
+          <h2>One-time spend by month</h2>
+          <p class="card-sub">every receipt in the ledger, monthly totals</p>
+        </div>
+      </div>
+      <div id="chart-monthly-spend"></div>
+    </section>
+
+    <section class="card span-5">
+      <div class="card-head">
+        <div>
+          <h2>What's coming</h2>
+          <p class="card-sub">the short list that matters</p>
+        </div>
+        <a class="more" href="forecast.html">Full forecast →</a>
+      </div>
+      <ul class="tasklist" id="coming-list"></ul>
+      <div class="section-gap"></div>
+      <p class="note" id="forecast-teaser"></p>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr · owner Keith Traywick</span>
+    <span>Source: the Weldon Lakehouse sheet + the physical notebook</span>
+    <div class="chiprail" aria-hidden="true">
+      <i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i>
+    </div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/common.js"></script>
+<script>
+(function () {
+  const { D, usd, SERIES_COLORS } = W;
+
+  // tiles
+  document.getElementById('tile-runrate').textContent = usd(W.runRate(), 0) + '/mo';
+  document.getElementById('tile-2025').textContent = usd(W.yearTotal(2025), 0);
+  document.getElementById('tile-2024').textContent = usd(W.yearTotal(2024), 0);
+  const open = W.openTasks(), high = W.highPriority();
+  document.getElementById('tile-open').textContent = open.length;
+  document.getElementById('tile-open-note').textContent = high.length + ' marked high priority';
+
+  // utilities line chart
+  WCharts.lineChart(document.getElementById('chart-utilities'), {
+    labels: D.utilities.labels,
+    ariaLabel: 'Monthly utility bills, 2024 to 2025',
+    series: [
+      { name: 'Electricity', color: SERIES_COLORS.electricity, values: D.utilities.electricity },
+      { name: 'Water, sewer & garbage', color: SERIES_COLORS.water, values: D.utilities.water },
+      { name: 'Internet', color: SERIES_COLORS.internet, values: D.utilities.internet },
+    ],
+  });
+
+  // categories
+  WCharts.hBars(document.getElementById('chart-categories'), W.categoryTotals());
+
+  // monthly one-time spend bars
+  WCharts.barChart(document.getElementById('chart-monthly-spend'), {
+    labels: D.utilities.labels,
+    ariaLabel: 'One-time expenses by month',
+    series: [{ name: 'One-time spend', color: SERIES_COLORS.electricity, values: W.expenseMonthlyTotals() }],
+    height: 220,
+  });
+
+  // what's coming: high-priority tasks first, then mediums
+  const coming = high.concat(open.filter(t => (t.priority || '').toLowerCase() === 'medium')).slice(0, 5);
+  document.getElementById('coming-list').innerHTML = coming.map(t =>
+    '<li><span class="prio ' + ((t.priority || '').toLowerCase() === 'high' ? 'high' : '') + '">' + (t.priority || '—') + '</span> ' +
+    t.task + '<span class="where">' + (t.where || '') + '</span></li>'
+  ).join('');
+
+  // forecast teaser using default capital assumptions from the forecast page
+  const capital = 23500; // roof 12k + panel 2.5k + windows 9k, defaults — editable on Forecast
+  const monthly = W.pmt(capital, 7, 36);
+  document.getElementById('forecast-teaser').innerHTML =
+    'If the roof, electrical panel, and windows all happen: about <strong class="num">' + usd(monthly, 0) +
+    '/mo</strong> for three years on top of the run-rate, at the default estimates. Tune the numbers on the Forecast page.';
+})();
+</script>
+</body>
+</html>

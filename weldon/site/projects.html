@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects — 160 Weldon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./"><span class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-apricot"></i><i class="sw-mint"></i></span>160 Weldon</a>
+    <a class="navlink" href="./">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html">Utilities</a>
+    <a class="navlink" href="forecast.html">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="projects.html" aria-current="page">Projects</a>
+    <a class="navlink" href="location.html">Location</a>
+    <a class="navlink" href="photos.html">Photos</a>
+  </nav>
+</div>
+
+<div class="page-title">
+  <p class="eyebrow"><i style="background:var(--chip-swiss)"></i>The to-do list</p>
+  <h1>Projects, room by room</h1>
+  <p id="proj-summary"></p>
+</div>
+
+<main class="wrap">
+  <div class="filters" id="filters" role="group" aria-label="Filter projects"></div>
+  <div class="grid" id="rooms"></div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr</span>
+    <div class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i></div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/common.js"></script>
+<script>
+(function () {
+  const { D } = W;
+
+  function statusOf(t) {
+    const s = (t.status || '').toLowerCase(), p = (t.priority || '').toLowerCase();
+    if (s === 'completed' || p === 'done') return 'done';
+    if (s === 'in progress') return 'progress';
+    if (s === 'blocked') return 'blocked';
+    return 'open';
+  }
+  const BADGE = { done: 'Done', progress: 'In progress', blocked: 'Blocked', open: 'Open' };
+  const PRIO_ORDER = { high: 0, medium: 1, low: 2, 'nice to have': 3, '': 4, done: 5 };
+
+  const tasks = D.todo.map(t => ({ ...t, st: statusOf(t), room: t.where || 'general' }));
+  const open = tasks.filter(t => t.st !== 'done');
+  const high = open.filter(t => (t.priority || '').toLowerCase() === 'high');
+  document.getElementById('proj-summary').textContent =
+    open.length + ' open, ' + high.length + ' high priority, ' + (tasks.length - open.length) + ' already done. Straight from the record book.';
+
+  let mode = 'open';
+  const fEl = document.getElementById('filters');
+  [['open', 'Open'], ['high', 'High priority'], ['all', 'Everything incl. done']].forEach(([key, label]) => {
+    const b = document.createElement('button');
+    b.className = 'pill' + (key === mode ? ' on' : '');
+    b.textContent = label;
+    b.onclick = () => { mode = key; render(); [...fEl.children].forEach(x => x.classList.toggle('on', x === b)); };
+    fEl.appendChild(b);
+  });
+
+  function render() {
+    let list = tasks;
+    if (mode === 'open') list = open;
+    if (mode === 'high') list = high;
+
+    const rooms = {};
+    list.forEach(t => { (rooms[t.room] = rooms[t.room] || []).push(t); });
+
+    const el = document.getElementById('rooms');
+    el.innerHTML = Object.entries(rooms)
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([room, ts]) => {
+        ts.sort((a, b) => (PRIO_ORDER[(a.priority || '').toLowerCase()] ?? 4) - (PRIO_ORDER[(b.priority || '').toLowerCase()] ?? 4));
+        return '<section class="card span-6"><div class="card-head"><h2>' + room + '</h2>' +
+          '<span class="card-sub">' + ts.length + '</span></div><ul class="tasklist">' +
+          ts.map(t => {
+            const p = (t.priority || '').toLowerCase();
+            const prio = t.st === 'done' ? '' : '<span class="prio' + (p === 'high' ? ' high' : '') + '">' + (t.priority || '—') + '</span>';
+            return '<li>' + prio + '<span' + (t.st === 'done' ? ' style="color:var(--ink-3);text-decoration:line-through"' : '') + '>' +
+              t.task + '</span><span class="where"><span class="badge ' + t.st + '">' + BADGE[t.st] + '</span></span></li>';
+          }).join('') + '</ul></section>';
+      }).join('');
+  }
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "weldon-api",
+  "version": "0.1.0",
+  "description": "Backend for 160weldon.kevintraywick.com — serves the site, reads receipt/bill scans with Claude, stores the ledger, photos, and maintenance schedule.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.88.0",
+    "better-sqlite3": "^11.6.0",
+    "express": "^4.21.1",
+    "multer": "^2.1.1",
+    "nodemailer": "^6.9.16"
+  }
+}

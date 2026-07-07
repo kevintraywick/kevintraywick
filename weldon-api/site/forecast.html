@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forecast — 160 Weldon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./"><span class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-apricot"></i><i class="sw-mint"></i></span>160 Weldon</a>
+    <a class="navlink" href="./">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html">Utilities</a>
+    <a class="navlink" href="forecast.html" aria-current="page">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="projects.html">Projects</a>
+    <a class="navlink" href="location.html">Location</a>
+    <a class="navlink" href="photos.html">Photos</a>
+  </nav>
+</div>
+
+<div class="page-title">
+  <p class="eyebrow"><i style="background:var(--chip-apricot)"></i>The next five years</p>
+  <h1>What will the house cost?</h1>
+  <p>Baseline running costs plus the big capital projects, each financed at a rate you set. Every number below is editable; the chart follows.</p>
+</div>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card span-12">
+      <div class="card-head">
+        <div><h2>Projected annual cost, 2026–2030</h2><p class="card-sub">baseline plus financed capital payments</p></div>
+      </div>
+      <div id="chart-forecast"></div>
+      <div class="section-gap"></div>
+      <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+        <div class="tile">
+          <div class="t-label">Capital payment</div>
+          <div class="t-value" id="sum-cap">—</div>
+          <div class="t-note">per month while financing</div>
+        </div>
+        <div class="tile">
+          <div class="t-label">All-in monthly</div>
+          <div class="t-value" id="sum-allin">—</div>
+          <div class="t-note">baseline + capital, peak year</div>
+        </div>
+        <div class="tile">
+          <div class="t-label">5-year total</div>
+          <div class="t-value" id="sum-5yr">—</div>
+          <div class="t-note">2026–2030, everything in</div>
+        </div>
+      </div>
+      <div class="tablewrap">
+        <table class="data" id="forecast-table">
+          <thead id="forecast-thead"></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card span-4">
+      <h2>Baseline, per year</h2>
+      <p class="card-sub">seeded from the record book — adjust as bills come in</p>
+      <div class="section-gap"></div>
+      <div class="controls">
+        <div class="control">
+          <label for="in-util">Utilities ($/month)</label>
+          <input type="number" id="in-util" min="0" step="5">
+        </div>
+        <div class="control">
+          <label for="in-ins">Insurance ($/year)</label>
+          <input type="number" id="in-ins" min="0" step="50" value="1100">
+        </div>
+        <div class="control">
+          <label for="in-tax">Property tax ($/year)</label>
+          <input type="number" id="in-tax" min="0" step="50" value="1250">
+        </div>
+        <div class="control">
+          <label for="in-maint">Upkeep &amp; projects ($/year)</label>
+          <input type="number" id="in-maint" min="0" step="100" value="1500">
+        </div>
+        <div class="control">
+          <label for="in-rate">Financing rate</label>
+          <div class="range-row">
+            <input type="range" id="in-rate" min="0" max="15" step="0.5" value="7" aria-describedby="out-rate">
+            <output class="range-out num" id="out-rate">7.0%</output>
+          </div>
+        </div>
+      </div>
+      <div class="section-gap"></div>
+      <p class="card-sub">Property tax default is an estimate from the $200,000 valuation — set it from the actual bill.</p>
+    </section>
+
+    <section class="card span-8">
+      <h2>Capital projects</h2>
+      <p class="card-sub">check what's happening and set the price · the big three are financed over 36 months</p>
+      <div class="section-gap"></div>
+      <div class="grid" id="capitems" style="gap:12px"></div>
+      <div class="section-gap"></div>
+      <h2 style="font-size:15px">Add another project</h2>
+      <form class="entryform" id="cap-form" style="grid-template-columns:1.4fr 1fr 1fr 1fr 1fr auto">
+        <div class="control"><label for="cf-name">Project</label><input type="text" id="cf-name" required placeholder="Deck rebuild"></div>
+        <div class="control"><label for="cf-cost">Cost ($)</label><input type="number" id="cf-cost" min="0" step="250" required placeholder="5000"></div>
+        <div class="control"><label for="cf-month">Starts</label>
+          <select id="cf-month" style="font:inherit;font-size:14px;padding:9px 8px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)"></select>
+        </div>
+        <div class="control"><label for="cf-year">Year</label><input type="number" id="cf-year" min="2026" max="2030" step="1" value="2026"></div>
+        <div class="control"><label for="cf-term">Months (≤120)</label><input type="number" id="cf-term" min="1" max="120" step="1" value="36"></div>
+        <button class="btn" type="submit">Add to graph</button>
+      </form>
+      <div class="statusline" id="cap-status"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr</span>
+    <div class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i></div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/common.js"></script>
+<script>
+(function () {
+  const { usd, SERIES_COLORS } = W;
+  const YEARS = [2026, 2027, 2028, 2029, 2030];
+  const MONTHS = W.MONTHS;
+
+  const items = [
+    { id: 'roof', name: 'Roof', cost: 12000, startY: 2026, startM: 1, term: 36, on: true, color: SERIES_COLORS.water, fixed: true },
+    { id: 'panel', name: 'Electrical panel', cost: 2500, startY: 2026, startM: 1, term: 36, on: true, color: SERIES_COLORS.internet, fixed: true },
+    { id: 'windows', name: 'Windows', cost: 9000, startY: 2027, startM: 1, term: 36, on: true, color: SERIES_COLORS.tax, fixed: true },
+  ];
+  const EXTRA_COLORS = [SERIES_COLORS.insurance, SERIES_COLORS.maintenance, SERIES_COLORS.extra];
+  let extraUsed = 0;
+
+  const utilIn = document.getElementById('in-util');
+  utilIn.value = Math.round(W.utilityRunRate().total);
+
+  document.getElementById('cf-month').innerHTML =
+    MONTHS.map((m, i) => '<option value="' + (i + 1) + '"' + (i === 0 ? ' selected' : '') + '>' + m + '</option>').join('');
+
+  const capWrap = document.getElementById('capitems');
+  function buildControls() {
+    capWrap.innerHTML = '';
+    items.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'capitem span-4';
+      const startLabel = c.fixed
+        ? '<div class="control"><label for="start-' + c.id + '">Starts</label><input type="number" id="start-' + c.id + '" min="2026" max="2030" step="1" value="' + c.startY + '"></div>'
+        : '<div class="control"><label>Starts</label><div style="font-family:var(--font-mono);font-size:13.5px;padding:9px 0">' + MONTHS[c.startM - 1] + ' ' + c.startY + ' · ' + c.term + ' mo</div></div>';
+      div.innerHTML =
+        '<div class="ci-head"><input type="checkbox" id="on-' + c.id + '"' + (c.on ? ' checked' : '') + '>' +
+        '<label for="on-' + c.id + '" style="color:' + c.color + '">' + c.name + '</label></div>' +
+        '<div class="ci-fields">' +
+        '<div class="control"><label for="cost-' + c.id + '">Cost ($)</label><input type="number" id="cost-' + c.id + '" min="0" step="250" value="' + c.cost + '"></div>' +
+        startLabel +
+        '</div><p class="ci-pay" id="pay-' + c.id + '"></p>';
+      capWrap.appendChild(div);
+    });
+    capWrap.querySelectorAll('input').forEach(i => i.addEventListener('input', recalc));
+  }
+
+  document.getElementById('cap-form').onsubmit = e => {
+    e.preventDefault();
+    if (extraUsed >= EXTRA_COLORS.length) {
+      document.getElementById('cap-status').textContent = 'Three custom projects is the limit for now — uncheck one of the others first.';
+      return;
+    }
+    const name = document.getElementById('cf-name').value.trim();
+    items.push({
+      id: 'x' + Date.now(),
+      name,
+      cost: parseFloat(document.getElementById('cf-cost').value) || 0,
+      startY: Math.min(2030, Math.max(2026, parseInt(document.getElementById('cf-year').value) || 2026)),
+      startM: parseInt(document.getElementById('cf-month').value) || 1,
+      term: Math.min(120, Math.max(1, parseInt(document.getElementById('cf-term').value) || 36)),
+      on: true,
+      color: EXTRA_COLORS[extraUsed++],
+      fixed: false,
+    });
+    e.target.reset();
+    document.getElementById('cf-year').value = 2026;
+    document.getElementById('cf-term').value = 36;
+    document.getElementById('cap-status').textContent = '';
+    buildControls();
+    recalc();
+  };
+
+  const chartEl = document.getElementById('chart-forecast');
+
+  function monthsInYear(year, c) {
+    const m0 = (c.startY - 2026) * 12 + (c.startM - 1);
+    const m1 = m0 + c.term;
+    const y0 = (year - 2026) * 12, y1 = y0 + 12;
+    return Math.max(0, Math.min(m1, y1) - Math.max(m0, y0));
+  }
+
+  function recalc() {
+    const rate = parseFloat(document.getElementById('in-rate').value) || 0;
+    document.getElementById('out-rate').textContent = rate.toFixed(1) + '%';
+    const baseYr = (parseFloat(utilIn.value) || 0) * 12 +
+      (parseFloat(document.getElementById('in-ins').value) || 0) +
+      (parseFloat(document.getElementById('in-tax').value) || 0) +
+      (parseFloat(document.getElementById('in-maint').value) || 0);
+
+    const active = items.map(c => {
+      const on = document.getElementById('on-' + c.id)?.checked ?? c.on;
+      const cost = parseFloat(document.getElementById('cost-' + c.id)?.value) || 0;
+      if (c.fixed) {
+        c.startY = Math.min(2030, Math.max(2026, parseInt(document.getElementById('start-' + c.id)?.value) || c.startY));
+      }
+      c.on = on; c.cost = cost;
+      const monthly = on && cost > 0 ? W.pmt(cost, rate, c.term) : 0;
+      const payEl = document.getElementById('pay-' + c.id);
+      if (payEl) payEl.innerHTML = on && cost > 0
+        ? '<span class="num">' + usd(monthly, 0) + '/mo</span> for ' + c.term + ' mo · total <span class="num">' + usd(monthly * c.term, 0) + '</span>'
+        : 'not included';
+      return { ...c, monthly };
+    });
+
+    const series = [{ name: 'Baseline', color: SERIES_COLORS.electricity, values: YEARS.map(() => Math.round(baseYr)) }]
+      .concat(active.map(c => ({
+        name: c.name, color: c.color,
+        values: YEARS.map(y => Math.round(c.monthly * monthsInYear(y, c))),
+      })));
+
+    chartEl.innerHTML = '';
+    chartEl.className = '';
+    WCharts.barChart(chartEl, {
+      labels: YEARS.map(String),
+      series,
+      height: 250,
+      ariaLabel: 'Projected annual cost 2026 to 2030',
+    });
+
+    document.getElementById('forecast-thead').innerHTML =
+      '<tr><th>Year</th>' + series.map(s => '<th class="r">' + s.name + '</th>').join('') + '<th class="r">Total</th></tr>';
+    let html = '', grand = 0;
+    YEARS.forEach((y, i) => {
+      const vals = series.map(s => s.values[i]);
+      const tot = vals.reduce((a, b) => a + b, 0);
+      grand += tot;
+      html += '<tr><td class="num">' + y + '</td>' +
+        vals.map(v => '<td class="r num">' + (v ? usd(v, 0) : '—') + '</td>').join('') +
+        '<td class="r num"><strong>' + usd(tot, 0) + '</strong></td></tr>';
+    });
+    document.querySelector('#forecast-table tbody').innerHTML = html;
+
+    const capMonthly = active.reduce((a, c) => a + c.monthly, 0);
+    document.getElementById('sum-cap').textContent = usd(capMonthly, 0) + '/mo';
+    const peak = Math.max(...YEARS.map((y, i) => series.slice(1).reduce((a, s) => a + s.values[i], 0)));
+    document.getElementById('sum-allin').textContent = usd(baseYr / 12 + peak / 12, 0) + '/mo';
+    document.getElementById('sum-5yr').textContent = usd(grand, 0);
+  }
+
+  document.querySelectorAll('.controls input, #in-rate').forEach(i => i.addEventListener('input', recalc));
+  buildControls();
+  recalc();
+})();
+</script>
+</body>
+</html>

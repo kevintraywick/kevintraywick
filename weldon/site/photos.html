@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photos — 160 Weldon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./"><span class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-apricot"></i><i class="sw-mint"></i></span>160 Weldon</a>
+    <a class="navlink" href="./">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html">Utilities</a>
+    <a class="navlink" href="forecast.html">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="projects.html">Projects</a>
+    <a class="navlink" href="location.html">Location</a>
+    <a class="navlink" href="photos.html" aria-current="page">Photos</a>
+  </nav>
+</div>
+
+<div class="page-title">
+  <p class="eyebrow"><i style="background:var(--chip-champagne)"></i>The album</p>
+  <h1>Photos</h1>
+  <p>The house, room by room. Beyond the memories, this doubles as insurance documentation — a current photo of every room and the yard, refreshed on the maintenance schedule.</p>
+</div>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card span-12">
+      <div class="slideshow" id="slideshow">
+        <div class="ss-empty" id="ss-empty">
+          <span>No photos yet</span>
+          <span style="font-size:12.5px">drop some below and they'll show up here</span>
+        </div>
+        <button class="ss-nav ss-prev" id="ss-prev" aria-label="Previous photo">‹</button>
+        <button class="ss-nav ss-next" id="ss-next" aria-label="Next photo">›</button>
+        <span class="ss-count" id="ss-count"></span>
+      </div>
+      <div class="section-gap"></div>
+      <div class="dz" id="dz-photos">
+        <input type="file" accept="image/*" multiple>
+        <div class="dz-big">Drop photos here — one or a whole batch</div>
+        <div class="dz-small">they're added to the slideshow; use the room panes below to file photos by room</div>
+      </div>
+      <div class="statusline" id="dz-status"></div>
+    </section>
+
+    <section class="span-12">
+      <div class="card-head" style="margin-bottom:2px">
+        <div><h2 style="font-family:var(--font-display);font-size:17px">Room by room</h2>
+        <p class="card-sub">small drop zone on each pane — aim for a fresh set once a year for the insurance file</p></div>
+      </div>
+      <div class="roomgrid" id="roomgrid"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr</span>
+    <div class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i></div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+(async function () {
+  const ROOMS = ['Kitchen', 'Den', 'Living room', 'Dining room', 'Kev bedroom', 'Second bedroom',
+                 'Office', 'Bathroom', 'Garage', 'Attic', 'Back deck', 'Yard & exterior'];
+
+  let photos = [];
+  const hasApi = await WAPI.health();
+  if (hasApi) { try { photos = await WAPI.get('/photos'); } catch {} }
+
+  const statusEl = document.getElementById('dz-status');
+  function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
+  if (!hasApi) say('Photo uploads need the backend — offline right now.');
+
+  /* ---------- slideshow ---------- */
+  const ss = document.getElementById('slideshow');
+  let idx = 0, timer = null;
+
+  function slides() { return photos.slice().reverse(); } // newest first
+
+  function renderSlides() {
+    ss.querySelectorAll('img').forEach(el => el.remove());
+    const list = slides();
+    document.getElementById('ss-empty').style.display = list.length ? 'none' : '';
+    list.forEach((p, i) => {
+      const img = document.createElement('img');
+      img.src = p.url;
+      img.alt = p.area ? p.area + ' photo' : 'house photo';
+      img.loading = i < 3 ? 'eager' : 'lazy';
+      ss.prepend(img);
+    });
+    idx = Math.min(idx, Math.max(0, list.length - 1));
+    show(idx);
+  }
+
+  function show(i) {
+    const imgs = [...ss.querySelectorAll('img')].reverse(); // back to newest-first order
+    if (!imgs.length) { document.getElementById('ss-count').textContent = ''; return; }
+    idx = (i + imgs.length) % imgs.length;
+    imgs.forEach((img, j) => img.classList.toggle('on', j === idx));
+    document.getElementById('ss-count').textContent = (idx + 1) + ' / ' + imgs.length;
+  }
+
+  function restartTimer() {
+    if (timer) clearInterval(timer);
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      timer = setInterval(() => show(idx + 1), 5000);
+    }
+  }
+  document.getElementById('ss-prev').onclick = () => { show(idx - 1); restartTimer(); };
+  document.getElementById('ss-next').onclick = () => { show(idx + 1); restartTimer(); };
+
+  /* ---------- uploads ---------- */
+  async function uploadFiles(files, area, zoneEl) {
+    if (!hasApi) { say('Backend offline — can\'t upload right now.', 'err'); return; }
+    zoneEl.classList.add('busy');
+    let done = 0;
+    for (const f of files) {
+      try {
+        const p = await WAPI.upload('/photos', f, { area });
+        photos.push(p);
+        done++;
+      } catch (e) { say('Failed on ' + f.name + ': ' + e.message, 'err'); }
+    }
+    zoneEl.classList.remove('busy');
+    if (done) say(done + ' photo' + (done > 1 ? 's' : '') + ' added' + (area !== 'general' ? ' to ' + area : '') + '.', 'ok');
+    renderSlides();
+    renderRooms();
+    restartTimer();
+  }
+
+  WAPI.wireDropZone(document.getElementById('dz-photos'),
+    files => uploadFiles(files, 'general', document.getElementById('dz-photos')));
+
+  /* ---------- room panes ---------- */
+  const grid = document.getElementById('roomgrid');
+  function renderRooms() {
+    grid.innerHTML = '';
+    ROOMS.forEach(room => {
+      const mine = photos.filter(p => p.area === room);
+      const pane = document.createElement('div');
+      pane.className = 'roompane';
+      pane.innerHTML =
+        '<div class="rp-head"><h3>' + room + '</h3><span class="rp-count">' + (mine.length || '—') + '</span></div>' +
+        '<div class="rp-thumbs">' + mine.slice(-6).map(p => '<img src="' + p.url + '" alt="' + room + '" loading="lazy">').join('') + '</div>' +
+        '<div class="dz mini"><input type="file" accept="image/*" multiple><span>＋ add photos</span></div>';
+      grid.appendChild(pane);
+      const dz = pane.querySelector('.dz');
+      WAPI.wireDropZone(dz, files => uploadFiles(files, room, dz));
+      pane.querySelectorAll('.rp-thumbs img').forEach(img => {
+        img.addEventListener('click', () => {
+          const all = slides();
+          const at = all.findIndex(p => p.url === img.getAttribute('src'));
+          if (at >= 0) { show(at); window.scrollTo({ top: 0, behavior: 'smooth' }); restartTimer(); }
+        });
+      });
+    });
+  }
+
+  renderSlides();
+  renderRooms();
+  restartTimer();
+})();
+</script>
+</body>
+</html>

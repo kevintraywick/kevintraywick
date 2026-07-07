@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Utilities — 160 Weldon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./"><span class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-apricot"></i><i class="sw-mint"></i></span>160 Weldon</a>
+    <a class="navlink" href="./">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html" aria-current="page">Utilities</a>
+    <a class="navlink" href="forecast.html">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="projects.html">Projects</a>
+    <a class="navlink" href="location.html">Location</a>
+    <a class="navlink" href="photos.html">Photos</a>
+  </nav>
+</div>
+
+<div class="page-title" style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+  <div style="flex:1;min-width:260px">
+    <p class="eyebrow"><i style="background:var(--chip-mint)"></i>Recurring bills</p>
+    <h1>Utilities</h1>
+    <p>Electricity, water/sewer/garbage, and WK&amp;T fiber, month by month. Drop a scanned bill and it gets read and charted automatically.</p>
+  </div>
+  <div style="min-width:250px;flex:0 1 300px">
+    <div class="dz" id="dz-bill">
+      <input type="file" accept="image/*,.pdf" multiple>
+      <div class="dz-big">Drop a bill scan</div>
+      <div class="dz-small">photo or PDF of the paper bill</div>
+    </div>
+    <div class="statusline" id="dz-status"></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card span-12">
+      <div class="card-head">
+        <div>
+          <h2>Monthly bills</h2>
+          <p class="card-sub">gaps are months not yet entered — the drop zone fills them in</p>
+        </div>
+      </div>
+      <div id="chart-utilities"></div>
+    </section>
+
+    <section class="card span-7">
+      <div class="card-head"><div><h2>The numbers</h2><p class="card-sub">exactly as recorded</p></div></div>
+      <div class="tablewrap">
+        <table class="data" id="util-table">
+          <thead><tr><th>Month</th><th class="r">Electricity</th><th class="r">Water/S/G</th><th class="r">Internet</th><th class="r">Month total</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card span-5">
+      <div class="card-head"><div><h2>Scanned bills</h2><p class="card-sub">what the drop zone has read so far</p></div></div>
+      <ul class="tasklist" id="scan-list"><li class="card-sub">Nothing scanned yet.</li></ul>
+      <div class="section-gap"></div>
+      <p class="note"><strong>Also on the books:</strong> insurance runs about <span class="num">$1,100/yr</span>, and property tax is assessed on a $200,000 valuation — both tracked annually rather than monthly.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr</span>
+    <div class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i></div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/common.js"></script>
+<script src="js/api.js"></script>
+<script>
+(async function () {
+  const { D, usd, SERIES_COLORS } = W;
+  const MONTHS = W.MONTHS;
+
+  let bills = [];
+  const hasApi = await WAPI.health();
+  if (hasApi) { try { bills = await WAPI.get('/utility-bills'); } catch {} }
+
+  const dzEl = document.getElementById('dz-bill');
+  const statusEl = document.getElementById('dz-status');
+  function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
+  if (!hasApi) {
+    say('Bill scanning needs the backend — offline right now.');
+    dzEl.classList.add('busy');
+  } else {
+    WAPI.wireDropZone(dzEl, async files => {
+      for (const f of files) {
+        say('Reading ' + f.name + '…');
+        dzEl.classList.add('busy');
+        try {
+          const bill = await WAPI.upload('/utility-bills', f);
+          bills.push(bill);
+          render();
+          say('Recorded: ' + bill.utility + ', ' + bill.month + ' — ' + usd(bill.amount, 2), 'ok');
+        } catch (e) {
+          say('Could not read ' + f.name + ': ' + e.message, 'err');
+        } finally { dzEl.classList.remove('busy'); }
+      }
+    });
+  }
+
+  /* combine the seed series (2024–2025 from the sheet) with scanned bills,
+     extending the month axis as new bills arrive */
+  function combined() {
+    const map = {}; // 'YYYY-MM' -> {electricity, water, internet}
+    const put = (ym, key, v) => { (map[ym] = map[ym] || {})[key] = v; };
+    ['electricity', 'water', 'internet'].forEach(key => {
+      D.utilities[key].forEach((v, i) => {
+        if (v == null) return;
+        const y = i < 12 ? 2024 : 2025, m = (i % 12) + 1;
+        put(y + '-' + String(m).padStart(2, '0'), key, v);
+      });
+    });
+    bills.forEach(b => {
+      if (['electricity', 'water', 'internet'].includes(b.utility)) put(b.month, b.utility, b.amount);
+    });
+    const months = Object.keys(map).sort();
+    let end = months[months.length - 1] || '2025-12';
+    if (end < '2025-12') end = '2025-12';
+    const labels = [], keys = [];
+    for (let y = 2024, m = 1; y + '-' + String(m).padStart(2, '0') <= end;) {
+      const ym = y + '-' + String(m).padStart(2, '0');
+      keys.push(ym);
+      labels.push(MONTHS[m - 1] + ' ’' + String(y).slice(2));
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    const series = k => keys.map(ym => map[ym]?.[k] ?? null);
+    return { labels, keys, map, electricity: series('electricity'), water: series('water'), internet: series('internet') };
+  }
+
+  function render() {
+    const c = combined();
+    const chartEl = document.getElementById('chart-utilities');
+    chartEl.innerHTML = '';
+    chartEl.className = '';
+    WCharts.lineChart(chartEl, {
+      labels: c.labels,
+      ariaLabel: 'Monthly utility bills',
+      height: 280,
+      series: [
+        { name: 'Electricity', color: SERIES_COLORS.electricity, values: c.electricity },
+        { name: 'Water, sewer & garbage', color: SERIES_COLORS.water, values: c.water },
+        { name: 'Internet', color: SERIES_COLORS.internet, values: c.internet },
+      ],
+    });
+
+    let html = '';
+    c.keys.forEach((ym, i) => {
+      const row = c.map[ym];
+      if (!row) return;
+      const e = row.electricity, w = row.water, n = row.internet;
+      const tot = (e || 0) + (w || 0) + (n || 0);
+      html += '<tr><td class="num">' + c.labels[i] + '</td><td class="r num">' + usd(e, 2) + '</td><td class="r num">' +
+        usd(w, 2) + '</td><td class="r num">' + usd(n, 2) + '</td><td class="r num">' + usd(tot, 2) + '</td></tr>';
+    });
+    document.querySelector('#util-table tbody').innerHTML = html;
+
+    if (bills.length) {
+      document.getElementById('scan-list').innerHTML = bills.slice().reverse().map(b =>
+        '<li><span class="prio">' + b.month + '</span>' + b.utility +
+        '<span class="where num">' + usd(b.amount, 2) + '</span></li>').join('');
+    }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
