@@ -103,6 +103,10 @@
 
   .panel{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:26px; backdrop-filter:blur(8px)}
   .chart-note{font-size:13px; color:var(--faint); margin-top:14px; max-width:80ch}
+  .chart-note b{color:var(--muted)}
+  .mini-head{display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:12px}
+  .mini-head h3{font-size:21px; color:var(--gold); line-height:1.1}
+  .mini-head span{font-size:12px; color:var(--faint)}
   .legend-inline{display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-top:10px}
   .swatch{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:middle}
   .callout{margin-top:20px; padding:16px 18px; border-left:3px solid var(--gold); background:rgba(242,198,109,0.06); border-radius:0 10px 10px 0; font-size:14px; color:var(--ink)}
@@ -144,10 +148,11 @@
     padding:6px 14px; font-size:13px; font-family:inherit; cursor:pointer}
   .brush.on{border-color:var(--gold); color:var(--ink); background:rgba(242,198,109,0.10); font-weight:600}
   .brush .bd{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:middle}
-  #availBoard{min-width:620px}
+  #availBoard{min-width:1360px}
   .av-title{font-size:13px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin:6px 0 8px; padding-left:82px}
   .av-row{display:flex; align-items:center; margin:5px 0}
-  .av-lbl{flex:0 0 78px; width:78px; padding-right:8px; font-size:13px; color:var(--muted); white-space:nowrap}
+  .av-lbl{flex:0 0 78px; width:78px; padding-right:8px; font-size:13px; color:var(--muted); white-space:nowrap;
+    position:sticky; left:0; z-index:3; background:#0b0e1c; box-shadow:1px 0 0 var(--line)}
   .av-scale{flex:1 1 auto; display:flex}
   .av-mo{flex:1 1 0; font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); white-space:nowrap; padding-left:5px}
   .av-mo.mstart{border-left:1px solid var(--line)}
@@ -312,11 +317,34 @@
     </div>
     <div class="callout">
       <b>Recommended window: Sept 9 – 14, 2026.</b> The Sept 10 new moon lands just as summer monsoon clouds
-      taper off, while the galactic core is still standing tall in the evening sky — the sweet spot. The
-      Aug 12 new moon is a strong runner-up (darkest core, slightly higher cloud risk). By the Oct 10 new
-      moon the skies are clearest of all, but the core sits low and sets early; November–December give
-      gorgeous dark nights but the Milky Way's core is gone until spring.
+      taper off, while the galactic core still stands tall in the evening sky — the sweet spot. By the Oct 10
+      new moon the skies are clearest of all, but the core sits low and sets early. November brings gorgeous
+      dark, clear nights, yet the Milky Way's bright center is essentially gone until spring — lovely for
+      planets and constellations, just past prime for the galaxy itself.
     </div>
+  </div>
+
+  <div class="panel" style="margin-top:18px">
+    <div class="mini-head">
+      <h3>Nightly temperatures · Chisos Basin</h3>
+      <span>Typical high &amp; low across the season (≈5,400 ft, prime stargazing camp)</span>
+    </div>
+    <div style="position:relative; height:158px"><canvas id="tempChart"></canvas></div>
+    <div class="legend-inline">
+      <span><span class="swatch" style="background:var(--gold2)"></span>Daytime high</span>
+      <span><span class="swatch" style="background:var(--sea)"></span>Overnight low</span>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:18px">
+    <div class="mini-head">
+      <h3>Same night, different elevations</h3>
+      <span>September averages — every 1,000 ft up trades heat for cool</span>
+    </div>
+    <div style="position:relative; height:168px"><canvas id="elevChart"></canvas></div>
+    <div class="chart-note">Big Bend is "three parks in one": the desert floor runs about <b>20°F hotter by day</b>
+      than the Chisos Basin. Nights are more even — and by November the basin is actually <em>warmer</em> after
+      dark than the low desert, where cold air pools. Bars span each zone's typical overnight low → daytime high.</div>
   </div>
 </div></section>
 
@@ -506,7 +534,7 @@ function buildSkyData(){
   const clearByMonth={7:0.55,8:0.66,9:0.78,10:0.82,11:0.80};   // Aug..Dec
   const coreByMonth ={7:1.00,8:0.85,9:0.45,10:0.12,11:0.08};   // galactic-core presence
   const labels=[], scores=[], colors=[], meta=[];
-  let d=new Date(2026,7,1); const end=new Date(2026,11,31);
+  let d=new Date(2026,8,1); const end=new Date(2026,10,30);   // Sept 1 – Nov 30
   while(d<=end){
     const days=(d.getTime()-ref)/DAY;
     const phase=2*Math.PI*(((days%SYN)+SYN)%SYN)/SYN;
@@ -560,13 +588,75 @@ window.addEventListener('load',function(){
       }
     }
   });
+
+  /* ----- Temperature: interpolate NPS monthly normals into a daily curve ----- */
+  function buildTempData(){
+    // Chisos Basin (~5,400 ft) monthly high/low normals, anchored at mid-month.
+    // Sept 1 = index 0; Sep/Oct/Nov = 30/31/30 = 91 days.
+    const anchors=[ {i:14,hi:80,lo:61}, {i:44,hi:74,lo:53}, {i:75,hi:65,lo:45} ];
+    const N=91, hi=[], lo=[], labels=[], AV=new Date(2026,8,1);
+    function make(key){ return function(idx){
+      if(idx<=anchors[0].i){ const a=anchors[0],b=anchors[1],s=(b[key]-a[key])/(b.i-a.i); return a[key]+s*(idx-a.i); }
+      for(let k=0;k<anchors.length-1;k++){ const a=anchors[k],b=anchors[k+1];
+        if(idx>=a.i&&idx<=b.i){ const s=(b[key]-a[key])/(b.i-a.i); return a[key]+s*(idx-a.i); } }
+      const a=anchors[anchors.length-2],b=anchors[anchors.length-1],s=(b[key]-a[key])/(b.i-a.i); return b[key]+s*(idx-b.i);
+    };}
+    const fh=make('hi'), fl=make('lo');
+    for(let x=0;x<N;x++){ hi.push(Math.round(fh(x))); lo.push(Math.round(fl(x))); labels.push(new Date(AV.getTime()+x*86400000)); }
+    return {labels,hi,lo};
+  }
+  const td=buildTempData();
+  new Chart(document.getElementById('tempChart'),{
+    type:'line',
+    data:{ labels:td.labels, datasets:[
+      { label:'High', data:td.hi, borderColor:'#e8a94a', backgroundColor:'rgba(232,169,74,0.13)',
+        borderWidth:2, pointRadius:0, tension:.35, fill:'+1' },
+      { label:'Low', data:td.lo, borderColor:'#5fb2ff', backgroundColor:'transparent',
+        borderWidth:2, pointRadius:0, tension:.35, fill:false }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{
+          title:(it)=> new Date(it[0].label).toLocaleDateString('en-US',{month:'short',day:'numeric'}),
+          label:(it)=> it.dataset.label+': '+it.raw+'°F' } } },
+      scales:{
+        x:{ type:'category',
+          ticks:{ maxTicksLimit:6, autoSkip:true,
+            callback:function(v){ const dt=new Date(this.getLabelForValue(v));
+              return dt.getDate()===1?dt.toLocaleDateString('en-US',{month:'short'}):''; } },
+          grid:{display:false} },
+        y:{ grid:{color:'rgba(150,160,210,0.10)'}, ticks:{callback:(v)=>v+'°'},
+          suggestedMin:35, suggestedMax:90 }
+      }
+    }
+  });
+
+  /* ----- Elevation: floating low→high bars for three zones (September) ----- */
+  new Chart(document.getElementById('elevChart'),{
+    type:'bar',
+    data:{ labels:['Rio Grande · 1,850 ft','Panther Jct · 3,750 ft','Chisos Basin · 5,400 ft'],
+      datasets:[{ data:[[59,99],[65,88],[61,80]],   // Sept typical low → high
+        backgroundColor:['rgba(232,124,74,0.85)','rgba(242,198,109,0.85)','rgba(95,210,196,0.85)'],
+        borderWidth:0, borderRadius:6, barPercentage:0.64 }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label:(it)=>{ const v=it.raw; return 'Low '+v[0]+'°  →  High '+v[1]+'°F'; } } } },
+      scales:{
+        x:{ grid:{color:'rgba(150,160,210,0.10)'}, ticks:{callback:(v)=>v+'°'},
+          suggestedMin:40, suggestedMax:100,
+          title:{display:true,text:'Temperature °F · typical September night → day',color:'#6b7299'} },
+        y:{ grid:{display:false} }
+      }
+    }
+  });
 });
 
 /* ---------------- Availability (shared via API) ---------------- */
 const PALETTE=['#5fb2ff','#f2c66d','#ff7e9d','#5fd2c4','#8b7bd8','#ff9f4a','#7ee787','#e06bff','#ffd24a','#4ad6a0'];
 const pcolor=(i)=>PALETTE[i%PALETTE.length];
 const DAYMS=86400000;
-const AV_START=new Date(2026,8,1), AV_END=new Date(2026,9,31);          // Sep 1 – Oct 31
+const AV_START=new Date(2026,8,1), AV_END=new Date(2026,10,30);          // Sep 1 – Nov 30
 const AV_DAYS=Math.round((AV_END-AV_START)/DAYMS)+1;
 const fmt=(d)=> d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 const dayDate=(idx)=> new Date(AV_START.getTime()+idx*DAYMS);

@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const AV_DAYS = 61; // Sep 1 – Oct 31 2026
+const AV_DAYS = 91; // Sep 1 – Nov 30 2026
 const AV_START = Date.UTC(2026, 8, 1);
 
 const SEED_PEOPLE = [
