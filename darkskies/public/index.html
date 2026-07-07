@@ -326,13 +326,14 @@
 
   <div class="panel" style="margin-top:18px">
     <div class="mini-head">
-      <h3>Nightly temperatures · Chisos Basin</h3>
-      <span>Typical high &amp; low across the season (≈5,400 ft, prime stargazing camp)</span>
+      <h3>Nightly temperatures across the park</h3>
+      <span>Rio Grande · Panther Junction · Chisos Basin — each band spans a night&#39;s low → daytime high</span>
     </div>
-    <div style="position:relative; height:158px"><canvas id="tempChart"></canvas></div>
+    <div style="position:relative; height:242px"><canvas id="tempChart"></canvas></div>
     <div class="legend-inline">
-      <span><span class="swatch" style="background:var(--gold2)"></span>Daytime high</span>
-      <span><span class="swatch" style="background:var(--sea)"></span>Overnight low</span>
+      <span><span class="swatch" style="background:#4a82dc"></span>cooler</span>
+      <span><span class="swatch" style="background:#f0783a"></span>warmer</span>
+      <span style="color:var(--faint)">— color follows temperature, not location; taller band = bigger day/night swing</span>
     </div>
   </div>
 
@@ -589,33 +590,60 @@ window.addEventListener('load',function(){
     }
   });
 
-  /* ----- Temperature: interpolate NPS monthly normals into a daily curve ----- */
-  function buildTempData(){
-    // Chisos Basin (~5,400 ft) monthly high/low normals, anchored at mid-month.
-    // Sept 1 = index 0; Sep/Oct/Nov = 30/31/30 = 91 days.
-    const anchors=[ {i:14,hi:80,lo:61}, {i:44,hi:74,lo:53}, {i:75,hi:65,lo:45} ];
-    const N=91, hi=[], lo=[], labels=[], AV=new Date(2026,8,1);
-    function make(key){ return function(idx){
+  /* ----- Temperature: three elevation zones, high–low bands, Sept–Nov ----- */
+  // NPS monthly high/low normals anchored mid-month (Sep/Oct/Nov = index 14/44/75).
+  const TEMP_LOCS=[
+    { name:'Rio Grande',   anchors:[{i:14,hi:99,lo:59},{i:44,hi:90,lo:48},{i:75,hi:78,lo:36}] },
+    { name:'Panther Jct',  anchors:[{i:14,hi:88,lo:65},{i:44,hi:80,lo:56},{i:75,hi:69,lo:42}] },
+    { name:'Chisos Basin', anchors:[{i:14,hi:80,lo:61},{i:44,hi:74,lo:53},{i:75,hi:65,lo:45}] }
+  ];
+  function tSeries(anchors,key){
+    const N=91,out=[];
+    function val(idx){
       if(idx<=anchors[0].i){ const a=anchors[0],b=anchors[1],s=(b[key]-a[key])/(b.i-a.i); return a[key]+s*(idx-a.i); }
       for(let k=0;k<anchors.length-1;k++){ const a=anchors[k],b=anchors[k+1];
         if(idx>=a.i&&idx<=b.i){ const s=(b[key]-a[key])/(b.i-a.i); return a[key]+s*(idx-a.i); } }
       const a=anchors[anchors.length-2],b=anchors[anchors.length-1],s=(b[key]-a[key])/(b.i-a.i); return b[key]+s*(idx-b.i);
-    };}
-    const fh=make('hi'), fl=make('lo');
-    for(let x=0;x<N;x++){ hi.push(Math.round(fh(x))); lo.push(Math.round(fl(x))); labels.push(new Date(AV.getTime()+x*86400000)); }
-    return {labels,hi,lo};
+    }
+    for(let x=0;x<N;x++) out.push(Math.round(val(x)));
+    return out;
   }
-  const td=buildTempData();
+  const tLabels=[]; { const AV=new Date(2026,8,1); for(let x=0;x<91;x++) tLabels.push(new Date(AV.getTime()+x*86400000)); }
+  // Shared vertical blue→orange gradient mapped to the y-axis (cold low, hot high).
+  function tempGrad(chart,alpha){
+    const a=chart.chartArea; if(!a) return 'rgba(150,170,210,'+alpha+')';
+    const g=chart.ctx.createLinearGradient(0,a.bottom,0,a.top);
+    g.addColorStop(0.00,'rgba(74,130,220,'+alpha+')');
+    g.addColorStop(0.48,'rgba(126,150,205,'+alpha+')');
+    g.addColorStop(0.72,'rgba(232,169,74,'+alpha+')');
+    g.addColorStop(1.00,'rgba(240,120,58,'+alpha+')');
+    return g;
+  }
+  const tempDatasets=[];
+  TEMP_LOCS.forEach(loc=>{
+    tempDatasets.push(
+      { label:loc.name+' high', loc:loc.name, edge:true, data:tSeries(loc.anchors,'hi'),
+        borderColor:(c)=>tempGrad(c.chart,0.95), backgroundColor:'transparent',
+        borderWidth:1.7, pointRadius:0, tension:.35, fill:false },
+      { label:loc.name+' low', loc:loc.name, data:tSeries(loc.anchors,'lo'),
+        borderColor:(c)=>tempGrad(c.chart,0.85), backgroundColor:(c)=>tempGrad(c.chart,0.18),
+        borderWidth:1.7, pointRadius:0, tension:.35, fill:'-1' }
+    );
+  });
+  const bandLabels={ id:'bandLabels', afterDatasetsDraw(chart){
+    const ctx=chart.ctx;
+    chart.data.datasets.forEach((ds,i)=>{ if(!ds.edge) return;
+      const meta=chart.getDatasetMeta(i), pt=meta.data[0]; if(!pt) return;
+      ctx.save(); ctx.font='600 11px Inter, sans-serif'; ctx.fillStyle='#eef1fb';
+      ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText(ds.loc, pt.x+6, pt.y-3); ctx.restore();
+    });
+  }};
   new Chart(document.getElementById('tempChart'),{
-    type:'line',
-    data:{ labels:td.labels, datasets:[
-      { label:'High', data:td.hi, borderColor:'#e8a94a', backgroundColor:'rgba(232,169,74,0.13)',
-        borderWidth:2, pointRadius:0, tension:.35, fill:'+1' },
-      { label:'Low', data:td.lo, borderColor:'#5fb2ff', backgroundColor:'transparent',
-        borderWidth:2, pointRadius:0, tension:.35, fill:false }
-    ]},
+    type:'line', plugins:[bandLabels],
+    data:{ labels:tLabels, datasets:tempDatasets },
     options:{ responsive:true, maintainAspectRatio:false,
-      interaction:{mode:'index',intersect:false},
+      interaction:{mode:'nearest',intersect:false,axis:'x'},
       plugins:{ legend:{display:false},
         tooltip:{ callbacks:{
           title:(it)=> new Date(it[0].label).toLocaleDateString('en-US',{month:'short',day:'numeric'}),
@@ -626,8 +654,8 @@ window.addEventListener('load',function(){
           ticks:{ autoSkip:false, maxRotation:0, align:'start',
             callback:function(v){ return new Date(this.getLabelForValue(v)).toLocaleDateString('en-US',{month:'short'}); } },
           grid:{display:false, drawTicks:false} },
-        y:{ grid:{color:'rgba(150,160,210,0.10)'}, ticks:{callback:(v)=>v+'°'},
-          suggestedMin:35, suggestedMax:90 }
+        y:{ min:30, max:105, ticks:{stepSize:10, callback:(v)=>v+'°'},
+          grid:{color:'rgba(150,160,210,0.09)'} }
       }
     }
   });
