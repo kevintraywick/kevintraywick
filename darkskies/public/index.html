@@ -305,7 +305,7 @@
   <div class="wrap">
   <div class="kicker">Chart · Sky Conditions</div>
   <h2>Best nights to see the galaxy</h2>
-  <p class="lede">A nightly score from August to December 2026 based on how dark the moon is, the historical
+  <p class="lede">A nightly score from September to November 2026 based on how dark the moon is, the historical
   odds of clear West Texas skies, and whether the bright <em>galactic core</em> is still above the horizon.</p>
   <div class="panel" style="margin-top:26px">
     <div style="position:relative; height:300px"><canvas id="skyChart"></canvas></div>
@@ -579,10 +579,10 @@ window.addEventListener('load',function(){
         }}},
       scales:{
         x:{ type:'category',
-          ticks:{ maxTicksLimit:11, autoSkip:true,
-            callback:function(v){ const dt=new Date(this.getLabelForValue(v));
-              return dt.getDate()===1?dt.toLocaleDateString('en-US',{month:'short'}):''; } },
-          grid:{display:false} },
+          afterBuildTicks:function(axis){ axis.ticks=[0,30,61].map(function(v){return {value:v};}); }, // Sep 1 / Oct 1 / Nov 1
+          ticks:{ autoSkip:false, maxRotation:0, align:'start',
+            callback:function(v){ return new Date(this.getLabelForValue(v)).toLocaleDateString('en-US',{month:'short'}); } },
+          grid:{display:false, drawTicks:false} },
         y:{ beginAtZero:true, max:60, grid:{color:'rgba(150,160,210,0.10)'},
           title:{display:true,text:'Galaxy viewing score',color:'#6b7299'} }
       }
@@ -622,10 +622,10 @@ window.addEventListener('load',function(){
           label:(it)=> it.dataset.label+': '+it.raw+'°F' } } },
       scales:{
         x:{ type:'category',
-          ticks:{ maxTicksLimit:6, autoSkip:true,
-            callback:function(v){ const dt=new Date(this.getLabelForValue(v));
-              return dt.getDate()===1?dt.toLocaleDateString('en-US',{month:'short'}):''; } },
-          grid:{display:false} },
+          afterBuildTicks:function(axis){ axis.ticks=[0,30,61].map(function(v){return {value:v};}); }, // Sep 1 / Oct 1 / Nov 1
+          ticks:{ autoSkip:false, maxRotation:0, align:'start',
+            callback:function(v){ return new Date(this.getLabelForValue(v)).toLocaleDateString('en-US',{month:'short'}); } },
+          grid:{display:false, drawTicks:false} },
         y:{ grid:{color:'rgba(150,160,210,0.10)'}, ticks:{callback:(v)=>v+'°'},
           suggestedMin:35, suggestedMax:90 }
       }
