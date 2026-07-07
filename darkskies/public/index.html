@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Skies · West Texas 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#05060d; --bg2:#0a0d1c; --panel:rgba(18,22,42,0.72);
+    --ink:#e9ecf7; --muted:#9aa2c4; --faint:#6b7299;
+    --gold:#f2c66d; --gold2:#e8a94a; --violet:#8b7bd8; --teal:#5fd2c4;
+    --line:rgba(150,160,210,0.16);
+    --sea:#5fb2ff; --sat:#f2c66d; --mem:#ff7e9d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    line-height:1.65; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif; font-weight:500; letter-spacing:.3px; margin:0}
+  a{color:var(--gold)}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px}
+
+  /* ---------- HERO with CSS astrophotography sky ---------- */
+  .hero{position:relative; min-height:92vh; display:flex; align-items:center; overflow:hidden}
+  .sky{position:absolute; inset:0; z-index:0;
+    background:
+      radial-gradient(1200px 700px at 72% 18%, rgba(139,123,216,0.20), transparent 60%),
+      radial-gradient(900px 600px at 20% 80%, rgba(95,210,196,0.10), transparent 60%),
+      linear-gradient(180deg,#04050b 0%, #070a18 40%, #0a0e20 70%, #05060d 100%);
+  }
+  /* Milky Way band */
+  .milkyway{position:absolute; inset:0; z-index:1; opacity:.55;
+    background:
+      radial-gradient(60% 42% at 60% 40%, rgba(226,214,255,0.16), transparent 70%),
+      radial-gradient(42% 30% at 55% 44%, rgba(255,240,214,0.14), transparent 70%),
+      radial-gradient(28% 18% at 62% 36%, rgba(180,150,255,0.16), transparent 70%);
+    transform:rotate(-24deg) scale(1.5); filter:blur(2px);
+    mix-blend-mode:screen;
+  }
+  .stars,.stars2,.stars3{position:absolute; inset:0; z-index:1}
+  .horizon{position:absolute; left:0; right:0; bottom:0; height:26vh; z-index:2;
+    background:linear-gradient(180deg, transparent, #02030a 78%);
+  }
+  .ridge{position:absolute; left:0; right:0; bottom:0; height:16vh; z-index:3;
+    background:#010207;
+    clip-path:polygon(0% 100%,0% 55%,8% 62%,16% 48%,24% 58%,33% 40%,44% 56%,54% 44%,63% 60%,72% 46%,82% 58%,90% 50%,100% 62%,100% 100%);
+    opacity:.95;
+  }
+  .hero-inner{position:relative; z-index:4; width:100%}
+  .eyebrow{font-family:'Inter'; text-transform:uppercase; letter-spacing:4px; font-size:12px; color:var(--gold); font-weight:600}
+  .hero h1{font-size:clamp(48px,9vw,104px); line-height:.98; margin:.18em 0 .1em}
+  .hero .sub{font-family:'Cormorant Garamond'; font-size:clamp(20px,2.6vw,30px); color:var(--muted); font-style:italic}
+  .hero .meta{margin-top:26px; display:flex; gap:26px; flex-wrap:wrap; font-size:14px; color:var(--muted)}
+  .hero .meta b{color:var(--ink); font-weight:600}
+  .hero-blurb{margin-top:22px; max-width:700px; font-size:15.5px; line-height:1.7; font-style:italic; color:rgba(233,236,247,0.45)}
+  .hero .wrap{display:grid; grid-template-columns:1fr minmax(320px,380px); gap:44px; align-items:center}
+  .hero-left{min-width:0}
+  .hero-chat{background:rgba(10,13,26,0.55); border:1px solid var(--line); border-radius:16px;
+    padding:18px 18px 16px; backdrop-filter:blur(10px); box-shadow:0 16px 50px rgba(0,0,0,.42);
+    display:flex; flex-direction:column}
+  .hero-chat h3{font-size:26px; color:var(--gold); line-height:1}
+  .chat-sub{font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:1.5px; margin:4px 0 12px}
+  .hero-chat .comments{margin-top:0; max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:6px}
+  .chat-composer{margin-top:14px; display:flex; flex-direction:column; gap:8px}
+  .chat-row{display:flex; gap:8px; align-items:stretch}
+  .chat-row textarea{flex:1; min-height:44px; resize:vertical}
+  .chat-row .btn{white-space:nowrap}
+  @media(max-width:880px){
+    .hero{min-height:auto; padding:96px 0 64px}
+    .hero .wrap{grid-template-columns:1fr; gap:30px}
+    .hero-chat{max-width:560px}
+    .scroll-cue{display:none}
+  }
+  .scroll-cue{position:absolute; bottom:22px; left:50%; transform:translateX(-50%); z-index:4; color:var(--faint); font-size:12px; letter-spacing:2px; text-transform:uppercase}
+
+  /* ---------- Sections ---------- */
+  section{position:relative; z-index:1}
+  .band{padding:76px 0; border-top:1px solid var(--line)}
+  .kicker{text-transform:uppercase; letter-spacing:3px; font-size:12px; color:var(--gold); font-weight:600; font-family:'Inter'}
+  .band h2{font-size:clamp(30px,4vw,46px); margin:.25em 0 .5em}
+  /* Backdrop sections (image behind charts) */
+  .bg-sec{position:relative; background:#05060d; overflow:hidden}
+  .bg-sec .bg-img{position:absolute; inset:0; z-index:0;
+    background-position:center; background-size:cover; background-repeat:no-repeat; opacity:.69}
+  .bg-sec::after{content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(5,6,13,.86) 0%, rgba(5,6,13,.60) 42%, rgba(5,6,13,.92) 100%)}
+  .bg-sec > .wrap{position:relative; z-index:1}
+  .bg-sec .panel{background:rgba(10,13,26,0.25)}
+  .lede{font-size:17px; color:var(--muted); max-width:70ch}
+
+  .cards{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:34px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px; backdrop-filter:blur(8px)}
+  .card h3{font-size:24px; color:var(--gold); margin-bottom:6px}
+  .card p{margin:0; font-size:14px; color:var(--muted)}
+  .pin{font-size:12px; color:var(--faint); text-transform:uppercase; letter-spacing:2px}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:26px; backdrop-filter:blur(8px)}
+  .chart-note{font-size:13px; color:var(--faint); margin-top:14px; max-width:80ch}
+  .legend-inline{display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-top:10px}
+  .swatch{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:middle}
+  .callout{margin-top:20px; padding:16px 18px; border-left:3px solid var(--gold); background:rgba(242,198,109,0.06); border-radius:0 10px 10px 0; font-size:14px; color:var(--ink)}
+
+  /* ---------- Availability ---------- */
+  .avail-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px; margin-top:26px}
+  .person{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; backdrop-filter:blur(8px)}
+  .person .name{font-family:'Cormorant Garamond'; font-size:23px; color:var(--ink)}
+  .person .from{font-size:12px; color:var(--faint); text-transform:uppercase; letter-spacing:2px; margin-bottom:12px}
+  .daterow{display:flex; gap:8px; align-items:center; margin:8px 0}
+  .daterow label{font-size:11px; color:var(--muted); width:34px}
+  input[type=date],input[type=text],textarea{
+    background:#0c1020; border:1px solid var(--line); color:var(--ink);
+    border-radius:9px; padding:9px 11px; font-family:inherit; font-size:14px; width:100%;
+  }
+  input:focus,textarea:focus{outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(242,198,109,.12)}
+  .status-row{display:flex; gap:8px; margin-top:10px}
+  .chip{flex:1; text-align:center; font-size:12px; padding:7px; border-radius:8px; border:1px solid var(--line); color:var(--muted); cursor:pointer; user-select:none}
+  .chip.on-yes{background:rgba(95,210,196,.16); border-color:var(--teal); color:#bff3ec}
+  .chip.on-maybe{background:rgba(242,198,109,.16); border-color:var(--gold); color:#f7e2b0}
+  .chip.on-no{background:rgba(255,126,157,.14); border-color:var(--mem); color:#ffc9d5}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#1a1405; border:none; border-radius:10px;
+    padding:11px 18px; font-weight:600; font-size:14px; cursor:pointer; font-family:inherit}
+  .btn.ghost{background:transparent; color:var(--gold); border:1px solid var(--gold)}
+  .btn:active{transform:translateY(1px)}
+  .add-person{display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; align-items:center}
+  .dot{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:7px; vertical-align:middle}
+
+  /* ---------- Combined timeline ---------- */
+  .timeline-panel{margin-top:22px; overflow-x:auto}
+  .tl-head{display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:10px; margin-bottom:6px}
+  .tl-head h3{font-size:24px; color:var(--gold)}
+  .tl-legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:8px 0 18px}
+  .tl-grid{display:grid; grid-template-columns:70px 1fr; position:relative; min-width:640px; row-gap:2px}
+  /* Paint-availability board */
+  .brush-bar{display:flex; align-items:center; gap:8px; margin:18px 0 4px; flex-wrap:wrap}
+  .brush-label{display:inline-flex; align-items:center; color:var(--muted); margin-right:2px}
+  .brush{background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:20px;
+    padding:6px 14px; font-size:13px; font-family:inherit; cursor:pointer}
+  .brush.on{border-color:var(--gold); color:var(--ink); background:rgba(242,198,109,0.10); font-weight:600}
+  .brush .bd{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:middle}
+  #availBoard{min-width:620px}
+  .av-title{font-size:13px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin:6px 0 8px; padding-left:82px}
+  .av-row{display:flex; align-items:center; margin:5px 0}
+  .av-lbl{flex:0 0 78px; width:78px; padding-right:8px; font-size:13px; color:var(--muted); white-space:nowrap}
+  .av-scale{flex:1 1 auto; display:flex}
+  .av-mo{flex:1 1 0; font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); white-space:nowrap; padding-left:5px}
+  .av-mo.mstart{border-left:1px solid var(--line)}
+  .av-num{flex:1 1 0; text-align:center; font-size:9px; line-height:1; color:var(--faint)}
+  .av-num.mstart{border-left:1px solid rgba(150,160,210,0.22)}
+  .av-cell.mstart{border-left:1px solid rgba(150,160,210,0.22)}
+  .av-div{position:absolute; top:0; bottom:0; width:1px; background:rgba(150,160,210,0.20); pointer-events:none}
+  .av-body{position:relative}
+  .av-track{flex:1 1 auto; display:flex; height:28px; border:1px solid var(--line); border-radius:6px;
+    overflow:hidden; background:rgba(255,255,255,0.02); cursor:crosshair; touch-action:none}
+  .av-cell{flex:1 1 0; height:100%; border-right:1px solid rgba(150,160,210,0.06)}
+  .av-cell:last-child{border-right:none}
+  .av-heat{height:22px; cursor:default}
+  .av-spacer{height:14px}
+  .av-band{position:absolute; top:0; bottom:0; background:rgba(242,198,109,0.12);
+    border-left:1.5px dashed var(--gold); border-right:1.5px dashed var(--gold); pointer-events:none}
+  .tl-name{font-size:12.5px; color:var(--muted); display:flex; align-items:center; height:26px; white-space:nowrap}
+  .tl-track{position:relative; height:26px}
+  .tl-bar{position:absolute; top:5px; height:16px; border-radius:8px; min-width:4px; opacity:.92}
+  .tl-bar.maybe{opacity:.5; background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.25) 0 4px,transparent 4px 8px)}
+  .tl-scale{position:relative; height:20px; border-bottom:1px solid var(--line)}
+  .tl-mlabel{position:absolute; top:2px; font-size:11px; color:var(--faint)}
+  .tl-mtick{position:absolute; top:0; height:232px; width:1px; background:rgba(150,160,210,0.10)}
+  .tl-heat{position:relative; height:22px; display:flex; border-radius:5px; overflow:hidden; border:1px solid var(--line)}
+  .tl-cell{flex:1 1 0; height:100%}
+  .tl-band{grid-column:2; grid-row:3 / -2; position:relative; pointer-events:none; z-index:0}
+  .tl-band-fill{position:absolute; top:0; bottom:0; background:rgba(242,198,109,0.12); border-left:1.5px dashed var(--gold); border-right:1.5px dashed var(--gold)}
+  .tl-heatlegend{display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:12px}
+  .tl-heatlegend i{display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:middle}
+  .tl-best{margin-top:16px; padding:14px 16px; border-left:3px solid var(--teal); background:rgba(95,210,196,0.07); border-radius:0 10px 10px 0; font-size:14px}
+  .tl-best b{color:#bff3ec}
+
+  /* ---------- On the ground (transport + stay) ---------- */
+  .ground-grid{display:grid; grid-template-columns:1fr 1.35fr; gap:26px; margin-top:30px}
+  .col-h{font-size:22px; color:var(--gold); margin-bottom:14px}
+  .tcard{display:flex; gap:14px; align-items:center; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:14px; margin-bottom:12px; backdrop-filter:blur(8px)}
+  .tthumb{flex:0 0 62px; width:62px; height:62px; border-radius:10px; display:flex; align-items:center;
+    justify-content:center; font-size:28px}
+  .tcard h4{margin:0 0 3px; font-family:'Inter'; font-size:15px; color:var(--ink); font-weight:600}
+  .tcard p{margin:0 0 4px; font-size:13px; color:var(--muted); line-height:1.5}
+  .tcard a, .scard .lnk{font-size:12px; color:var(--gold); text-decoration:none}
+  .tcard a:hover, .scard:hover .lnk{text-decoration:underline}
+  .stay-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .scard{display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; overflow:hidden; text-decoration:none; color:inherit; backdrop-filter:blur(8px);
+    transition:border-color .15s, transform .15s}
+  .scard:hover{border-color:var(--gold); transform:translateY(-2px)}
+  .sthumb{height:84px; display:flex; align-items:center; justify-content:center; font-size:34px}
+  .sbody{padding:12px 14px}
+  .scard h4{margin:0 0 3px; font-family:'Cormorant Garamond'; font-size:21px; color:var(--ink)}
+  .scard .meta2{font-size:10.5px; color:var(--gold); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px}
+  .scard p{margin:0 0 8px; font-size:12.5px; color:var(--muted); line-height:1.5}
+  /* ---------- Map ---------- */
+  .map-wrap{position:relative; width:100%; height:min(72vh,600px); margin-top:26px;
+    border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#0a0d1c}
+  .map-wrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
+  .map-link{font-size:12.5px; color:var(--faint); margin-top:10px}
+  @media(max-width:760px){ .ground-grid{grid-template-columns:1fr} }
+
+  /* ---------- Comments ---------- */
+  .comments{display:grid; grid-template-columns:1fr; gap:12px; margin-top:24px}
+  .comment{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px}
+  .comment .c-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px}
+  .comment .c-name{font-weight:600; color:var(--gold)}
+  .comment .c-time{font-size:12px; color:var(--faint)}
+  .comment .c-body{font-size:14.5px; color:var(--ink)}
+  .composer{display:grid; grid-template-columns:180px 1fr auto; gap:10px; margin-top:20px; align-items:start}
+  .composer textarea{min-height:46px; resize:vertical}
+  .demo-tag{display:inline-block; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--faint); border:1px dashed var(--line); padding:3px 8px; border-radius:20px; margin-left:10px}
+  footer{padding:50px 0 70px; border-top:1px solid var(--line); color:var(--faint); font-size:13px}
+  @media(max-width:720px){
+    .cards{grid-template-columns:1fr}
+    .composer{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="sky"></div>
+  <div class="milkyway"></div>
+  <canvas class="stars" id="starfield"></canvas>
+  <div class="horizon"></div>
+  <div class="ridge"></div>
+  <div class="hero-inner">
+    <div class="wrap">
+      <div class="hero-left">
+        <div class="eyebrow">Big Bend · Fall 2026</div>
+        <h1>Dark Skies</h1>
+        <div class="sub">Chasing the galaxy across West Texas…</div>
+        <div class="meta">
+          <span><b>Where</b> &nbsp;Big Bend National Park, TX</span>
+          <span><b>When</b> &nbsp;Aug – Dec 2026</span>
+          <span><b>Who</b> &nbsp;Ian · Ashley · Sean · Zelda · Kevin</span>
+        </div>
+        <p class="hero-blurb">The darkest skies in the Lower 48 sit inside the 9-million-acre Greater Big Bend
+        International Dark Sky Reserve — the largest protected dark-sky place on Earth. Fly into Midland (MAF),
+        stock up, and drive to McDonald Observatory near Fort Davis.</p>
+      </div>
+      <div class="hero-chat">
+        <h3>Chat</h3>
+        <div class="chat-sub">Saved in your browser · demo</div>
+        <div class="comments" id="comments"></div>
+        <div class="chat-composer">
+          <input type="text" id="cName" placeholder="Your name">
+          <div class="chat-row">
+            <textarea id="cBody" placeholder="Say something…"></textarea>
+            <button class="btn" onclick="postComment()">Post</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue">scroll ↓</div>
+</header>
+
+<!-- ============ CHART 1: BEST NIGHTS ============ -->
+<section class="band bg-sec">
+  <div class="bg-img" style="background-image:url('hubble.webp')"></div>
+  <div class="wrap">
+  <div class="kicker">Chart · Sky Conditions</div>
+  <h2>Best nights to see the galaxy</h2>
+  <p class="lede">A nightly score from August to December 2026 based on how dark the moon is, the historical
+  odds of clear West Texas skies, and whether the bright <em>galactic core</em> is still above the horizon.</p>
+  <div class="panel" style="margin-top:26px">
+    <div style="position:relative; height:300px"><canvas id="skyChart"></canvas></div>
+    <div class="legend-inline">
+      <span><span class="swatch" style="background:var(--gold)"></span>Prime galaxy nights</span>
+      <span><span class="swatch" style="background:var(--violet)"></span>Good nights</span>
+      <span><span class="swatch" style="background:#3a4066"></span>Bright-moon / low-core nights</span>
+      <span><span class="swatch" style="background:var(--teal)"></span>New moon</span>
+    </div>
+    <div class="callout">
+      <b>Recommended window: Sept 9 – 14, 2026.</b> The Sept 10 new moon lands just as summer monsoon clouds
+      taper off, while the galactic core is still standing tall in the evening sky — the sweet spot. The
+      Aug 12 new moon is a strong runner-up (darkest core, slightly higher cloud risk). By the Oct 10 new
+      moon the skies are clearest of all, but the core sits low and sets early; November–December give
+      gorgeous dark nights but the Milky Way's core is gone until spring.
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ AVAILABILITY ============ -->
+<section class="band bg-sec">
+  <div class="bg-img" style="background-image:url('purple.jpg')"></div>
+  <div class="wrap">
+  <div class="kicker">Plan Together</div>
+  <h2>Who's available when</h2>
+  <p class="lede">Select your paintbrush and drag across the dates next to your name to mark the days you can
+  go. The overlap row shows where the whole group lines up.</p>
+
+  <div class="brush-bar">
+    <span class="brush-label" title="Paintbrush"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg></span>
+    <button class="brush on" data-mode="yes" onclick="setBrush('yes')"><i class="bd" style="background:rgba(63,185,106,0.9)"></i>Available</button>
+    <button class="brush" data-mode="maybe" onclick="setBrush('maybe')"><i class="bd" style="background:rgba(240,200,70,0.9)"></i>Maybe</button>
+    <button class="brush" data-mode="no" onclick="setBrush('no')"><i class="bd" style="background:rgba(224,85,111,0.9)"></i>Can't make it</button>
+    <button class="brush" data-mode="" onclick="setBrush('')">Erase</button>
+  </div>
+
+  <div class="panel timeline-panel">
+    <div class="av-grid" id="availBoard"></div>
+    <div class="tl-heatlegend">
+      <span><i style="background:rgba(63,185,106,0.88)"></i>Works for everyone</span>
+      <span><i style="background:rgba(240,200,70,0.85)"></i>Everyone but one</span>
+      <span><i style="background:rgba(224,85,111,0.72)"></i>Two or more can't make it</span>
+    </div>
+    <div class="tl-best" id="tlBest"></div>
+  </div>
+
+  <div class="add-person">
+    <input type="text" id="newPersonName" placeholder="New traveler's name" style="max-width:220px">
+    <button class="btn" onclick="addPerson()">+ Add person</button>
+  </div>
+</div></section>
+
+<!-- ============ ON THE GROUND ============ -->
+<section class="band"><div class="wrap">
+  <div class="kicker">On the ground</div>
+  <h2>Getting around &amp; where to stay</h2>
+  <p class="lede">Fly into Midland (MAF), grab a vehicle, and it's roughly a 4–5 hour drive south. A great
+  first move: everyone converges on a gateway spot for night one, then we caravan into the park together.</p>
+
+  <div class="ground-grid">
+    <div>
+      <h3 class="col-h">Getting there</h3>
+      <div class="tcard">
+        <div class="tthumb" style="background:linear-gradient(135deg,#5fb2ff,#3a6fd8)">✈️</div>
+        <div>
+          <h4>Midland Int'l Air &amp; Space Port (MAF)</h4>
+          <p>The closest airport — about 275 mi / 4½–5 hrs from the park.</p>
+          <a href="https://visitmidland.com/plan/transportation/" target="_blank" rel="noopener">Airport &amp; transport ↗</a>
+        </div>
+      </div>
+      <div class="tcard">
+        <div class="tthumb" style="background:linear-gradient(135deg,#f2c66d,#e8a94a)">🚙</div>
+        <div>
+          <h4>Rent an SUV</h4>
+          <p>Enterprise, Avis, Hertz &amp; National are at MAF. Grab something high-clearance for park roads.</p>
+          <a href="https://visitbigbend.com/vehicle-rental/" target="_blank" rel="noopener">Vehicle rentals ↗</a>
+        </div>
+      </div>
+      <div class="tcard">
+        <div class="tthumb" style="background:linear-gradient(135deg,#5fd2c4,#3a9d92)">🚐</div>
+        <div>
+          <h4>Shuttles &amp; local rides</h4>
+          <p>No public bus from Midland (private car ≈ $250–300). Terlingua-area shuttles help once you're near the park.</p>
+          <a href="https://visitbigbend.com/local-transport/" target="_blank" rel="noopener">Local transport ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="col-h">Where to stay</h3>
+      <div class="stay-grid">
+        <a class="scard" href="https://gagehotel.com/" target="_blank" rel="noopener">
+          <div class="sthumb" style="background:linear-gradient(135deg,#e8a94a,#a9552a)">🏨</div>
+          <div class="sbody">
+            <div class="meta2">Marathon · ~3 hr from MAF</div>
+            <h4>The Gage Hotel</h4>
+            <p>Historic 1927 adobe hotel, once named Texas's #1. Salt-water pool, 27-acre gardens, superb restaurant — the classic gateway, 42 mi from the park. <span class="lnk">Visit ↗</span></p>
+          </div>
+        </a>
+        <a class="scard" href="https://tpwd.texas.gov/state-parks/indian-lodge" target="_blank" rel="noopener">
+          <div class="sthumb" style="background:linear-gradient(135deg,#c9a06a,#7d5a34)">🏛️</div>
+          <div class="sbody">
+            <div class="meta2">Fort Davis · ~2½ hr from MAF</div>
+            <h4>Indian Lodge</h4>
+            <p>White-adobe lodge built by the CCC in the Davis Mountains, right by McDonald Observatory. Pool, trails, Black Bear Restaurant. <span class="lnk">Visit ↗</span></p>
+          </div>
+        </a>
+        <a class="scard" href="https://texastimetravel.com/directory/chinati-hot-springs/" target="_blank" rel="noopener">
+          <div class="sthumb" style="background:linear-gradient(135deg,#5fd2c4,#4a7fd8)">♨️</div>
+          <div class="sbody">
+            <div class="meta2">Near Presidio · off-grid</div>
+            <h4>Chinati Hot Springs</h4>
+            <p>Remote desert casitas around natural 90–100°F soaking pools. Dark skies, total quiet — an unforgettable soak after travel. <span class="lnk">Visit ↗</span></p>
+          </div>
+        </a>
+        <a class="scard" href="https://visitbigbend.com/places/" target="_blank" rel="noopener">
+          <div class="sthumb" style="background:linear-gradient(135deg,#8b7bd8,#c85a8a)">🌵</div>
+          <div class="sbody">
+            <div class="meta2">Terlingua · at the park's door</div>
+            <h4>Terlingua Ghost Town</h4>
+            <p>Stone-and-adobe casitas in a quirky old mining town at the west entrance — sunset porches and the best star-watching perches. <span class="lnk">Explore ↗</span></p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ MAP ============ -->
+<section class="band"><div class="wrap">
+  <div class="kicker">The lay of the land</div>
+  <h2>Midland &amp; the road south</h2>
+  <p class="lede">Get your bearings — pan and zoom to trace the drive from Midland down toward Big Bend.</p>
+  <div class="map-wrap">
+    <iframe title="Map of Midland, Texas" loading="lazy"
+      src="https://www.openstreetmap.org/export/embed.html?bbox=-102.30%2C31.82%2C-101.86%2C32.14&layer=mapnik&marker=31.9973%2C-102.0779"></iframe>
+  </div>
+  <div class="map-link"><a href="https://www.openstreetmap.org/?mlat=31.9973&mlon=-102.0779#map=11/31.9973/-102.0779" target="_blank" rel="noopener">View larger map on OpenStreetMap ↗</a></div>
+</div></section>
+
+
+<script>
+/* ---------------- Starfield ---------------- */
+(function(){
+  const c=document.getElementById('starfield'); if(!c) return;
+  const ctx=c.getContext('2d');
+  function resize(){c.width=innerWidth; c.height=c.parentElement.offsetHeight;}
+  resize();
+  const stars=[];
+  for(let i=0;i<520;i++){
+    const band=Math.random(); // cluster some toward the milky way diagonal
+    stars.push({
+      x:Math.random()*c.width, y:Math.random()*c.height,
+      r:Math.random()*1.5+0.2, a:Math.random()*0.6+0.3,
+      tw:Math.random()*0.02+0.003, ph:Math.random()*6.28,
+      hue: band>0.85 ? '#fff3d6' : (Math.random()>0.9?'#cfe0ff':'#ffffff')
+    });
+  }
+  let t=0;
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    for(const s of stars){
+      const a=s.a + Math.sin(t*s.tw*40 + s.ph)*0.18;
+      ctx.globalAlpha=Math.max(0,Math.min(1,a));
+      ctx.fillStyle=s.hue;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.283); ctx.fill();
+    }
+    ctx.globalAlpha=1; t++; requestAnimationFrame(draw);
+  }
+  draw();
+  addEventListener('resize',resize);
+})();
+
+/* ---------------- Sky chart data ---------------- */
+function buildSkyData(){
+  const newMoons=[ new Date(2026,7,12), new Date(2026,8,10), new Date(2026,9,10), new Date(2026,10,9), new Date(2026,11,8) ];
+  const SYN=29.53059, DAY=86400000;
+  const ref=newMoons[0].getTime();
+  const clearByMonth={7:0.55,8:0.66,9:0.78,10:0.82,11:0.80};   // Aug..Dec
+  const coreByMonth ={7:1.00,8:0.85,9:0.45,10:0.12,11:0.08};   // galactic-core presence
+  const labels=[], scores=[], colors=[], meta=[];
+  let d=new Date(2026,7,1); const end=new Date(2026,11,31);
+  while(d<=end){
+    const days=(d.getTime()-ref)/DAY;
+    const phase=2*Math.PI*(((days%SYN)+SYN)%SYN)/SYN;
+    const illum=(1-Math.cos(phase))/2;         // 0=new .. 1=full
+    const dark=1-illum;
+    const m=d.getMonth();
+    const clear=clearByMonth[m], core=coreByMonth[m];
+    const score=Math.round(dark*clear*core*100);
+    const isNew=newMoons.some(nm=>Math.abs((nm-d)/DAY)<0.5);
+    labels.push(new Date(d));
+    scores.push(score);
+    let col= score>=42 ? '#f2c66d' : score>=26 ? '#8b7bd8' : '#3a4066';
+    if(isNew) col='#5fd2c4';
+    colors.push(col);
+    meta.push({illumPct:Math.round(illum*100), clear:Math.round(clear*100), core:Math.round(core*100), isNew});
+    d.setDate(d.getDate()+1);
+  }
+  return {labels,scores,colors,meta};
+}
+
+window.addEventListener('load',function(){
+  if(typeof Chart==='undefined') return;
+  Chart.defaults.color='#9aa2c4';
+  Chart.defaults.font.family='Inter, sans-serif';
+
+  const sd=buildSkyData();
+  new Chart(document.getElementById('skyChart'),{
+    type:'bar',
+    data:{ labels:sd.labels,
+      datasets:[{ data:sd.scores, backgroundColor:sd.colors, borderWidth:0,
+        barPercentage:1.0, categoryPercentage:0.92 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{
+          title:(it)=> new Date(it[0].label).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}),
+          label:(it)=>{ const m=sd.meta[it.dataIndex];
+            return [ 'Viewing score: '+it.raw+'/100',
+                     'Moon lit: '+m.illumPct+'%',
+                     'Clear-sky odds: '+m.clear+'%',
+                     'Galactic core: '+m.core+'%'+(m.isNew?'  ·  NEW MOON':'') ]; }
+        }}},
+      scales:{
+        x:{ type:'category',
+          ticks:{ maxTicksLimit:11, autoSkip:true,
+            callback:function(v){ const dt=new Date(this.getLabelForValue(v));
+              return dt.getDate()===1?dt.toLocaleDateString('en-US',{month:'short'}):''; } },
+          grid:{display:false} },
+        y:{ beginAtZero:true, max:60, grid:{color:'rgba(150,160,210,0.10)'},
+          title:{display:true,text:'Galaxy viewing score',color:'#6b7299'} }
+      }
+    }
+  });
+});
+
+/* ---------------- Availability (shared via API) ---------------- */
+const PALETTE=['#5fb2ff','#f2c66d','#ff7e9d','#5fd2c4','#8b7bd8','#ff9f4a','#7ee787','#e06bff','#ffd24a','#4ad6a0'];
+const pcolor=(i)=>PALETTE[i%PALETTE.length];
+const DAYMS=86400000;
+const AV_START=new Date(2026,8,1), AV_END=new Date(2026,9,31);          // Sep 1 – Oct 31
+const AV_DAYS=Math.round((AV_END-AV_START)/DAYMS)+1;
+const fmt=(d)=> d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const dayDate=(idx)=> new Date(AV_START.getTime()+idx*DAYMS);
+
+let people=[];   // populated from the server
+const api={
+  async state(){ const r=await fetch('/api/state'); if(!r.ok) throw 0; return r.json(); },
+  async addComment(name,body){ const r=await fetch('/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,body})}); return r.json(); },
+  async addPerson(name){ const r=await fetch('/api/people',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}); return r.json(); },
+  async setSlots(id,slots){ await fetch('/api/people/'+id+'/slots',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({slots})}); }
+};
+function savepeople(){ store.set('ds_people_v3',people); }
+
+let brush='yes';
+function setBrush(m){ brush=m; document.querySelectorAll('.brush').forEach(b=>b.classList.toggle('on', b.dataset.mode===m)); }
+function cellStyle(state){
+  if(state==='yes')   return 'background:rgba(63,185,106,0.85)';
+  if(state==='maybe') return 'background:rgba(240,200,70,0.85)';
+  if(state==='no')    return 'background:rgba(224,85,111,0.78)';
+  return '';
+}
+
+function heatColor(out,total){
+  if(total===0) return 'transparent';
+  if(out<=0)    return 'rgba(63,185,106,0.88)';
+  if(out===1)   return 'rgba(240,200,70,0.85)';
+  return 'rgba(224,85,111,0.72)';
+}
+
+function renderBoard(){
+  const grid=document.getElementById('availBoard');
+  const best=document.getElementById('tlBest');
+  if(!grid) return;
+
+  // overlap counts
+  const total=people.length;
+  const counts=new Array(AV_DAYS).fill(0);
+  people.forEach(p=>{ for(let x=0;x<AV_DAYS;x++) if(p.slots[x]==='yes'||p.slots[x]==='maybe') counts[x]++; });
+  const maxC=Math.max(0,...counts);
+  let bestStart=-1,bestLen=0,curStart=-1,curLen=0;
+  for(let x=0;x<AV_DAYS;x++){ if(maxC>0&&counts[x]===maxC){ if(curStart<0){curStart=x;curLen=0;} curLen++; if(curLen>bestLen){bestLen=curLen;bestStart=curStart;} } else curStart=-1; }
+
+  // month segments + interior boundaries
+  const segs=[]; const bounds=[]; let cur=null;
+  for(let x=0;x<AV_DAYS;x++){ const d=dayDate(x), m=d.getMonth();
+    if(!cur||cur.m!==m){ if(cur) bounds.push(x); cur={m,label:d.toLocaleDateString('en-US',{month:'long'}),count:0}; segs.push(cur); }
+    cur.count++; }
+
+  let html='';
+  html+=`<div class="av-title">${segs.map(s=>s.label.slice(0,3)).join(' – ')} 2026</div>`;
+  // month-label row
+  html+='<div class="av-row"><div class="av-lbl"></div><div class="av-scale">';
+  segs.forEach((s,i)=> html+=`<div class="av-mo ${i>0?'mstart':''}" style="flex:${s.count}">${s.label}</div>`);
+  html+='</div></div>';
+  // day-number scale
+  html+='<div class="av-row"><div class="av-lbl"></div><div class="av-scale">';
+  for(let x=0;x<AV_DAYS;x++){ const d=dayDate(x).getDate();
+    html+=`<div class="av-num ${(d===1&&x>0)?'mstart':''}">${d}</div>`; }
+  html+='</div></div>';
+  // body: person rows + boundary dividers + highlight band
+  html+='<div class="av-body">';
+  people.forEach((p,i)=>{
+    html+=`<div class="av-row"><div class="av-lbl">${escapeHtml(p.name)}</div>`;
+    html+=`<div class="av-track" data-person="${i}">`;
+    for(let x=0;x<AV_DAYS;x++) html+=`<div class="av-cell ${(dayDate(x).getDate()===1&&x>0)?'mstart':''}" title="${fmt(dayDate(x))}" style="${cellStyle(p.slots[x])}"></div>`;
+    html+='</div></div>';
+  });
+  bounds.forEach(b=>{ html+=`<div class="av-div" style="left:calc(78px + (100% - 78px)*${b/AV_DAYS})"></div>`; });
+  if(bestStart>=0){ const l=bestStart/AV_DAYS, w=bestLen/AV_DAYS;
+    html+=`<div class="av-band" style="left:calc(78px + (100% - 78px)*${l});width:calc((100% - 78px)*${w})"></div>`; }
+  html+='</div>';
+  html+='<div class="av-spacer"></div>';
+  // overlap row
+  html+='<div class="av-row"><div class="av-lbl">Overlap</div><div class="av-track av-heat">';
+  for(let x=0;x<AV_DAYS;x++){ const c=counts[x], out=total-c;
+    html+=`<div class="av-cell" style="background:${heatColor(out,total)}" title="${fmt(dayDate(x))}: ${c}/${total} available${out>0?' · '+out+' out':''}"></div>`; }
+  html+='</div></div>';
+  grid.innerHTML=html;
+
+  // callout
+  if(bestStart>=0 && maxC>0){
+    const s=dayDate(bestStart), e=dayDate(bestStart+bestLen-1);
+    const who=people.filter(p=>{ for(let x=bestStart;x<bestStart+bestLen;x++){ if(p.slots[x]==='yes'||p.slots[x]==='maybe') return true; } return false; }).map(p=>p.name);
+    best.innerHTML=`<b>Best overlap: ${fmt(s)} – ${fmt(e)}</b> — ${maxC} of ${total} available`
+      +(bestLen>1?` for ${bestLen} days`:``)+`. ${who.join(', ')}. `
+      +(maxC===total?`Everyone lines up — lock it.`:`Nudging a day or two could get the whole group.`);
+  } else { best.innerHTML=`Drag across a row to mark availability — the overlap window shows up here.`; }
+
+  attachPaint();
+}
+
+let painting=false;
+function idxFromEvent(track,e){ const r=track.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width; return Math.max(0,Math.min(AV_DAYS-1,Math.floor(x*AV_DAYS))); }
+function paintAt(track,e){ const i=+track.dataset.person, d=idxFromEvent(track,e);
+  if(people[i].slots[d]!==brush){ people[i].slots[d]=brush; const cell=track.children[d]; if(cell) cell.setAttribute('style', cellStyle(brush)); } }
+function attachPaint(){
+  document.querySelectorAll('.av-track[data-person]').forEach(track=>{
+    track.addEventListener('pointerdown', e=>{ painting=true; try{track.setPointerCapture(e.pointerId);}catch(_){}; paintAt(track,e); });
+    track.addEventListener('pointermove', e=>{ if(painting) paintAt(track,e); });
+    track.addEventListener('pointerup',   ()=>{ if(painting){ painting=false; commitSlots(track); } });
+    track.addEventListener('pointercancel',()=>{ if(painting){ painting=false; commitSlots(track); } });
+  });
+}
+function commitSlots(track){
+  const i=+track.dataset.person, p=people[i];
+  renderBoard();
+  if(p && p.id!=null) api.setSlots(p.id, p.slots).catch(()=>{});
+}
+async function addPerson(){
+  const n=document.getElementById('newPersonName').value.trim();
+  if(!n) return;
+  document.getElementById('newPersonName').value='';
+  try{ await api.addPerson(n); await refreshState(); }catch(_){}
+}
+
+/* ---------------- Comments ---------------- */
+let comments=[];
+function timeAgo(ts){ const s=(Date.now()-ts)/1000;
+  if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+function renderComments(){
+  const c=document.getElementById('comments'); if(!c) return; c.innerHTML='';
+  comments.slice().reverse().forEach(m=>{
+    const el=document.createElement('div'); el.className='comment';
+    el.innerHTML=`<div class="c-head"><span class="c-name">${escapeHtml(m.name)}</span>
+      <span class="c-time">${timeAgo(m.ts)}</span></div>
+      <div class="c-body">${escapeHtml(m.body)}</div>`;
+    c.appendChild(el);
+  });
+}
+async function postComment(){
+  const n=document.getElementById('cName').value.trim()||'Anonymous';
+  const b=document.getElementById('cBody').value.trim();
+  if(!b) return;
+  document.getElementById('cBody').value='';
+  try{ await api.addComment(n,b); await refreshState(); }catch(_){}
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------------- Bootstrap + polling (shared state) ---------------- */
+async function refreshState(){
+  try{
+    const st=await api.state();
+    comments=st.comments||[];
+    if(!painting){ people=(st.people||[]).map(p=>({id:p.id,name:p.name,slots:p.slots})); renderBoard(); }
+    renderComments();
+  }catch(_){/* offline / not served by API — leave as is */}
+}
+refreshState();
+setInterval(()=>{ if(!painting) refreshState(); }, 4000);
+</script>
+</body>
+</html>
