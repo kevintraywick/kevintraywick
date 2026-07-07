@@ -54,6 +54,15 @@ async function makePgBackend(connectionString) {
       body TEXT NOT NULL,
       created_at TIMESTAMPTZ DEFAULT now()
     );
+    CREATE TABLE IF NOT EXISTS ideas (
+      id SERIAL PRIMARY KEY,
+      kind TEXT NOT NULL,
+      url TEXT,
+      title TEXT,
+      image TEXT,
+      added_by TEXT NOT NULL DEFAULT 'Anonymous',
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
   `);
   // seed once if empty
   const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM people');
@@ -83,7 +92,18 @@ async function makePgBackend(connectionString) {
     async addComment(name, body) {
       const r = await pool.query('INSERT INTO comments(name, body) VALUES ($1,$2) RETURNING id, name, body, EXTRACT(EPOCH FROM created_at)*1000 AS ts', [name, body]);
       const c = r.rows[0]; return { id: c.id, name: c.name, body: c.body, ts: Number(c.ts) };
-    }
+    },
+    async getIdeas() {
+      const r = await pool.query('SELECT id, kind, url, title, image, added_by, EXTRACT(EPOCH FROM created_at)*1000 AS ts FROM ideas ORDER BY created_at DESC');
+      return r.rows.map(i => ({ id: i.id, kind: i.kind, url: i.url, title: i.title, image: i.image, addedBy: i.added_by, ts: Number(i.ts) }));
+    },
+    async addIdea({ kind, url, title, image, addedBy }) {
+      const r = await pool.query(
+        'INSERT INTO ideas(kind, url, title, image, added_by) VALUES ($1,$2,$3,$4,$5) RETURNING id, kind, url, title, image, added_by, EXTRACT(EPOCH FROM created_at)*1000 AS ts',
+        [kind, url, title, image, addedBy]);
+      const i = r.rows[0]; return { id: i.id, kind: i.kind, url: i.url, title: i.title, image: i.image, addedBy: i.added_by, ts: Number(i.ts) };
+    },
+    async deleteIdea(id) { await pool.query('DELETE FROM ideas WHERE id=$1', [id]); }
   };
 }
 
@@ -98,17 +118,22 @@ function makeFileBackend() {
     let n = 0;
     data = {
       people: SEED_PEOPLE.map(p => ({ id: ++n, name: p.name, slots: p.slots })),
-      comments: SEED_COMMENTS.map(c => ({ id: ++n, name: c.name, body: c.body, ts: Date.now() }))
+      comments: SEED_COMMENTS.map(c => ({ id: ++n, name: c.name, body: c.body, ts: Date.now() })),
+      ideas: []
     };
     save();
   }
-  let seq = Math.max(0, ...[...data.people, ...data.comments].map(x => x.id));
+  if (!Array.isArray(data.ideas)) data.ideas = [];
+  let seq = Math.max(0, ...[...data.people, ...data.comments, ...data.ideas].map(x => x.id));
   return {
     async getPeople() { return data.people.slice().sort((a, b) => a.name.localeCompare(b.name)).map(p => ({ id: p.id, name: p.name, slots: normalizeSlots(p.slots) })); },
     async addPerson(name) { const p = { id: ++seq, name, slots: new Array(AV_DAYS).fill('') }; data.people.push(p); save(); return p; },
     async setSlots(id, slots) { const p = data.people.find(x => x.id === id); if (p) { p.slots = normalizeSlots(slots); save(); } },
     async getComments() { return data.comments.slice().sort((a, b) => a.ts - b.ts); },
-    async addComment(name, body) { const c = { id: ++seq, name, body, ts: Date.now() }; data.comments.push(c); save(); return c; }
+    async addComment(name, body) { const c = { id: ++seq, name, body, ts: Date.now() }; data.comments.push(c); save(); return c; },
+    async getIdeas() { return data.ideas.slice().sort((a, b) => b.ts - a.ts); },
+    async addIdea({ kind, url, title, image, addedBy }) { const i = { id: ++seq, kind, url: url || null, title: title || null, image: image || null, addedBy, ts: Date.now() }; data.ideas.push(i); save(); return i; },
+    async deleteIdea(id) { data.ideas = data.ideas.filter(x => x.id !== id); save(); }
   };
 }
 
