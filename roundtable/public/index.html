@@ -89,13 +89,15 @@
     font-size: .82rem; letter-spacing: .14em; text-transform: uppercase;
     color: var(--ink-soft); margin-bottom: .5rem;
   }
-  input[type=text], textarea {
+  input[type=text], input[type=email], input[type=tel], textarea {
     width: 100%; font: inherit; font-size: 1.1rem; color: var(--ink);
     background: #fffdf6; border: 1.5px solid var(--line); border-radius: 9px;
     padding: .7rem .85rem; outline: none;
   }
-  input[type=text]:focus, textarea:focus { border-color: var(--amber-deep); }
+  input[type=text]:focus, input[type=email]:focus, input[type=tel]:focus, textarea:focus { border-color: var(--amber-deep); }
   textarea { resize: vertical; min-height: 64px; font-size: 1rem; }
+  .contact { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
+  @media (max-width: 480px) { .contact { grid-template-columns: 1fr; } }
 
   .dates { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-top: .2rem; }
   .date-opt { position: relative; }
@@ -214,6 +216,13 @@
         <input type="text" id="name" name="name" autocomplete="name" placeholder="e.g. Kevin the Undaunted" maxlength="80">
 
         <div style="height:1.2rem"></div>
+        <label class="field-label">How should we contact you?</label>
+        <div class="contact">
+          <input type="email" id="email" name="email" autocomplete="email" placeholder="Email" maxlength="120">
+          <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="Phone number" maxlength="40">
+        </div>
+
+        <div style="height:1.2rem"></div>
         <label class="field-label">Which nights can you make? (pick all that work)</label>
         <div class="dates">
           <label class="date-opt"><input type="checkbox" name="dates" value="jul21"><span><span class="dow">Tuesday</span><span class="day">July 21</span></span></label>
@@ -241,10 +250,9 @@
 
     <div class="tabletalk">
       <div class="rule">⚔️</div>
-      <p>Nothing formal here — I'll kick things off with some quick intros, and then we'll
-      just go around the table: what campaigns everyone's running right now and how they're
-      going, who's been building terrain or painting minis, and what new campaigns are in
-      the works.</p>
+      <p>We'll do a round of intros, discuss our current campaigns, building terrain,
+      painting minis, 2014 vs. 2024, all the stuff and whatever else comes up.
+      I hope you can make it.</p>
       <p class="sig">— Kevin</p>
     </div>
 
@@ -253,8 +261,9 @@
       <div class="pt"><b>Know a DM who might be interested?</b><br>
       Send them the link.</div>
       <button class="share" id="share-btn" aria-label="Share this invitation">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 3v13"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <path d="M8.7 10.6l6.6-4.2M8.7 13.4l6.6 4.2"/>
         </svg>
         <span id="share-label">Share</span>
       </button>
@@ -279,9 +288,12 @@
     e.preventDefault();
     err.style.display = 'none';
     const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
     const dates = [...document.querySelectorAll('input[name=dates]:checked')].map(b => b.value);
     const note = document.getElementById('note').value.trim();
     if (!name) return showErr('Every adventurer needs a name — fill in yours above.');
+    if (!email && !phone) return showErr('Leave us an email or a phone number so we can reach you.');
     if (!dates.length) return showErr('Pick at least one night (or the last option).');
     const btn = form.querySelector('button');
     btn.disabled = true; btn.textContent = 'Sending the raven…';
@@ -289,7 +301,7 @@
       const r = await fetch('/api/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, dates, note })
+        body: JSON.stringify({ name, email, phone, dates, note })
       });
       if (!r.ok) throw new Error((await r.json()).error || 'Something went wrong.');
       document.getElementById('form-view').style.display = 'none';

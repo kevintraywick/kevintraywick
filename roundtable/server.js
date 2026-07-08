@@ -35,17 +35,19 @@ if (process.env.DATABASE_URL) {
       note TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT now()
     );
+    ALTER TABLE roundtable_rsvps ADD COLUMN IF NOT EXISTS email TEXT NOT NULL DEFAULT '';
+    ALTER TABLE roundtable_rsvps ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT '';
   `);
   store = {
-    async add(name, dates, note) {
+    async add(name, email, phone, dates, note) {
       await pool.query(
-        'INSERT INTO roundtable_rsvps (name, dates, note) VALUES ($1, $2, $3)',
-        [name, JSON.stringify(dates), note]
+        'INSERT INTO roundtable_rsvps (name, email, phone, dates, note) VALUES ($1, $2, $3, $4, $5)',
+        [name, email, phone, JSON.stringify(dates), note]
       );
     },
     async all() {
       const { rows } = await pool.query(
-        'SELECT id, name, dates, note, created_at FROM roundtable_rsvps ORDER BY created_at'
+        'SELECT id, name, email, phone, dates, note, created_at FROM roundtable_rsvps ORDER BY created_at'
       );
       return rows;
     }
@@ -54,9 +56,9 @@ if (process.env.DATABASE_URL) {
   const FILE = path.join(__dirname, 'rsvps.local.json');
   const read = () => (fs.existsSync(FILE) ? JSON.parse(fs.readFileSync(FILE, 'utf8')) : []);
   store = {
-    async add(name, dates, note) {
+    async add(name, email, phone, dates, note) {
       const rows = read();
-      rows.push({ id: rows.length + 1, name, dates, note, created_at: new Date().toISOString() });
+      rows.push({ id: rows.length + 1, name, email, phone, dates, note, created_at: new Date().toISOString() });
       fs.writeFileSync(FILE, JSON.stringify(rows, null, 2));
     },
     async all() {
@@ -66,13 +68,15 @@ if (process.env.DATABASE_URL) {
 }
 
 /* ---------------- discord ping (best-effort) ---------------- */
-async function notifyDiscord(name, dates, note) {
+async function notifyDiscord(name, email, phone, dates, note) {
   if (!DISCORD_BOT_TOKEN || !DISCORD_CHANNEL_ID) return;
   const nice = dates.map((d) => DATES[d] || d);
   let content = `🍻 **Roundtable RSVP** — **${name}**`;
   content += dates.includes('none')
     ? ` can't make any of the dates, but wants to get together.`
     : ` is in for: ${nice.join(' · ')}`;
+  const contact = [email && `📫 ${email}`, phone && `📞 ${phone}`].filter(Boolean).join(' · ');
+  if (contact) content += `\n${contact}`;
   if (note) content += `\n> ${note.slice(0, 400)}`;
   try {
     await fetch(`https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages`, {
@@ -97,13 +101,16 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 app.post('/api/rsvp', async (req, res) => {
   const name = String(req.body?.name || '').trim().slice(0, 80);
+  const email = String(req.body?.email || '').trim().slice(0, 120);
+  const phone = String(req.body?.phone || '').trim().slice(0, 40);
   const note = String(req.body?.note || '').trim().slice(0, 500);
   let dates = Array.isArray(req.body?.dates) ? req.body.dates.filter((d) => d in DATES) : [];
   if (dates.includes('none')) dates = ['none'];
   if (!name) return res.status(400).json({ error: 'Name is required.' });
+  if (!email && !phone) return res.status(400).json({ error: 'Leave an email or phone number so we can reach you.' });
   if (!dates.length) return res.status(400).json({ error: 'Pick at least one option.' });
-  await store.add(name, dates, note);
-  notifyDiscord(name, dates, note); // fire and forget
+  await store.add(name, email, phone, dates, note);
+  notifyDiscord(name, email, phone, dates, note); // fire and forget
   res.json({ ok: true });
 });
 
@@ -126,8 +133,8 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d8c9ae;padding
 th{background:#f3ead8}.tally span{display:inline-block;background:#f3ead8;border:1px solid #d8c9ae;border-radius:6px;padding:.2rem .6rem;margin:.15rem}</style>
 <h1>Roundtable RSVPs (${rows.length})</h1>
 <p class="tally">${Object.entries(DATES).map(([k, v]) => `<span><b>${counts[k]}</b> — ${esc(v)}</span>`).join(' ')}</p>
-<table><tr><th>Name</th><th>Dates</th><th>Note</th><th>When</th></tr>
-${rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${r.dates.map((d) => esc(DATES[d] || d)).join('<br>')}</td><td>${esc(r.note || '')}</td><td>${esc(String(r.created_at).slice(0, 16).replace('T', ' '))}</td></tr>`).join('')}
+<table><tr><th>Name</th><th>Contact</th><th>Dates</th><th>Note</th><th>When</th></tr>
+${rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${[r.email, r.phone].filter(Boolean).map(esc).join('<br>')}</td><td>${r.dates.map((d) => esc(DATES[d] || d)).join('<br>')}</td><td>${esc(r.note || '')}</td><td>${esc(String(r.created_at).slice(0, 16).replace('T', ' '))}</td></tr>`).join('')}
 </table>`);
 });
 
