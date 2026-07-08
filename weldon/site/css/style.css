@@ -319,6 +319,7 @@ table.data tr.subtotal td { background: var(--chip-swiss); font-weight: 600; }
 footer.site-foot { border-top: 1px solid var(--line); margin-top: 30px; }
 footer.site-foot .wrap { padding: 22px 20px 34px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--ink-3); }
 footer.site-foot .chiprail { margin-left: auto; }
+footer.site-foot .gate-hint { font-size: 15px; letter-spacing: 3px; margin-left: 4px; }
 
 .section-gap { height: 16px; }
 

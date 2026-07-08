@@ -187,6 +187,10 @@ const upload = multer({
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// current gate combination — sits behind the gate middleware, so only
+// visitors who already passed can read it (footer hint on every page)
+app.get('/api/gate-hint', (req, res) => res.json({ code: GATE_CODE }));
+
 /* expenses */
 app.get('/api/expenses', (req, res) => {
   res.json(db.prepare(`SELECT * FROM expenses ORDER BY date`).all());
