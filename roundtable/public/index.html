@@ -145,14 +145,9 @@
 
   /* ---------- table talk ---------- */
   .tabletalk { margin-top: 1.9rem; }
-  .tabletalk h3 {
-    font-family: 'Cinzel', serif; font-weight: 700; text-align: center;
-    font-size: 1.15rem; color: var(--ember); letter-spacing: .06em;
-  }
   .tabletalk p {
     margin-top: .95rem; font-size: 1.08rem; line-height: 1.62; color: var(--ink);
   }
-  .tabletalk p i { font-style: italic; }
   .tabletalk .sig {
     margin-top: .8rem; text-align: right; font-style: italic;
     font-size: 1.12rem; color: var(--ink-soft);
@@ -160,16 +155,33 @@
 
   /* ---------- pass it on ---------- */
   .pass {
-    margin-top: 1.9rem; display: flex; align-items: center; gap: 1.1rem;
+    margin-top: 1.9rem; display: flex; align-items: center; gap: 1rem;
     background: var(--parchment-deep); border: 1px solid var(--line);
-    border-radius: 12px; padding: .95rem 1.1rem;
+    border-radius: 12px; padding: .95rem 1rem;
   }
   .pass img {
     width: 104px; height: 104px; flex: none; border-radius: 8px;
     border: 1px solid var(--line); background: #fff;
   }
-  .pass .pt { font-size: 1.05rem; line-height: 1.5; color: var(--ink-soft); }
+  .pass .pt { flex: 1; text-align: center; font-size: 1.05rem; line-height: 1.5; color: var(--ink-soft); }
   .pass .pt b { color: var(--ember); }
+  .pass .share {
+    width: 104px; height: 104px; flex: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .2rem; border-radius: 8px; border: 1px solid var(--line);
+    background: #fff; color: var(--ember);
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: .78rem;
+    letter-spacing: .12em; text-transform: uppercase;
+    transition: transform .1s ease;
+  }
+  .pass .share:active { transform: scale(.96); }
+  .pass .share svg { width: 44px; height: 44px; }
+  @media (max-width: 480px) {
+    .pass { gap: .7rem; }
+    .pass img, .pass .share { width: 84px; height: 84px; }
+    .pass .share svg { width: 36px; height: 36px; }
+    .pass .pt { font-size: .95rem; }
+  }
 
   footer {
     text-align: center; padding: 0 1rem 2.2rem; color: #9a7f57; font-size: .95rem;
@@ -229,23 +241,23 @@
 
     <div class="tabletalk">
       <div class="rule">⚔️</div>
-      <h3>Table Talk</h3>
       <p>Nothing formal here — I'll kick things off with some quick intros, and then we'll
       just go around the table: what campaigns everyone's running right now and how they're
       going, who's been building terrain or painting minis, and what new campaigns are in
-      the works. I've got a couple brewing myself — <i>The Winter Witch</i>, and a four-part
-      Halloween run called <i>One Night at Broken Tavern</i>.</p>
-      <p>Come with something to share and room to steal: the encounter that worked better than
-      it had any right to, the mechanic that flopped, the table trick your players still talk
-      about. The goal is that everyone walks out with at least one thing they can't wait to
-      spring on their own table.</p>
+      the works.</p>
       <p class="sig">— Kevin</p>
     </div>
 
     <div class="pass">
       <img src="qr.png" alt="QR code for this invitation">
       <div class="pt"><b>Know a DM who might be interested?</b><br>
-      Pass it on — point their camera here.</div>
+      Send them the link.</div>
+      <button class="share" id="share-btn" aria-label="Share this invitation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v13"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
+        </svg>
+        <span id="share-label">Share</span>
+      </button>
     </div>
 
   </div>
@@ -297,6 +309,20 @@
   });
 
   function showErr(m) { err.textContent = m; err.style.display = 'block'; }
+
+  document.getElementById('share-btn').addEventListener('click', async () => {
+    const url = location.origin + '/';
+    if (navigator.share) {
+      try { await navigator.share({ title: "The Dungeon Masters' Roundtable", url }); } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        const l = document.getElementById('share-label');
+        l.textContent = 'Copied!';
+        setTimeout(() => { l.textContent = 'Share'; }, 1800);
+      } catch {}
+    }
+  });
 </script>
 </body>
 </html>
