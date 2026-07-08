@@ -143,29 +143,37 @@
   .success h2 { font-family: 'Cinzel', serif; color: var(--ember); margin-top: .4rem; }
   .success p { margin-top: .6rem; color: var(--ink-soft); font-size: 1.08rem; }
 
-  /* ---------- agenda ---------- */
-  .agenda { margin-top: 1.9rem; }
-  .agenda h3 {
+  /* ---------- table talk ---------- */
+  .tabletalk { margin-top: 1.9rem; }
+  .tabletalk h3 {
     font-family: 'Cinzel', serif; font-weight: 700; text-align: center;
     font-size: 1.15rem; color: var(--ember); letter-spacing: .06em;
   }
-  .agenda ol { list-style: none; margin-top: 1rem; }
-  .agenda li {
-    display: flex; align-items: baseline; gap: .75rem;
-    padding: .55rem .2rem; border-bottom: 1px dashed var(--line);
-    font-size: 1.08rem;
+  .tabletalk p {
+    margin-top: .95rem; font-size: 1.08rem; line-height: 1.62; color: var(--ink);
   }
-  .agenda li:last-child { border-bottom: none; }
-  .agenda .n {
-    font-family: 'Cinzel', serif; font-weight: 700; font-size: .85rem;
-    color: var(--amber-deep); min-width: 1.4rem; text-align: right;
+  .tabletalk p i { font-style: italic; }
+  .tabletalk .sig {
+    margin-top: .8rem; text-align: right; font-style: italic;
+    font-size: 1.12rem; color: var(--ink-soft);
   }
-  .agenda .t i { font-style: italic; }
+
+  /* ---------- pass it on ---------- */
+  .pass {
+    margin-top: 1.9rem; display: flex; align-items: center; gap: 1.1rem;
+    background: var(--parchment-deep); border: 1px solid var(--line);
+    border-radius: 12px; padding: .95rem 1.1rem;
+  }
+  .pass img {
+    width: 104px; height: 104px; flex: none; border-radius: 8px;
+    border: 1px solid var(--line); background: #fff;
+  }
+  .pass .pt { font-size: 1.05rem; line-height: 1.5; color: var(--ink-soft); }
+  .pass .pt b { color: var(--ember); }
 
   footer {
-    text-align: center; padding: 0 1rem 2.2rem; color: #9a7f57; font-size: .92rem;
+    text-align: center; padding: 0 1rem 2.2rem; color: #9a7f57; font-size: .95rem;
   }
-  footer a { color: #c9a25e; }
 </style>
 </head>
 <body>
@@ -219,24 +227,31 @@
       <p id="success-msg">We'll confirm the night once the ravens return.</p>
     </div>
 
-    <div class="agenda">
+    <div class="tabletalk">
       <div class="rule">⚔️</div>
-      <h3>On the Table That Night</h3>
-      <ol>
-        <li><span class="n">I.</span><span class="t">Intros</span></li>
-        <li><span class="n">II.</span><span class="t">Players</span></li>
-        <li><span class="n">III.</span><span class="t">What's been working</span></li>
-        <li><span class="n">IV.</span><span class="t">Minis &amp; terrain</span></li>
-        <li><span class="n">V.</span><span class="t">New campaigns</span></li>
-        <li><span class="n">VI.</span><span class="t"><i>The Winter Witch</i></span></li>
-        <li><span class="n">VII.</span><span class="t"><i>One Night at Broken Tavern</i></span></li>
-      </ol>
+      <h3>Table Talk</h3>
+      <p>Nothing formal here — I'll kick things off with some quick intros, and then we'll
+      just go around the table: what campaigns everyone's running right now and how they're
+      going, who's been building terrain or painting minis, and what new campaigns are in
+      the works. I've got a couple brewing myself — <i>The Winter Witch</i>, and a four-part
+      Halloween run called <i>One Night at Broken Tavern</i>.</p>
+      <p>Come with something to share and room to steal: the encounter that worked better than
+      it had any right to, the mechanic that flopped, the table trick your players still talk
+      about. The goal is that everyone walks out with at least one thing they can't wait to
+      spring on their own table.</p>
+      <p class="sig">— Kevin</p>
+    </div>
+
+    <div class="pass">
+      <img src="qr.png" alt="QR code for this invitation">
+      <div class="pt"><b>Know a DM who might be interested?</b><br>
+      Pass it on — point their camera here.</div>
     </div>
 
   </div>
 </div>
 
-<footer>A gathering of the <a href="https://blackmoor.up.railway.app">Blackmoor</a> circle &middot; Summer 2026</footer>
+<footer>See you at the table 🍺</footer>
 
 <script>
   const form = document.getElementById('rsvp');
