@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Dungeon Masters' Roundtable</title>
+<meta name="description" content="You're invited — an evening of beer and shop talk for Dungeon Masters.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2b1d12;
+    --ink-soft: #5a4630;
+    --parchment: #f5ead2;
+    --parchment-deep: #ecdcba;
+    --amber: #e8a33d;
+    --amber-deep: #b06d1a;
+    --ember: #8a2f2b;
+    --line: #d8c39a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Alegreya', Georgia, serif;
+    background: #221610;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    height: min(62vh, 560px);
+    min-height: 380px;
+    background: url('tavern.jpg') center 38% / cover no-repeat;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(20,12,8,.55) 0%, rgba(20,12,8,0) 35%, rgba(20,12,8,0) 55%, rgba(34,22,16,.92) 100%);
+  }
+  .hero-text {
+    position: absolute; top: 7%; left: 0; right: 0; z-index: 1;
+    text-align: center; padding: 0 1.2rem;
+    text-shadow: 0 2px 14px rgba(0,0,0,.75), 0 1px 3px rgba(0,0,0,.9);
+  }
+  .hero-text .kicker {
+    font-family: 'Cinzel', serif; font-weight: 500;
+    letter-spacing: .32em; text-transform: uppercase;
+    font-size: clamp(.68rem, 2.4vw, .85rem); color: var(--amber);
+  }
+  .hero-text h1 {
+    font-family: 'Cinzel', serif; font-weight: 700;
+    font-size: clamp(1.7rem, 6.4vw, 3.1rem);
+    line-height: 1.12; color: #f8efdc; margin-top: .45rem;
+  }
+
+  /* ---------- card ---------- */
+  .sheet {
+    position: relative; z-index: 2;
+    max-width: 660px;
+    margin: -84px auto 0;
+    padding: 0 14px 56px;
+  }
+  .card {
+    background: var(--parchment);
+    border-radius: 14px;
+    border: 1px solid rgba(120, 90, 40, .35);
+    box-shadow: 0 18px 50px rgba(0,0,0,.55);
+    padding: clamp(1.4rem, 4.5vw, 2.3rem);
+  }
+  .welcome { text-align: center; }
+  .welcome h2 {
+    font-family: 'Cinzel', serif; font-weight: 700;
+    font-size: clamp(1.25rem, 4.4vw, 1.6rem); color: var(--ember);
+  }
+  .welcome p {
+    margin-top: .7rem; font-size: 1.08rem; line-height: 1.55; color: var(--ink-soft);
+  }
+  .rule {
+    display: flex; align-items: center; gap: .8rem;
+    margin: 1.5rem 0; color: var(--amber-deep);
+  }
+  .rule::before, .rule::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+
+  /* ---------- form ---------- */
+  label.field-label {
+    display: block; font-family: 'Cinzel', serif; font-weight: 700;
+    font-size: .82rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: .5rem;
+  }
+  input[type=text], input[type=email], input[type=tel], textarea {
+    width: 100%; font: inherit; font-size: 1.1rem; color: var(--ink);
+    background: #fffdf6; border: 1.5px solid var(--line); border-radius: 9px;
+    padding: .7rem .85rem; outline: none;
+  }
+  input[type=text]:focus, input[type=email]:focus, input[type=tel]:focus, textarea:focus { border-color: var(--amber-deep); }
+  textarea { resize: vertical; min-height: 64px; font-size: 1rem; }
+  .contact { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
+  @media (max-width: 480px) { .contact { grid-template-columns: 1fr; } }
+
+  .dates { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-top: .2rem; }
+  .date-opt { position: relative; }
+  .date-opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .date-opt > span {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .1rem; text-align: center; cursor: pointer; user-select: none;
+    background: #fffdf6; border: 1.5px solid var(--line); border-radius: 10px;
+    padding: .8rem .5rem; transition: all .12s ease;
+  }
+  .date-opt .dow {
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: .78rem;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .date-opt .day { font-size: 1.28rem; font-weight: 700; }
+  .date-opt input:checked + span {
+    background: var(--amber); border-color: var(--amber-deep);
+    box-shadow: inset 0 0 0 1.5px var(--amber-deep);
+  }
+  .date-opt input:checked + span .dow { color: #5c3a08; }
+  .date-opt.none { grid-column: 1 / -1; }
+  .date-opt.none > span {
+    flex-direction: row; gap: .55rem; padding: .85rem .8rem;
+    font-size: 1rem; line-height: 1.3; font-style: italic; color: var(--ink-soft);
+  }
+  .date-opt.none input:checked + span { color: var(--ink); font-style: normal; }
+
+  .note-wrap { margin-top: 1.1rem; }
+  button.submit {
+    margin-top: 1.3rem; width: 100%; cursor: pointer;
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: 1.05rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: #fdf4e0; background: linear-gradient(180deg, #a03a34, var(--ember));
+    border: 1px solid #6d211d; border-radius: 10px; padding: .95rem;
+    box-shadow: 0 3px 10px rgba(110, 35, 30, .4);
+    transition: transform .1s ease;
+  }
+  button.submit:active { transform: scale(.985); }
+  button.submit:disabled { opacity: .6; cursor: default; }
+  .err { color: var(--ember); margin-top: .8rem; text-align: center; font-weight: 500; display: none; }
+
+  /* ---------- success ---------- */
+  .success { display: none; text-align: center; padding: .5rem 0; }
+  .success .big { font-size: 2.6rem; }
+  .success h2 { font-family: 'Cinzel', serif; color: var(--ember); margin-top: .4rem; }
+  .success p { margin-top: .6rem; color: var(--ink-soft); font-size: 1.08rem; }
+
+  /* ---------- table talk ---------- */
+  .tabletalk { margin-top: 1.9rem; }
+  .tabletalk p {
+    margin-top: .95rem; font-size: 1.08rem; line-height: 1.62; color: var(--ink);
+  }
+  .tabletalk .sig {
+    margin-top: .8rem; text-align: right; font-style: italic;
+    font-size: 1.12rem; color: var(--ink-soft);
+  }
+
+  /* ---------- pass it on ---------- */
+  .pass {
+    margin-top: 1.9rem; display: flex; align-items: center; gap: 1rem;
+    background: var(--parchment-deep); border: 1px solid var(--line);
+    border-radius: 12px; padding: .95rem 1rem;
+  }
+  .pass img {
+    width: 104px; height: 104px; flex: none; border-radius: 8px;
+    border: 1px solid var(--line); background: #fff;
+  }
+  .pass .pt { flex: 1; text-align: center; font-size: 1.05rem; line-height: 1.5; color: var(--ink-soft); }
+  .pass .pt b { color: var(--ember); }
+  .pass .share {
+    width: 104px; height: 104px; flex: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .2rem; border-radius: 8px; border: 1px solid var(--line);
+    background: #fff; color: var(--ember);
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: .78rem;
+    letter-spacing: .12em; text-transform: uppercase;
+    transition: transform .1s ease;
+  }
+  .pass .share:active { transform: scale(.96); }
+  .pass .share svg { width: 44px; height: 44px; }
+  @media (max-width: 480px) {
+    .pass { gap: .7rem; }
+    .pass img, .pass .share { width: 84px; height: 84px; }
+    .pass .share svg { width: 36px; height: 36px; }
+    .pass .pt { font-size: .95rem; }
+  }
+
+  footer {
+    text-align: center; padding: 0 1rem 2.2rem; color: #9a7f57; font-size: .95rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-text">
+    <div class="kicker">You are cordially summoned</div>
+    <h1>The Dungeon Masters'<br>Roundtable</h1>
+  </div>
+</div>
+
+<div class="sheet">
+  <div class="card">
+
+    <div id="form-view">
+      <div class="welcome">
+        <h2>Welcome, friend — pull up a chair.</h2>
+        <p>An evening of beer and shop talk for those of us who sit behind the screen.
+        Tell us who you are and which nights work, and we'll gather the party.</p>
+      </div>
+
+      <div class="rule">🍺</div>
+
+      <form id="rsvp">
+        <label class="field-label" for="name">Your name</label>
+        <input type="text" id="name" name="name" autocomplete="name" placeholder="e.g. Kevin the Undaunted" maxlength="80">
+
+        <div style="height:1.2rem"></div>
+        <label class="field-label">How should we contact you?</label>
+        <div class="contact">
+          <input type="email" id="email" name="email" autocomplete="email" placeholder="Email" maxlength="120">
+          <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="Phone number" maxlength="40">
+        </div>
+
+        <div style="height:1.2rem"></div>
+        <label class="field-label">Which nights can you make? (pick all that work)</label>
+        <div class="dates">
+          <label class="date-opt"><input type="checkbox" name="dates" value="jul21"><span><span class="dow">Tuesday</span><span class="day">July 21</span></span></label>
+          <label class="date-opt"><input type="checkbox" name="dates" value="jul23"><span><span class="dow">Thursday</span><span class="day">July 23</span></span></label>
+          <label class="date-opt"><input type="checkbox" name="dates" value="jul28"><span><span class="dow">Tuesday</span><span class="day">July 28</span></span></label>
+          <label class="date-opt"><input type="checkbox" name="dates" value="jul30"><span><span class="dow">Thursday</span><span class="day">July 30</span></span></label>
+          <label class="date-opt none"><input type="checkbox" name="dates" value="none"><span>🎲&nbsp; I can't make any of these — but I'd love to get together with you all</span></label>
+        </div>
+
+        <div class="note-wrap">
+          <label class="field-label" for="note">Anything to add? <span style="text-transform:none;letter-spacing:0;font-family:Alegreya,serif;font-weight:400">(optional)</span></label>
+          <textarea id="note" name="note" maxlength="500" placeholder="Bringing a friend, topic requests, favorite ale…"></textarea>
+        </div>
+
+        <button class="submit" type="submit">Save my seat</button>
+        <div class="err" id="err"></div>
+      </form>
+    </div>
+
+    <div class="success" id="success-view">
+      <div class="big">🍻</div>
+      <h2>Huzzah! You're on the list.</h2>
+      <p id="success-msg">We'll confirm the night once the ravens return.</p>
+    </div>
+
+    <div class="tabletalk">
+      <div class="rule">⚔️</div>
+      <p>We'll do a round of intros, discuss our current campaigns, building terrain,
+      painting minis, 2014 vs. 2024, all the stuff and whatever else comes up.
+      I hope you can make it.</p>
+      <p class="sig">— Kevin</p>
+    </div>
+
+    <div class="pass">
+      <img src="qr.png" alt="QR code for this invitation">
+      <div class="pt"><b>Know a DM who might be interested?</b></div>
+      <button class="share" id="share-btn" aria-label="Share this invitation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v13"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
+        </svg>
+        <span id="share-label">Share</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<footer>See you at the table 🍺</footer>
+
+<script>
+  const form = document.getElementById('rsvp');
+  const err = document.getElementById('err');
+  const noneBox = document.querySelector('input[value=none]');
+  const dateBoxes = [...document.querySelectorAll('input[name=dates]')].filter(b => b !== noneBox);
+
+  // "Can't make any" is exclusive with the concrete dates.
+  noneBox.addEventListener('change', () => { if (noneBox.checked) dateBoxes.forEach(b => b.checked = false); });
+  dateBoxes.forEach(b => b.addEventListener('change', () => { if (b.checked) noneBox.checked = false; }));
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.style.display = 'none';
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const dates = [...document.querySelectorAll('input[name=dates]:checked')].map(b => b.value);
+    const note = document.getElementById('note').value.trim();
+    if (!name) return showErr('Every adventurer needs a name — fill in yours above.');
+    if (!email && !phone) return showErr('Leave us an email or a phone number so we can reach you.');
+    if (!dates.length) return showErr('Pick at least one night (or the last option).');
+    const btn = form.querySelector('button');
+    btn.disabled = true; btn.textContent = 'Sending the raven…';
+    try {
+      const r = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, dates, note })
+      });
+      if (!r.ok) throw new Error((await r.json()).error || 'Something went wrong.');
+      document.getElementById('form-view').style.display = 'none';
+      if (dates.includes('none')) {
+        document.getElementById('success-msg').textContent =
+          "Noted, " + name + " — we'll find another night to raise a glass together.";
+      } else {
+        document.getElementById('success-msg').textContent =
+          "Thanks, " + name + " — we'll confirm the night once everyone has weighed in.";
+      }
+      document.getElementById('success-view').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (ex) {
+      showErr(ex.message);
+      btn.disabled = false; btn.textContent = 'Save my seat';
+    }
+  });
+
+  function showErr(m) { err.textContent = m; err.style.display = 'block'; }
+
+  document.getElementById('share-btn').addEventListener('click', async () => {
+    const url = location.origin + '/';
+    if (navigator.share) {
+      try { await navigator.share({ title: "The Dungeon Masters' Roundtable", url }); } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        const l = document.getElementById('share-label');
+        l.textContent = 'Copied!';
+        setTimeout(() => { l.textContent = 'Share'; }, 1800);
+      } catch {}
+    }
+  });
+</script>
+</body>
+</html>
