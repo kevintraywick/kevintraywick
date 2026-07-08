@@ -1,0 +1,17 @@
+{
+  "name": "roundtable",
+  "version": "1.0.0",
+  "description": "Dungeon Masters' Roundtable — invitation + RSVP (roundtable.kevintraywick.com)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
+  }
+}

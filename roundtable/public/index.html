@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Dungeon Masters' Roundtable</title>
+<meta name="description" content="You're invited — an evening of beer and shop talk for Dungeon Masters.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2b1d12;
+    --ink-soft: #5a4630;
+    --parchment: #f5ead2;
+    --parchment-deep: #ecdcba;
+    --amber: #e8a33d;
+    --amber-deep: #b06d1a;
+    --ember: #8a2f2b;
+    --line: #d8c39a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Alegreya', Georgia, serif;
+    background: #221610;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    height: min(62vh, 560px);
+    min-height: 380px;
+    background: url('tavern.jpg') center 38% / cover no-repeat;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(20,12,8,.55) 0%, rgba(20,12,8,0) 35%, rgba(20,12,8,0) 55%, rgba(34,22,16,.92) 100%);
+  }
+  .hero-text {
+    position: absolute; top: 7%; left: 0; right: 0; z-index: 1;
+    text-align: center; padding: 0 1.2rem;
+    text-shadow: 0 2px 14px rgba(0,0,0,.75), 0 1px 3px rgba(0,0,0,.9);
+  }
+  .hero-text .kicker {
+    font-family: 'Cinzel', serif; font-weight: 500;
+    letter-spacing: .32em; text-transform: uppercase;
+    font-size: clamp(.68rem, 2.4vw, .85rem); color: var(--amber);
+  }
+  .hero-text h1 {
+    font-family: 'Cinzel', serif; font-weight: 700;
+    font-size: clamp(1.7rem, 6.4vw, 3.1rem);
+    line-height: 1.12; color: #f8efdc; margin-top: .45rem;
+  }
+
+  /* ---------- card ---------- */
+  .sheet {
+    position: relative; z-index: 2;
+    max-width: 660px;
+    margin: -84px auto 0;
+    padding: 0 14px 56px;
+  }
+  .card {
+    background: var(--parchment);
+    border-radius: 14px;
+    border: 1px solid rgba(120, 90, 40, .35);
+    box-shadow: 0 18px 50px rgba(0,0,0,.55);
+    padding: clamp(1.4rem, 4.5vw, 2.3rem);
+  }
+  .welcome { text-align: center; }
+  .welcome h2 {
+    font-family: 'Cinzel', serif; font-weight: 700;
+    font-size: clamp(1.25rem, 4.4vw, 1.6rem); color: var(--ember);
+  }
+  .welcome p {
+    margin-top: .7rem; font-size: 1.08rem; line-height: 1.55; color: var(--ink-soft);
+  }
+  .rule {
+    display: flex; align-items: center; gap: .8rem;
+    margin: 1.5rem 0; color: var(--amber-deep);
+  }
+  .rule::before, .rule::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+
+  /* ---------- form ---------- */
+  label.field-label {
+    display: block; font-family: 'Cinzel', serif; font-weight: 700;
+    font-size: .82rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: .5rem;
+  }
+  input[type=text], textarea {
+    width: 100%; font: inherit; font-size: 1.1rem; color: var(--ink);
+    background: #fffdf6; border: 1.5px solid var(--line); border-radius: 9px;
+    padding: .7rem .85rem; outline: none;
+  }
+  input[type=text]:focus, textarea:focus { border-color: var(--amber-deep); }
+  textarea { resize: vertical; min-height: 64px; font-size: 1rem; }
+
+  .dates { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-top: .2rem; }
+  .date-opt { position: relative; }
+  .date-opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .date-opt > span {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .1rem; text-align: center; cursor: pointer; user-select: none;
+    background: #fffdf6; border: 1.5px solid var(--line); border-radius: 10px;
+    padding: .8rem .5rem; transition: all .12s ease;
+  }
+  .date-opt .dow {
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: .78rem;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .date-opt .day { font-size: 1.28rem; font-weight: 700; }
+  .date-opt input:checked + span {
+    background: var(--amber); border-color: var(--amber-deep);
+    box-shadow: inset 0 0 0 1.5px var(--amber-deep);
+  }
+  .date-opt input:checked + span .dow { color: #5c3a08; }
+  .date-opt.none { grid-column: 1 / -1; }
+  .date-opt.none > span {
+    flex-direction: row; gap: .55rem; padding: .85rem .8rem;
+    font-size: 1rem; line-height: 1.3; font-style: italic; color: var(--ink-soft);
+  }
+  .date-opt.none input:checked + span { color: var(--ink); font-style: normal; }
+
+  .note-wrap { margin-top: 1.1rem; }
+  button.submit {
+    margin-top: 1.3rem; width: 100%; cursor: pointer;
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: 1.05rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: #fdf4e0; background: linear-gradient(180deg, #a03a34, var(--ember));
+    border: 1px solid #6d211d; border-radius: 10px; padding: .95rem;
+    box-shadow: 0 3px 10px rgba(110, 35, 30, .4);
+    transition: transform .1s ease;
+  }
+  button.submit:active { transform: scale(.985); }
+  button.submit:disabled { opacity: .6; cursor: default; }
+  .err { color: var(--ember); margin-top: .8rem; text-align: center; font-weight: 500; display: none; }
+
+  /* ---------- success ---------- */
+  .success { display: none; text-align: center; padding: .5rem 0; }
+  .success .big { font-size: 2.6rem; }
+  .success h2 { font-family: 'Cinzel', serif; color: var(--ember); margin-top: .4rem; }
+  .success p { margin-top: .6rem; color: var(--ink-soft); font-size: 1.08rem; }
+
+  /* ---------- agenda ---------- */
+  .agenda { margin-top: 1.9rem; }
+  .agenda h3 {
+    font-family: 'Cinzel', serif; font-weight: 700; text-align: center;
+    font-size: 1.15rem; color: var(--ember); letter-spacing: .06em;
+  }
+  .agenda ol { list-style: none; margin-top: 1rem; }
+  .agenda li {
+    display: flex; align-items: baseline; gap: .75rem;
+    padding: .55rem .2rem; border-bottom: 1px dashed var(--line);
+    font-size: 1.08rem;
+  }
+  .agenda li:last-child { border-bottom: none; }
+  .agenda .n {
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: .85rem;
+    color: var(--amber-deep); min-width: 1.4rem; text-align: right;
+  }
+  .agenda .t i { font-style: italic; }
+
+  footer {
+    text-align: center; padding: 0 1rem 2.2rem; color: #9a7f57; font-size: .92rem;
+  }
+  footer a { color: #c9a25e; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-text">
+    <div class="kicker">You are cordially summoned</div>
+    <h1>The Dungeon Masters'<br>Roundtable</h1>
+  </div>
+</div>
+
+<div class="sheet">
+  <div class="card">
+
+    <div id="form-view">
+      <div class="welcome">
+        <h2>Welcome, friend — pull up a chair.</h2>
+        <p>An evening of beer and shop talk for those of us who sit behind the screen.
+        Tell us who you are and which nights work, and we'll gather the party.</p>
+      </div>
+
+      <div class="rule">🍺</div>
+
+      <form id="rsvp">
+        <label class="field-label" for="name">Your name</label>
+        <input type="text" id="name" name="name" autocomplete="name" placeholder="e.g. Kevin the Undaunted" maxlength="80">
+
+        <div style="height:1.2rem"></div>
+        <label class="field-label">Which nights can you make? (pick all that work)</label>
+        <div class="dates">
+          <label class="date-opt"><input type="checkbox" name="dates" value="jul21"><span><span class="dow">Tuesday</span><span class="day">July 21</span></span></label>
+          <label class="date-opt"><input type="checkbox" name="dates" value="jul23"><span><span class="dow">Thursday</span><span class="day">July 23</span></span></label>
+          <label class="date-opt"><input type="checkbox" name="dates" value="jul28"><span><span class="dow">Tuesday</span><span class="day">July 28</span></span></label>
+          <label class="date-opt"><input type="checkbox" name="dates" value="jul30"><span><span class="dow">Thursday</span><span class="day">July 30</span></span></label>
+          <label class="date-opt none"><input type="checkbox" name="dates" value="none"><span>🎲&nbsp; I can't make any of these — but I'd love to get together with you all</span></label>
+        </div>
+
+        <div class="note-wrap">
+          <label class="field-label" for="note">Anything to add? <span style="text-transform:none;letter-spacing:0;font-family:Alegreya,serif;font-weight:400">(optional)</span></label>
+          <textarea id="note" name="note" maxlength="500" placeholder="Bringing a friend, topic requests, favorite ale…"></textarea>
+        </div>
+
+        <button class="submit" type="submit">Save my seat</button>
+        <div class="err" id="err"></div>
+      </form>
+    </div>
+
+    <div class="success" id="success-view">
+      <div class="big">🍻</div>
+      <h2>Huzzah! You're on the list.</h2>
+      <p id="success-msg">We'll confirm the night once the ravens return.</p>
+    </div>
+
+    <div class="agenda">
+      <div class="rule">⚔️</div>
+      <h3>On the Table That Night</h3>
+      <ol>
+        <li><span class="n">I.</span><span class="t">Intros</span></li>
+        <li><span class="n">II.</span><span class="t">Players</span></li>
+        <li><span class="n">III.</span><span class="t">What's been working</span></li>
+        <li><span class="n">IV.</span><span class="t">Minis &amp; terrain</span></li>
+        <li><span class="n">V.</span><span class="t">New campaigns</span></li>
+        <li><span class="n">VI.</span><span class="t"><i>The Winter Witch</i></span></li>
+        <li><span class="n">VII.</span><span class="t"><i>One Night at Broken Tavern</i></span></li>
+      </ol>
+    </div>
+
+  </div>
+</div>
+
+<footer>A gathering of the <a href="https://blackmoor.up.railway.app">Blackmoor</a> circle &middot; Summer 2026</footer>
+
+<script>
+  const form = document.getElementById('rsvp');
+  const err = document.getElementById('err');
+  const noneBox = document.querySelector('input[value=none]');
+  const dateBoxes = [...document.querySelectorAll('input[name=dates]')].filter(b => b !== noneBox);
+
+  // "Can't make any" is exclusive with the concrete dates.
+  noneBox.addEventListener('change', () => { if (noneBox.checked) dateBoxes.forEach(b => b.checked = false); });
+  dateBoxes.forEach(b => b.addEventListener('change', () => { if (b.checked) noneBox.checked = false; }));
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.style.display = 'none';
+    const name = document.getElementById('name').value.trim();
+    const dates = [...document.querySelectorAll('input[name=dates]:checked')].map(b => b.value);
+    const note = document.getElementById('note').value.trim();
+    if (!name) return showErr('Every adventurer needs a name — fill in yours above.');
+    if (!dates.length) return showErr('Pick at least one night (or the last option).');
+    const btn = form.querySelector('button');
+    btn.disabled = true; btn.textContent = 'Sending the raven…';
+    try {
+      const r = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, dates, note })
+      });
+      if (!r.ok) throw new Error((await r.json()).error || 'Something went wrong.');
+      document.getElementById('form-view').style.display = 'none';
+      if (dates.includes('none')) {
+        document.getElementById('success-msg').textContent =
+          "Noted, " + name + " — we'll find another night to raise a glass together.";
+      } else {
+        document.getElementById('success-msg').textContent =
+          "Thanks, " + name + " — we'll confirm the night once everyone has weighed in.";
+      }
+      document.getElementById('success-view').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (ex) {
+      showErr(ex.message);
+      btn.disabled = false; btn.textContent = 'Save my seat';
+    }
+  });
+
+  function showErr(m) { err.textContent = m; err.style.display = 'block'; }
+</script>
+</body>
+</html>
