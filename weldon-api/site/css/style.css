@@ -246,6 +246,12 @@ table.data td.act { white-space: nowrap; text-align: right; }
 .rowbtn:hover { color: var(--accent-ink); border-color: var(--accent); }
 .rowbtn.danger:hover { color: var(--st-block); border-color: var(--st-block); }
 .rowbtn + .rowbtn { margin-left: 6px; }
+.chip-improve {
+  display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--accent-ink); border: 1px solid var(--accent);
+  border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 1px;
+  white-space: nowrap;
+}
 
 /* ---------- pills, badges, filters ---------- */
 

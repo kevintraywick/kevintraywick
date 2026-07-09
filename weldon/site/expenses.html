@@ -35,8 +35,8 @@
   <div class="dz-row" style="margin-bottom:16px">
     <div class="dz" id="dz-receipt">
       <input type="file" accept="image/*,.pdf" multiple>
-      <div class="dz-big">Drop a receipt here</div>
-      <div class="dz-small">photo or PDF — it gets read and added to the ledger automatically</div>
+      <div class="dz-big">Drop any receipt or bill here</div>
+      <div class="dz-small">purchases, utility bills, tax statements, insurance — it reads the document and files it in the right place</div>
     </div>
     <button class="addbtn" id="btn-add" aria-expanded="false" title="Add an entry by hand"><span>+</span></button>
   </div>
@@ -49,6 +49,9 @@
       <div class="control"><label for="mf-vendor">Vendor</label><input type="text" id="mf-vendor" required placeholder="Lowe's"></div>
       <div class="control"><label for="mf-desc">What</label><input type="text" id="mf-desc" required placeholder="exterior paint"></div>
       <div class="control"><label for="mf-cat">Category</label><select id="mf-cat" style="font:inherit;font-size:14px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)"></select></div>
+      <div class="control"><label for="mf-work">Type</label><select id="mf-work" style="font:inherit;font-size:14px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)">
+        <option value="">Not sure</option><option value="repair">Repair / upkeep</option><option value="improvement">Improvement</option>
+      </select></div>
       <div class="control"><label for="mf-amount">Amount ($)</label><input type="number" id="mf-amount" min="0" step="0.01" required placeholder="0.00"></div>
       <button class="btn" type="submit" id="mf-submit">Add to ledger</button>
       <button class="btn ghost" type="button" id="mf-cancel" style="display:none">Cancel</button>
@@ -106,6 +109,7 @@
       year: r.date ? +r.date.slice(0, 4) : null,
       date: r.date, vendor: r.vendor, description: r.description,
       amount: r.amount, category: r.category || 'Hardware & misc',
+      work: r.work || null,
       warranty: '', notes: r.source === 'receipt' ? 'from scanned receipt' : '',
     })));
   }
@@ -125,10 +129,19 @@
         say('Reading ' + f.name + '…');
         dzEl.classList.add('busy');
         try {
-          const entry = await WAPI.upload('/receipts', f);
-          serverRows.push(entry);
-          render();
-          say('Added: ' + entry.vendor + ' — ' + usd(entry.amount, 2) + ' (' + (entry.date || 'no date') + ')', 'ok');
+          const r = await WAPI.upload('/documents', f);
+          if (r.routed === 'expenses') {
+            serverRows.push(r.entry);
+            render();
+            say('Added: ' + r.entry.vendor + ' — ' + usd(r.entry.amount, 2) + ' (' + (r.entry.date || 'no date') + ')' +
+              (r.entry.work ? ' · filed as ' + r.entry.work : ''), 'ok');
+          } else {
+            const b = r.entry;
+            const isAnnual = b.utility === 'tax' || b.utility === 'insurance';
+            say('That’s ' + (isAnnual ? 'a ' + b.utility + ' statement' : 'a ' + b.utility + ' bill') +
+              ' — recorded on the Utilities page (' + (isAnnual ? b.month.slice(0, 4) + ' annual' : b.month) +
+              ', ' + usd(b.amount, 2) + ')', 'ok');
+          }
         } catch (e) {
           say('Could not read ' + f.name + ': ' + e.message, 'err');
         } finally { dzEl.classList.remove('busy'); }
@@ -153,6 +166,7 @@
       document.getElementById('mf-vendor').value = row.vendor;
       document.getElementById('mf-desc').value = row.description;
       catSel.value = row.category || 'Hardware & misc';
+      document.getElementById('mf-work').value = row.work || '';
       document.getElementById('mf-amount').value = row.amount;
     } else {
       manualForm.reset();
@@ -178,6 +192,7 @@
       vendor: document.getElementById('mf-vendor').value.trim(),
       description: document.getElementById('mf-desc').value.trim(),
       category: catSel.value,
+      work: document.getElementById('mf-work').value || null,
       amount: parseFloat(document.getElementById('mf-amount').value),
     };
     try {
@@ -200,7 +215,8 @@
 
   const cats = CATS;
   const filters = [{ key: 'all', label: 'Everything' },
-                   { key: 'y2026', label: '2026' }, { key: 'y2025', label: '2025' }, { key: 'y2024', label: '2024' }]
+                   { key: 'y2026', label: '2026' }, { key: 'y2025', label: '2025' }, { key: 'y2024', label: '2024' },
+                   { key: 'w:improvement', label: 'Improvements' }]
     .concat(cats.map(c => ({ key: 'c:' + c, label: c })));
   let active = 'all';
 
@@ -223,6 +239,7 @@
     if (active === 'y2024') rows = rows.filter(e => e.year === 2024);
     if (active === 'y2025') rows = rows.filter(e => e.year === 2025);
     if (active === 'y2026') rows = rows.filter(e => e.year === 2026);
+    if (active === 'w:improvement') rows = rows.filter(e => e.work === 'improvement');
     if (active.startsWith('c:')) rows = rows.filter(e => e.category === active.slice(2));
 
     const tbody = document.querySelector('#ledger tbody');
@@ -242,14 +259,17 @@
           '<button class="rowbtn danger" data-del="' + e.sid + '" title="Delete entry" aria-label="Delete entry">✕</button>'
         : '';
       html += '<tr><td class="num">' + fmtDate(e.date) + '</td><td>' + e.vendor + '</td><td>' + e.description +
+        (e.work === 'improvement' ? ' <span class="chip-improve">improvement</span>' : '') +
         (e.warranty ? ' <span class="prio">· warranty: ' + e.warranty + '</span>' : '') +
         (e.notes ? ' <span class="prio">· ' + e.notes + '</span>' : '') +
         '</td><td>' + e.category + '</td><td class="r num">' + usd(e.amount, 2) + '</td><td class="act">' + actions + '</td></tr>';
     });
     flushSubtotal();
     tbody.innerHTML = html;
+    const improvements = rows.filter(e => e.work === 'improvement').reduce((a, e) => a + e.amount, 0);
     document.getElementById('ledger-sub').textContent =
-      rows.length + ' receipts · ' + usd(total, 2) + ' total';
+      rows.length + ' receipts · ' + usd(total, 2) + ' total' +
+      (improvements ? ' · ' + usd(improvements, 2) + ' in improvements (adds to cost basis)' : '');
   }
 
   document.querySelector('#ledger tbody').addEventListener('click', async ev => {

@@ -4,8 +4,9 @@
  *   GET  /api/health
  *   GET  /api/expenses            POST /api/expenses          (manual entry)
  *   PATCH /api/expenses/:id       DELETE /api/expenses/:id
- *   POST /api/receipts            (multipart scan → Claude reads it → ledger entry)
- *   GET  /api/utility-bills       POST /api/utility-bills     (multipart scan → Claude reads it)
+ *   POST /api/documents           (multipart scan → Claude classifies receipt vs
+ *                                  utility bill vs tax vs insurance and files it)
+ *   GET  /api/utility-bills
  *   GET  /api/photos              POST /api/photos            (multipart, field `area`)
  *   GET  /api/maintenance         POST /api/maintenance       PATCH /api/maintenance/:id
  *
@@ -56,6 +57,10 @@ CREATE TABLE IF NOT EXISTS maintenance (
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
 `);
 
+// migration: work classification on expenses — 'repair' | 'improvement' | NULL (unknown).
+// Improvements add to the house's cost basis; repairs don't.
+try { db.exec(`ALTER TABLE expenses ADD COLUMN work TEXT`); } catch { /* already added */ }
+
 // one-time seed of the maintenance schedule from the record book
 if (!db.prepare(`SELECT v FROM meta WHERE k='seeded'`).get()) {
   const ins = db.prepare(`INSERT INTO maintenance (title, due_date, repeat, cost, done_at) VALUES (?,?,?,?,?)`);
@@ -97,32 +102,70 @@ async function readScan(filePath, prompt, schema) {
   return JSON.parse(text);
 }
 
-const RECEIPT_SCHEMA = {
+/* One classifier for every document dropped anywhere on the site. `kind`
+   decides where it's filed: receipts land in the expenses ledger, everything
+   else in utility_bills (tax/insurance as annual totals). */
+const DOC_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['date', 'vendor', 'description', 'amount', 'category'],
+  required: ['kind', 'receipt', 'bill'],
   properties: {
-    date: { type: ['string', 'null'], description: 'Purchase date as YYYY-MM-DD, or null if not visible' },
-    vendor: { type: 'string', description: 'Store or company name' },
-    description: { type: 'string', description: 'Short summary of what was bought, a few words' },
-    amount: { type: 'number', description: 'Grand total paid in dollars' },
-    category: {
+    kind: {
       type: 'string',
-      enum: ['Paint & finishes', 'Garden & grounds', 'Systems & appliances', 'Patio & furnishings', 'Hardware & misc'],
+      enum: ['receipt', 'utility-bill', 'tax', 'insurance'],
+      description: 'receipt = one-time purchase or service invoice; utility-bill = monthly electricity/water/internet bill; tax = property tax statement or notice; insurance = homeowner insurance premium notice or declarations page',
+    },
+    receipt: {
+      type: ['object', 'null'],
+      additionalProperties: false,
+      required: ['date', 'vendor', 'description', 'amount', 'category', 'work'],
+      description: 'Filled when kind=receipt, null otherwise',
+      properties: {
+        date: { type: ['string', 'null'], description: 'Purchase date as YYYY-MM-DD, or null if not visible' },
+        vendor: { type: 'string', description: 'Store or company name' },
+        description: { type: 'string', description: 'Short summary of what was bought, a few words' },
+        amount: { type: 'number', description: 'Grand total paid in dollars' },
+        category: {
+          type: 'string',
+          enum: ['Paint & finishes', 'Garden & grounds', 'Systems & appliances', 'Patio & furnishings', 'Hardware & misc'],
+        },
+        work: {
+          type: 'string',
+          enum: ['repair', 'improvement', 'unsure'],
+          description: 'improvement = adds value or extends the life of the house (new equipment or fixtures, renovation materials, plantings and landscape installs); repair = fixes or maintains what already exists (replacement parts, service calls, upkeep supplies); unsure if genuinely unclear',
+        },
+      },
+    },
+    bill: {
+      type: ['object', 'null'],
+      additionalProperties: false,
+      required: ['month', 'utility', 'amount'],
+      description: 'Filled when kind is utility-bill, tax, or insurance; null for receipts',
+      properties: {
+        month: {
+          type: 'string',
+          description: 'Billing month as YYYY-MM (use the service period, not the payment due date). For annual documents (property tax, insurance) use the first month of the tax/policy year.',
+        },
+        utility: { type: 'string', enum: ['electricity', 'water', 'internet', 'tax', 'insurance', 'other'] },
+        amount: {
+          type: 'number',
+          description: 'Total amount due, in dollars. For annual documents (property tax, insurance) use the full-year total, not an installment.',
+        },
+      },
     },
   },
 };
 
-const BILL_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['month', 'utility', 'amount'],
-  properties: {
-    month: { type: 'string', description: 'Billing month as YYYY-MM (use the service period, not the payment due date)' },
-    utility: { type: 'string', enum: ['electricity', 'water', 'internet', 'other'] },
-    amount: { type: 'number', description: 'Total amount due for the month, in dollars' },
-  },
-};
+const DOC_PROMPT =
+  'This document relates to a residential house in Martin, Tennessee. Classify it: ' +
+  'a one-time purchase receipt or service invoice (receipt); a monthly utility bill — electricity, ' +
+  'water/sewer/garbage counts as water, WK&T fiber or Spectrum counts as internet (utility-bill); ' +
+  'a property tax statement or notice, city or county (tax); or a homeowner\'s insurance premium ' +
+  'notice or declarations page (insurance). Fill in `receipt` for receipts and `bill` for everything ' +
+  'else. For tax and insurance set bill.utility to "tax" or "insurance" and use the ANNUAL total ' +
+  'and the first month of the tax/policy year. For receipts use the grand total, pick the closest ' +
+  'category, and judge `work`: improvement if it adds value or extends the house\'s life, repair if ' +
+  'it fixes or maintains what exists, unsure if unclear.';
 
 /* ---------- app ---------- */
 const app = express();
@@ -197,26 +240,28 @@ app.get('/api/expenses', (req, res) => {
   res.json(db.prepare(`SELECT * FROM expenses ORDER BY date`).all());
 });
 
+const workOrNull = w => (['repair', 'improvement'].includes(w) ? w : null);
+
 app.post('/api/expenses', (req, res) => {
-  const { date, vendor, description, amount, category } = req.body || {};
+  const { date, vendor, description, amount, category, work } = req.body || {};
   if (!vendor || !description || typeof amount !== 'number' || !(amount >= 0)) {
     return res.status(400).send('vendor, description and a non-negative amount are required');
   }
   const info = db.prepare(
-    `INSERT INTO expenses (date, vendor, description, amount, category, source) VALUES (?,?,?,?,?, 'manual')`
-  ).run(date || null, vendor, description, amount, category || null);
+    `INSERT INTO expenses (date, vendor, description, amount, category, work, source) VALUES (?,?,?,?,?,?, 'manual')`
+  ).run(date || null, vendor, description, amount, category || null, workOrNull(work));
   res.json(db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid));
 });
 
 app.patch('/api/expenses/:id', (req, res) => {
   const row = db.prepare(`SELECT * FROM expenses WHERE id=?`).get(req.params.id);
   if (!row) return res.status(404).send('no such entry');
-  const { date, vendor, description, amount, category } = req.body || {};
+  const { date, vendor, description, amount, category, work } = req.body || {};
   if (!vendor || !description || typeof amount !== 'number' || !(amount >= 0)) {
     return res.status(400).send('vendor, description and a non-negative amount are required');
   }
-  db.prepare(`UPDATE expenses SET date=?, vendor=?, description=?, amount=?, category=? WHERE id=?`)
-    .run(date || null, vendor, description, amount, category || null, row.id);
+  db.prepare(`UPDATE expenses SET date=?, vendor=?, description=?, amount=?, category=?, work=? WHERE id=?`)
+    .run(date || null, vendor, description, amount, category || null, workOrNull(work), row.id);
   res.json(db.prepare(`SELECT * FROM expenses WHERE id=?`).get(row.id));
 });
 
@@ -230,20 +275,28 @@ app.delete('/api/expenses/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/receipts', upload.single('file'), async (req, res) => {
+/* unified document intake — classifies the scan and files it in the right place */
+app.post('/api/documents', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).send('no file');
   try {
-    const parsed = await readScan(
-      req.file.path,
-      'This is a receipt for a purchase related to a residential house. Extract the purchase details. Use the grand total. Pick the closest category.',
-      RECEIPT_SCHEMA
-    );
-    const info = db.prepare(
-      `INSERT INTO expenses (date, vendor, description, amount, category, source, receipt_file) VALUES (?,?,?,?,?, 'receipt', ?)`
-    ).run(parsed.date, parsed.vendor, parsed.description, parsed.amount, parsed.category, req.file.filename);
-    res.json(db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid));
+    const parsed = await readScan(req.file.path, DOC_PROMPT, DOC_SCHEMA);
+    if (parsed.kind === 'receipt' && parsed.receipt) {
+      const r = parsed.receipt;
+      const info = db.prepare(
+        `INSERT INTO expenses (date, vendor, description, amount, category, work, source, receipt_file) VALUES (?,?,?,?,?,?, 'receipt', ?)`
+      ).run(r.date, r.vendor, r.description, r.amount, r.category, workOrNull(r.work), req.file.filename);
+      return res.json({ routed: 'expenses', entry: db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid) });
+    }
+    if (parsed.bill) {
+      const b = parsed.bill;
+      const info = db.prepare(
+        `INSERT INTO utility_bills (month, utility, amount, scan_file) VALUES (?,?,?,?)`
+      ).run(b.month, b.utility, b.amount, req.file.filename);
+      return res.json({ routed: 'utility-bills', entry: db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(info.lastInsertRowid) });
+    }
+    res.status(422).send('could not classify this document');
   } catch (e) {
-    console.error('receipt scan failed:', e.message);
+    console.error('document scan failed:', e.message);
     res.status(422).send(e.message);
   }
 });
@@ -251,24 +304,6 @@ app.post('/api/receipts', upload.single('file'), async (req, res) => {
 /* utility bills */
 app.get('/api/utility-bills', (req, res) => {
   res.json(db.prepare(`SELECT * FROM utility_bills ORDER BY month`).all());
-});
-
-app.post('/api/utility-bills', upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).send('no file');
-  try {
-    const parsed = await readScan(
-      req.file.path,
-      'This is a utility bill for a residential house in Martin, Tennessee. Identify which utility it is (electricity; water/sewer/garbage counts as water; WK&T fiber or Spectrum counts as internet), the billing month, and the total amount due.',
-      BILL_SCHEMA
-    );
-    const info = db.prepare(
-      `INSERT INTO utility_bills (month, utility, amount, scan_file) VALUES (?,?,?,?)`
-    ).run(parsed.month, parsed.utility, parsed.amount, req.file.filename);
-    res.json(db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(info.lastInsertRowid));
-  } catch (e) {
-    console.error('bill scan failed:', e.message);
-    res.status(422).send(e.message);
-  }
 });
 
 /* photos */
@@ -325,7 +360,7 @@ app.patch('/api/maintenance/:id', (req, res) => {
   let expense = null;
   if (task.cost) {
     const info = db.prepare(
-      `INSERT INTO expenses (date, vendor, description, amount, category, source) VALUES (?,?,?,?,?, 'maintenance')`
+      `INSERT INTO expenses (date, vendor, description, amount, category, work, source) VALUES (?,?,?,?,?, 'repair', 'maintenance')`
     ).run(today, 'Maintenance', task.title, task.cost, 'Systems & appliances');
     expense = db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid);
   }

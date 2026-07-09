@@ -29,7 +29,7 @@
   <div style="flex:1;min-width:260px">
     <p class="eyebrow"><i style="background:var(--chip-mint)"></i>Recurring bills</p>
     <h1>Utilities</h1>
-    <p>Electricity, water/sewer/garbage, and WK&amp;T fiber, month by month. Drop a scanned bill and it gets read and charted automatically.</p>
+    <p>Electricity, water/sewer/garbage, and WK&amp;T fiber, month by month — plus property tax and insurance amortized to a monthly number. Drop a scanned bill (or a tax statement or insurance premium notice) and it gets read and charted automatically.</p>
   </div>
   <div style="min-width:250px;flex:0 1 300px">
     <div class="dz" id="dz-bill">
@@ -47,7 +47,7 @@
       <div class="card-head">
         <div>
           <h2>Monthly bills</h2>
-          <p class="card-sub">gaps are months not yet entered — the drop zone fills them in</p>
+          <p class="card-sub">gaps are months not yet entered — the drop zone fills them in. Dashed lines are estimates; they turn solid once a real statement is recorded.</p>
         </div>
       </div>
       <div id="chart-utilities"></div>
@@ -67,7 +67,7 @@
       <div class="card-head"><div><h2>Scanned bills</h2><p class="card-sub">what the drop zone has read so far</p></div></div>
       <ul class="tasklist" id="scan-list"><li class="card-sub">Nothing scanned yet.</li></ul>
       <div class="section-gap"></div>
-      <p class="note"><strong>Also on the books:</strong> insurance runs about <span class="num">$1,100/yr</span>, and property tax is assessed on a $200,000 valuation — both tracked annually rather than monthly.</p>
+      <p class="note"><strong>Annual costs on the chart:</strong> property tax is estimated at <span class="num">~$1,646/yr</span> ($200,000 appraisal × 25% TN residential assessment × $3.293/$100 combined Martin + Weakley 2025 rate) and insurance at <span class="num">$1,100/yr</span> from the record book. Both are shown amortized per month, dashed until an actual statement is dropped in above.</p>
     </section>
   </div>
 </main>
@@ -89,6 +89,13 @@
   const { D, usd, SERIES_COLORS } = W;
   const MONTHS = W.MONTHS;
 
+  /* annual obligations, amortized to a monthly figure on the chart.
+     Estimates (dashed) until an actual statement is scanned in:
+     - tax: $200k appraisal × 25% TN residential assessment × $3.293/$100
+       (City of Martin $1.7478 + Weakley County $1.5452, 2025 rates)
+     - insurance: record book note "12 mo @ 1100/year" */
+  const ANNUAL_EST = { tax: 1646, insurance: W.INSURANCE_YR };
+
   let bills = [];
   const hasApi = await WAPI.health();
   if (hasApi) { try { bills = await WAPI.get('/utility-bills'); } catch {} }
@@ -105,10 +112,18 @@
         say('Reading ' + f.name + '…');
         dzEl.classList.add('busy');
         try {
-          const bill = await WAPI.upload('/utility-bills', f);
-          bills.push(bill);
-          render();
-          say('Recorded: ' + bill.utility + ', ' + bill.month + ' — ' + usd(bill.amount, 2), 'ok');
+          const r = await WAPI.upload('/documents', f);
+          if (r.routed === 'utility-bills') {
+            const bill = r.entry;
+            bills.push(bill);
+            render();
+            const isAnnual = bill.utility === 'tax' || bill.utility === 'insurance';
+            say('Recorded: ' + bill.utility + ', ' + (isAnnual ? bill.month.slice(0, 4) + ' annual' : bill.month) +
+              ' — ' + usd(bill.amount, 2), 'ok');
+          } else {
+            say('That looked like a one-time purchase — added to the Expenses ledger (' +
+              r.entry.vendor + ', ' + usd(r.entry.amount, 2) + ')', 'ok');
+          }
         } catch (e) {
           say('Could not read ' + f.name + ': ' + e.message, 'err');
         } finally { dzEl.classList.remove('busy'); }
@@ -142,7 +157,21 @@
       m++; if (m > 12) { m = 1; y++; }
     }
     const series = k => keys.map(ym => map[ym]?.[k] ?? null);
-    return { labels, keys, map, electricity: series('electricity'), water: series('water'), internet: series('internet') };
+
+    /* tax + insurance scans carry the annual total; month = start of the
+       tax/policy year. Amortize across each calendar year on the axis. */
+    const annual = {};
+    ['tax', 'insurance'].forEach(k => {
+      const byYear = {};
+      bills.forEach(b => { if (b.utility === k) byYear[b.month.slice(0, 4)] = b.amount; });
+      const hasActuals = Object.keys(byYear).length > 0;
+      annual[k] = {
+        hasActuals,
+        values: keys.map(ym => (byYear[ym.slice(0, 4)] ?? ANNUAL_EST[k]) / 12),
+      };
+    });
+
+    return { labels, keys, map, annual, electricity: series('electricity'), water: series('water'), internet: series('internet') };
   }
 
   function render() {
@@ -158,6 +187,10 @@
         { name: 'Electricity', color: SERIES_COLORS.electricity, values: c.electricity },
         { name: 'Water, sewer & garbage', color: SERIES_COLORS.water, values: c.water },
         { name: 'Internet', color: SERIES_COLORS.internet, values: c.internet },
+        { name: 'Property tax /mo' + (c.annual.tax.hasActuals ? '' : ' (est.)'),
+          color: SERIES_COLORS.tax, values: c.annual.tax.values, dash: !c.annual.tax.hasActuals },
+        { name: 'Insurance /mo' + (c.annual.insurance.hasActuals ? '' : ' (est.)'),
+          color: SERIES_COLORS.insurance, values: c.annual.insurance.values, dash: !c.annual.insurance.hasActuals },
       ],
     });
 
@@ -173,9 +206,12 @@
     document.querySelector('#util-table tbody').innerHTML = html;
 
     if (bills.length) {
-      document.getElementById('scan-list').innerHTML = bills.slice().reverse().map(b =>
-        '<li><span class="prio">' + b.month + '</span>' + b.utility +
-        '<span class="where num">' + usd(b.amount, 2) + '</span></li>').join('');
+      document.getElementById('scan-list').innerHTML = bills.slice().reverse().map(b => {
+        const isAnnual = b.utility === 'tax' || b.utility === 'insurance';
+        const when = isAnnual ? b.month.slice(0, 4) + ' annual' : b.month;
+        return '<li><span class="prio">' + when + '</span>' + b.utility +
+          '<span class="where num">' + usd(b.amount, 2) + '</span></li>';
+      }).join('');
     }
   }
   render();

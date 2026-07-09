@@ -42,7 +42,10 @@
     series.forEach(s => {
       const item = document.createElement('span');
       item.className = 'lg';
-      item.innerHTML = '<i style="background:' + s.color + '"></i>' + s.name;
+      const swatch = s.dash
+        ? 'background:repeating-linear-gradient(90deg,' + s.color + ' 0 5px,transparent 5px 8px)'
+        : 'background:' + s.color;
+      item.innerHTML = '<i style="' + swatch + '"></i>' + s.name;
       lg.appendChild(item);
     });
     container.appendChild(lg);
@@ -84,7 +87,11 @@
         d += (pen ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1) + ' ';
         pen = true;
       });
-      if (d) el('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
+      if (d) {
+        const attrs = { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
+        if (s.dash) attrs['stroke-dasharray'] = '7 6'; // dashed = estimate, not a recorded number
+        el('path', attrs, svg);
+      }
       // lone points (no neighbors) still visible
       s.values.forEach((v, i) => {
         if (v == null) return;
