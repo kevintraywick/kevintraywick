@@ -237,6 +237,15 @@ table.data tr:last-child td { border-bottom: none; }
 table.data td.r, table.data th.r { text-align: right; }
 table.data td.num { font-size: 13.5px; }
 table.data tr.subtotal td { background: var(--chip-swiss); font-weight: 600; }
+table.data td.act { white-space: nowrap; text-align: right; }
+.rowbtn {
+  font: inherit; font-size: 13px; line-height: 1; color: var(--ink-3);
+  background: none; border: 1px solid var(--line); border-radius: 6px;
+  width: 26px; height: 26px; cursor: pointer; padding: 0;
+}
+.rowbtn:hover { color: var(--accent-ink); border-color: var(--accent); }
+.rowbtn.danger:hover { color: var(--st-block); border-color: var(--st-block); }
+.rowbtn + .rowbtn { margin-left: 6px; }
 
 /* ---------- pills, badges, filters ---------- */
 

@@ -3,6 +3,7 @@
  * Serves the static site from ./site plus a small JSON API:
  *   GET  /api/health
  *   GET  /api/expenses            POST /api/expenses          (manual entry)
+ *   PATCH /api/expenses/:id       DELETE /api/expenses/:id
  *   POST /api/receipts            (multipart scan → Claude reads it → ledger entry)
  *   GET  /api/utility-bills       POST /api/utility-bills     (multipart scan → Claude reads it)
  *   GET  /api/photos              POST /api/photos            (multipart, field `area`)
@@ -205,6 +206,28 @@ app.post('/api/expenses', (req, res) => {
     `INSERT INTO expenses (date, vendor, description, amount, category, source) VALUES (?,?,?,?,?, 'manual')`
   ).run(date || null, vendor, description, amount, category || null);
   res.json(db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid));
+});
+
+app.patch('/api/expenses/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM expenses WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such entry');
+  const { date, vendor, description, amount, category } = req.body || {};
+  if (!vendor || !description || typeof amount !== 'number' || !(amount >= 0)) {
+    return res.status(400).send('vendor, description and a non-negative amount are required');
+  }
+  db.prepare(`UPDATE expenses SET date=?, vendor=?, description=?, amount=?, category=? WHERE id=?`)
+    .run(date || null, vendor, description, amount, category || null, row.id);
+  res.json(db.prepare(`SELECT * FROM expenses WHERE id=?`).get(row.id));
+});
+
+app.delete('/api/expenses/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM expenses WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such entry');
+  db.prepare(`DELETE FROM expenses WHERE id=?`).run(row.id);
+  if (row.receipt_file) {
+    try { fs.unlinkSync(path.join(UPLOADS, row.receipt_file)); } catch {}
+  }
+  res.json({ ok: true });
 });
 
 app.post('/api/receipts', upload.single('file'), async (req, res) => {

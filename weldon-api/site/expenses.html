@@ -43,14 +43,15 @@
   <div class="statusline" id="dz-status"></div>
 
   <section class="card" id="manual-card" style="display:none;margin-bottom:16px">
-    <h2>New entry</h2>
+    <h2 id="manual-title">New entry</h2>
     <form class="entryform" id="manual-form">
       <div class="control"><label for="mf-date">Date</label><input type="date" id="mf-date" required style="font:inherit;font-family:var(--font-mono);font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)"></div>
       <div class="control"><label for="mf-vendor">Vendor</label><input type="text" id="mf-vendor" required placeholder="Lowe's"></div>
       <div class="control"><label for="mf-desc">What</label><input type="text" id="mf-desc" required placeholder="exterior paint"></div>
       <div class="control"><label for="mf-cat">Category</label><select id="mf-cat" style="font:inherit;font-size:14px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)"></select></div>
       <div class="control"><label for="mf-amount">Amount ($)</label><input type="number" id="mf-amount" min="0" step="0.01" required placeholder="0.00"></div>
-      <button class="btn" type="submit">Add to ledger</button>
+      <button class="btn" type="submit" id="mf-submit">Add to ledger</button>
+      <button class="btn ghost" type="button" id="mf-cancel" style="display:none">Cancel</button>
     </form>
   </section>
 
@@ -67,7 +68,7 @@
       <div class="tablewrap">
         <table class="data" id="ledger">
           <thead>
-            <tr><th>Date</th><th>Vendor</th><th>What</th><th>Category</th><th class="r">Amount</th></tr>
+            <tr><th>Date</th><th>Vendor</th><th>What</th><th>Category</th><th class="r">Amount</th><th></th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -101,6 +102,7 @@
   }
   function allRows() {
     return D.expenses.concat(serverRows.map(r => ({
+      sid: r.id, // server-side id — these rows can be edited and deleted
       year: r.date ? +r.date.slice(0, 4) : null,
       date: r.date, vendor: r.vendor, description: r.description,
       amount: r.amount, category: r.category || 'Hardware & misc',
@@ -136,15 +138,40 @@
 
   const addBtn = document.getElementById('btn-add');
   const manualCard = document.getElementById('manual-card');
+  const manualForm = document.getElementById('manual-form');
   const catSel = document.getElementById('mf-cat');
   catSel.innerHTML = CATS.map(c => '<option>' + c + '</option>').join('');
-  addBtn.onclick = () => {
-    const show = manualCard.style.display === 'none';
+
+  let editingId = null; // server row id being edited, or null for a new entry
+  function setEditMode(row) {
+    editingId = row ? row.id : null;
+    document.getElementById('manual-title').textContent = row ? 'Edit entry' : 'New entry';
+    document.getElementById('mf-submit').textContent = row ? 'Save changes' : 'Add to ledger';
+    document.getElementById('mf-cancel').style.display = row ? '' : 'none';
+    if (row) {
+      document.getElementById('mf-date').value = row.date || '';
+      document.getElementById('mf-vendor').value = row.vendor;
+      document.getElementById('mf-desc').value = row.description;
+      catSel.value = row.category || 'Hardware & misc';
+      document.getElementById('mf-amount').value = row.amount;
+    } else {
+      manualForm.reset();
+    }
+  }
+  function showManualCard(show) {
     manualCard.style.display = show ? '' : 'none';
     addBtn.setAttribute('aria-expanded', show);
     if (show) document.getElementById('mf-date').focus();
+  }
+
+  addBtn.onclick = () => {
+    const show = manualCard.style.display === 'none';
+    if (show && editingId !== null) setEditMode(null);
+    showManualCard(show);
   };
-  document.getElementById('manual-form').onsubmit = async e => {
+  document.getElementById('mf-cancel').onclick = () => { setEditMode(null); showManualCard(false); };
+
+  manualForm.onsubmit = async e => {
     e.preventDefault();
     const body = {
       date: document.getElementById('mf-date').value,
@@ -154,11 +181,20 @@
       amount: parseFloat(document.getElementById('mf-amount').value),
     };
     try {
-      const entry = await WAPI.post('/expenses', body);
-      serverRows.push(entry);
-      render();
-      e.target.reset();
-      say('Added: ' + entry.vendor + ' — ' + usd(entry.amount, 2), 'ok');
+      if (editingId !== null) {
+        const entry = await WAPI.patch('/expenses/' + editingId, body);
+        serverRows = serverRows.map(r => r.id === entry.id ? entry : r);
+        setEditMode(null);
+        showManualCard(false);
+        render();
+        say('Updated: ' + entry.vendor + ' — ' + usd(entry.amount, 2), 'ok');
+      } else {
+        const entry = await WAPI.post('/expenses', body);
+        serverRows.push(entry);
+        render();
+        e.target.reset();
+        say('Added: ' + entry.vendor + ' — ' + usd(entry.amount, 2), 'ok');
+      }
     } catch (err) { say('Could not save: ' + err.message, 'err'); }
   };
 
@@ -192,23 +228,52 @@
     const tbody = document.querySelector('#ledger tbody');
     let html = '', lastMonth = '', monthSum = 0, total = 0;
     const flushSubtotal = () => {
-      if (lastMonth) html += '<tr class="subtotal"><td colspan="4">' + lastMonth + ' total</td><td class="r num">' + usd(monthSum, 2) + '</td></tr>';
+      if (lastMonth) html += '<tr class="subtotal"><td colspan="4">' + lastMonth + ' total</td><td class="r num">' + usd(monthSum, 2) + '</td><td></td></tr>';
       monthSum = 0;
     };
     rows.forEach(e => {
       const mo = e.date ? new Date(e.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Undated';
       if (mo !== lastMonth) { flushSubtotal(); lastMonth = mo; }
       monthSum += e.amount; total += e.amount;
+      // only server-backed rows (manual entries, scanned receipts) can be edited;
+      // rows from the record book seed are read-only
+      const actions = e.sid
+        ? '<button class="rowbtn" data-edit="' + e.sid + '" title="Edit entry" aria-label="Edit entry">✎</button>' +
+          '<button class="rowbtn danger" data-del="' + e.sid + '" title="Delete entry" aria-label="Delete entry">✕</button>'
+        : '';
       html += '<tr><td class="num">' + fmtDate(e.date) + '</td><td>' + e.vendor + '</td><td>' + e.description +
         (e.warranty ? ' <span class="prio">· warranty: ' + e.warranty + '</span>' : '') +
         (e.notes ? ' <span class="prio">· ' + e.notes + '</span>' : '') +
-        '</td><td>' + e.category + '</td><td class="r num">' + usd(e.amount, 2) + '</td></tr>';
+        '</td><td>' + e.category + '</td><td class="r num">' + usd(e.amount, 2) + '</td><td class="act">' + actions + '</td></tr>';
     });
     flushSubtotal();
     tbody.innerHTML = html;
     document.getElementById('ledger-sub').textContent =
       rows.length + ' receipts · ' + usd(total, 2) + ' total';
   }
+
+  document.querySelector('#ledger tbody').addEventListener('click', async ev => {
+    const btn = ev.target.closest('button[data-edit], button[data-del]');
+    if (!btn) return;
+    const id = +(btn.dataset.edit || btn.dataset.del);
+    const row = serverRows.find(r => r.id === id);
+    if (!row) return;
+    if (btn.dataset.edit) {
+      setEditMode(row);
+      showManualCard(true);
+      manualCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      if (!confirm('Delete ' + row.vendor + ' — ' + usd(row.amount, 2) + '?')) return;
+      try {
+        await WAPI.del('/expenses/' + id);
+        serverRows = serverRows.filter(r => r.id !== id);
+        if (editingId === id) { setEditMode(null); showManualCard(false); }
+        render();
+        say('Deleted: ' + row.vendor + ' — ' + usd(row.amount, 2), 'ok');
+      } catch (e) { say('Could not delete: ' + e.message, 'err'); }
+    }
+  });
+
   render();
 })();
 </script>

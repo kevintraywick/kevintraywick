@@ -39,6 +39,12 @@
     return r.json();
   }
 
+  async function del(path) {
+    const r = await fetch(BASE + path, { method: 'DELETE' });
+    if (!r.ok) throw new Error((await r.text()) || r.statusText);
+    return r.json();
+  }
+
   async function upload(path, file, extra) {
     const fd = new FormData();
     fd.append('file', file);
@@ -65,5 +71,5 @@
     });
   }
 
-  window.WAPI = { health, get, post, patch, upload, wireDropZone };
+  window.WAPI = { health, get, post, patch, del, upload, wireDropZone };
 })();
