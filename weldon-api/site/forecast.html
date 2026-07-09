@@ -26,34 +26,34 @@
 </div>
 
 <div class="page-title">
-  <p class="eyebrow"><i style="background:var(--chip-apricot)"></i>The next five years</p>
+  <p class="eyebrow"><i style="background:var(--chip-apricot)"></i>The next seven years</p>
   <h1>What will the house cost?</h1>
-  <p>Baseline running costs plus the big capital projects, each financed at a rate you set. Every number below is editable; the chart follows.</p>
+  <p>Everything recorded so far — utilities, taxes, insurance, and the expense ledger — flows in as history, then projects forward seven years with the capital projects financed on your terms. Solid lines are recorded months; dashed lines are the projection.</p>
 </div>
 
 <main class="wrap">
   <div class="grid">
     <section class="card span-12">
       <div class="card-head">
-        <div><h2>Projected annual cost, 2026–2030</h2><p class="card-sub">baseline plus financed capital payments</p></div>
+        <div><h2>Monthly cost, recorded and projected</h2><p class="card-sub" id="chart-sub">solid = recorded · dashed = projected · hover for any month</p></div>
       </div>
       <div id="chart-forecast"></div>
       <div class="section-gap"></div>
       <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
         <div class="tile">
-          <div class="t-label">Capital payment</div>
-          <div class="t-value" id="sum-cap">—</div>
-          <div class="t-note">per month while financing</div>
+          <div class="t-label">Baseline today</div>
+          <div class="t-value" id="sum-base">—</div>
+          <div class="t-note">utilities + tax + insurance + upkeep</div>
         </div>
         <div class="tile">
-          <div class="t-label">All-in monthly</div>
-          <div class="t-value" id="sum-allin">—</div>
-          <div class="t-note">baseline + capital, peak year</div>
+          <div class="t-label">Peak month</div>
+          <div class="t-value" id="sum-peak">—</div>
+          <div class="t-note" id="sum-peak-note">with capital projects running</div>
         </div>
         <div class="tile">
-          <div class="t-label">5-year total</div>
-          <div class="t-value" id="sum-5yr">—</div>
-          <div class="t-note">2026–2030, everything in</div>
+          <div class="t-label">7-year total</div>
+          <div class="t-value" id="sum-7yr">—</div>
+          <div class="t-note" id="sum-7yr-note">everything in</div>
         </div>
       </div>
       <div class="tablewrap">
@@ -65,8 +65,8 @@
     </section>
 
     <section class="card span-4">
-      <h2>Baseline, per year</h2>
-      <p class="card-sub">seeded from the record book — adjust as bills come in</p>
+      <h2>Baseline, per month</h2>
+      <p class="card-sub">seeded from what's actually been recorded — override any number and the projection follows</p>
       <div class="section-gap"></div>
       <div class="controls">
         <div class="control">
@@ -74,19 +74,19 @@
           <input type="number" id="in-util" min="0" step="5">
         </div>
         <div class="control">
-          <label for="in-ins">Insurance ($/year)</label>
-          <input type="number" id="in-ins" min="0" step="50" value="1100">
+          <label for="in-upkeep">One-time &amp; upkeep ($/month)</label>
+          <input type="number" id="in-upkeep" min="0" step="5">
         </div>
         <div class="control">
           <label for="in-tax">Property tax ($/year)</label>
-          <input type="number" id="in-tax" min="0" step="50" value="1250">
+          <input type="number" id="in-tax" min="0" step="50">
         </div>
         <div class="control">
-          <label for="in-maint">Upkeep &amp; projects ($/year)</label>
-          <input type="number" id="in-maint" min="0" step="100" value="1500">
+          <label for="in-ins">Insurance ($/year)</label>
+          <input type="number" id="in-ins" min="0" step="50">
         </div>
         <div class="control">
-          <label for="in-rate">Financing rate</label>
+          <label for="in-rate">Financing rate (all projects)</label>
           <div class="range-row">
             <input type="range" id="in-rate" min="0" max="15" step="0.5" value="7" aria-describedby="out-rate">
             <output class="range-out num" id="out-rate">7.0%</output>
@@ -94,24 +94,21 @@
         </div>
       </div>
       <div class="section-gap"></div>
-      <p class="card-sub">Property tax default is an estimate from the $200,000 valuation — set it from the actual bill.</p>
+      <p class="card-sub" id="seed-note"></p>
     </section>
 
     <section class="card span-8">
       <h2>Capital projects</h2>
-      <p class="card-sub">check what's happening and set the price · the big three are financed over 36 months</p>
+      <p class="card-sub">each one financed from the month you pick, over the years you pick, at the rate on the left</p>
       <div class="section-gap"></div>
       <div class="grid" id="capitems" style="gap:12px"></div>
       <div class="section-gap"></div>
       <h2 style="font-size:15px">Add another project</h2>
-      <form class="entryform" id="cap-form" style="grid-template-columns:1.4fr 1fr 1fr 1fr 1fr auto">
+      <form class="entryform" id="cap-form" style="grid-template-columns:1.6fr 1fr 1.1fr .9fr auto">
         <div class="control"><label for="cf-name">Project</label><input type="text" id="cf-name" required placeholder="Deck rebuild"></div>
         <div class="control"><label for="cf-cost">Cost ($)</label><input type="number" id="cf-cost" min="0" step="250" required placeholder="5000"></div>
-        <div class="control"><label for="cf-month">Starts</label>
-          <select id="cf-month" style="font:inherit;font-size:14px;padding:9px 8px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)"></select>
-        </div>
-        <div class="control"><label for="cf-year">Year</label><input type="number" id="cf-year" min="2026" max="2030" step="1" value="2026"></div>
-        <div class="control"><label for="cf-term">Months (≤120)</label><input type="number" id="cf-term" min="1" max="120" step="1" value="36"></div>
+        <div class="control"><label for="cf-start">Starts</label><input type="month" id="cf-start" style="font:inherit;font-family:var(--font-mono);font-size:13.5px;padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)"></div>
+        <div class="control"><label for="cf-years">Years</label><input type="number" id="cf-years" min="1" max="10" step="1" value="3"></div>
         <button class="btn" type="submit">Add to graph</button>
       </form>
       <div class="statusline" id="cap-status"></div>
@@ -130,141 +127,282 @@
 <script src="js/data.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/common.js"></script>
+<script src="js/api.js"></script>
 <script>
-(function () {
-  const { usd, SERIES_COLORS } = W;
-  const YEARS = [2026, 2027, 2028, 2029, 2030];
-  const MONTHS = W.MONTHS;
+(async function () {
+  const { D, usd, SERIES_COLORS, MONTHS } = W;
+  const INK = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#23262B';
+  const STORE_KEY = 'weldon-forecast-v2';
 
-  const items = [
-    { id: 'roof', name: 'Roof', cost: 12000, startY: 2026, startM: 1, term: 36, on: true, color: SERIES_COLORS.water, fixed: true },
-    { id: 'panel', name: 'Electrical panel', cost: 2500, startY: 2026, startM: 1, term: 36, on: true, color: SERIES_COLORS.internet, fixed: true },
-    { id: 'windows', name: 'Windows', cost: 9000, startY: 2027, startM: 1, term: 36, on: true, color: SERIES_COLORS.tax, fixed: true },
+  /* ---------- timeline: Jan 2024 through now + 7 years, monthly ----------
+     Months are absolute indices (year*12 + month0) so arithmetic is trivial. */
+  const nowD = new Date();
+  const NOW = nowD.getFullYear() * 12 + nowD.getMonth();
+  const START = 2024 * 12;
+  const END = NOW + 84;
+  const N = END - START + 1;
+  const iNow = NOW - START;
+  const yearOf = i => Math.floor((START + i) / 12);
+  const moOf = i => (START + i) % 12;
+  const absOf = ym => +ym.slice(0, 4) * 12 + (+ym.slice(5, 7) - 1); // 'YYYY-MM' -> abs
+  const ymOf = i => yearOf(i) + '-' + String(moOf(i) + 1).padStart(2, '0');
+  const labels = Array.from({ length: N }, (_, i) => MONTHS[moOf(i)] + ' ’' + String(yearOf(i)).slice(2));
+  const labelIndices = Array.from({ length: N }, (_, i) => i).filter(i => moOf(i) === 0);
+
+  /* ---------- recorded history ---------- */
+  let serverExpenses = [], bills = [];
+  if (await WAPI.health()) {
+    try {
+      [serverExpenses, bills] = await Promise.all([WAPI.get('/expenses'), WAPI.get('/utility-bills')]);
+    } catch {}
+  }
+
+  // utilities: seed series (2024–25) overlaid with scanned bills, summed per month
+  const utilByAbs = {}; // abs -> {electricity, water, internet}
+  ['electricity', 'water', 'internet'].forEach(k => {
+    D.utilities[k].forEach((v, i) => {
+      if (v == null) return;
+      const abs = START + i; // seed slots are Jan 2024 … Dec 2025
+      (utilByAbs[abs] = utilByAbs[abs] || {})[k] = v;
+    });
+  });
+  bills.forEach(b => {
+    if (!['electricity', 'water', 'internet'].includes(b.utility)) return;
+    const abs = absOf(b.month);
+    (utilByAbs[abs] = utilByAbs[abs] || {})[b.utility] = b.amount;
+  });
+  const utilHist = Array.from({ length: N }, (_, i) => {
+    if (i > iNow) return null;
+    const row = utilByAbs[START + i];
+    if (!row) return null;
+    return (row.electricity || 0) + (row.water || 0) + (row.internet || 0);
+  });
+
+  // annual actuals from scans
+  const taxByYear = {}, insByYear = {};
+  bills.forEach(b => {
+    if (b.utility === 'tax') taxByYear[+b.month.slice(0, 4)] = b.amount;
+    if (b.utility === 'insurance') insByYear[+b.month.slice(0, 4)] = b.amount;
+  });
+
+  // one-time spend: record-book ledger + everything collected on the expenses page
+  const oneByAbs = {};
+  D.expenses.concat(serverExpenses).forEach(e => {
+    if (!e.date) return;
+    const abs = absOf(e.date.slice(0, 7));
+    oneByAbs[abs] = (oneByAbs[abs] || 0) + e.amount;
+  });
+  const oneHist = Array.from({ length: N }, (_, i) =>
+    i > iNow ? null : Math.round((oneByAbs[START + i] || 0) * 100) / 100);
+
+  /* ---------- baselines seeded from the data ---------- */
+  const avg = a => { const v = a.filter(x => x != null); return v.length ? v.reduce((x, y) => x + y, 0) / v.length : 0; };
+  const utilSeed = Math.round(avg(utilHist.filter(v => v != null).slice(-12))) || Math.round(W.utilityRunRate().total);
+  const upkeepMonths = oneHist.slice(Math.max(0, iNow - 23), iNow + 1); // trailing 24 months
+  const upkeepSeed = Math.round(upkeepMonths.reduce((a, b) => a + (b || 0), 0) / Math.max(1, upkeepMonths.length));
+  const taxYears = Object.keys(taxByYear).sort();
+  const insYears = Object.keys(insByYear).sort();
+  const taxSeed = taxYears.length ? Math.round(taxByYear[taxYears[taxYears.length - 1]]) : 1646;
+  const insSeed = insYears.length ? Math.round(insByYear[insYears[insYears.length - 1]]) : W.INSURANCE_YR;
+  document.getElementById('seed-note').textContent =
+    'Utilities seeded from the trailing 12 recorded months; upkeep from the trailing 24 months of the expense ledger; ' +
+    (taxYears.length ? 'tax from the ' + taxYears[taxYears.length - 1] + ' statement' : 'tax estimated from the $200,000 valuation at 2025 Martin + Weakley rates') +
+    (insYears.length ? '; insurance from the ' + insYears[insYears.length - 1] + ' premium.' : '; insurance from the record book.');
+
+  /* ---------- capital projects + persisted settings ---------- */
+  const startDefault = ymOf(iNow + 2); // first of the month, two months out
+  let items = [
+    { id: 'roof', name: 'Roof', cost: 12000, start: startDefault, years: 3, on: true },
+    { id: 'panel', name: 'Electrical panel', cost: 2500, start: startDefault, years: 3, on: true },
+    { id: 'windows', name: 'Windows', cost: 9000, start: ymOf(iNow + 6), years: 3, on: true },
   ];
-  const EXTRA_COLORS = [SERIES_COLORS.insurance, SERIES_COLORS.maintenance, SERIES_COLORS.extra];
-  let extraUsed = 0;
+  const PROJECT_COLORS = [SERIES_COLORS.water, SERIES_COLORS.internet, '#B0486E', '#5E8A72', '#7A6A9E', '#946A3D'];
+  let settings = { util: utilSeed, upkeep: upkeepSeed, tax: taxSeed, ins: insSeed, rate: 7 };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (saved) {
+      settings = { ...settings, ...saved.settings };
+      if (Array.isArray(saved.items) && saved.items.length) items = saved.items;
+    }
+  } catch {}
 
-  const utilIn = document.getElementById('in-util');
-  utilIn.value = Math.round(W.utilityRunRate().total);
+  const $ = id => document.getElementById(id);
+  $('in-util').value = settings.util;
+  $('in-upkeep').value = settings.upkeep;
+  $('in-tax').value = settings.tax;
+  $('in-ins').value = settings.ins;
+  $('in-rate').value = settings.rate;
+  $('cf-start').value = startDefault;
+  $('cf-start').min = ymOf(iNow);
 
-  document.getElementById('cf-month').innerHTML =
-    MONTHS.map((m, i) => '<option value="' + (i + 1) + '"' + (i === 0 ? ' selected' : '') + '>' + m + '</option>').join('');
-
-  const capWrap = document.getElementById('capitems');
+  const capWrap = $('capitems');
   function buildControls() {
     capWrap.innerHTML = '';
-    items.forEach(c => {
+    items.forEach((c, idx) => {
+      const color = PROJECT_COLORS[idx % PROJECT_COLORS.length];
+      c.color = color;
       const div = document.createElement('div');
       div.className = 'capitem span-4';
-      const startLabel = c.fixed
-        ? '<div class="control"><label for="start-' + c.id + '">Starts</label><input type="number" id="start-' + c.id + '" min="2026" max="2030" step="1" value="' + c.startY + '"></div>'
-        : '<div class="control"><label>Starts</label><div style="font-family:var(--font-mono);font-size:13.5px;padding:9px 0">' + MONTHS[c.startM - 1] + ' ' + c.startY + ' · ' + c.term + ' mo</div></div>';
       div.innerHTML =
         '<div class="ci-head"><input type="checkbox" id="on-' + c.id + '"' + (c.on ? ' checked' : '') + '>' +
-        '<label for="on-' + c.id + '" style="color:' + c.color + '">' + c.name + '</label></div>' +
+        '<label for="on-' + c.id + '" style="color:' + color + '">' + c.name + '</label></div>' +
         '<div class="ci-fields">' +
         '<div class="control"><label for="cost-' + c.id + '">Cost ($)</label><input type="number" id="cost-' + c.id + '" min="0" step="250" value="' + c.cost + '"></div>' +
-        startLabel +
+        '<div class="control"><label for="start-' + c.id + '">Starts</label><input type="month" id="start-' + c.id + '" value="' + c.start + '" style="font:inherit;font-family:var(--font-mono);font-size:12.5px;padding:8px 6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink);width:100%"></div>' +
+        '<div class="control"><label for="years-' + c.id + '">Years</label><input type="number" id="years-' + c.id + '" min="1" max="10" step="1" value="' + c.years + '"></div>' +
         '</div><p class="ci-pay" id="pay-' + c.id + '"></p>';
       capWrap.appendChild(div);
     });
     capWrap.querySelectorAll('input').forEach(i => i.addEventListener('input', recalc));
   }
 
-  document.getElementById('cap-form').onsubmit = e => {
+  $('cap-form').onsubmit = e => {
     e.preventDefault();
-    if (extraUsed >= EXTRA_COLORS.length) {
-      document.getElementById('cap-status').textContent = 'Three custom projects is the limit for now — uncheck one of the others first.';
-      return;
-    }
-    const name = document.getElementById('cf-name').value.trim();
     items.push({
-      id: 'x' + Date.now(),
-      name,
-      cost: parseFloat(document.getElementById('cf-cost').value) || 0,
-      startY: Math.min(2030, Math.max(2026, parseInt(document.getElementById('cf-year').value) || 2026)),
-      startM: parseInt(document.getElementById('cf-month').value) || 1,
-      term: Math.min(120, Math.max(1, parseInt(document.getElementById('cf-term').value) || 36)),
+      id: 'x' + items.length + '-' + Date.now(),
+      name: $('cf-name').value.trim(),
+      cost: parseFloat($('cf-cost').value) || 0,
+      start: $('cf-start').value || startDefault,
+      years: Math.min(10, Math.max(1, parseInt($('cf-years').value) || 3)),
       on: true,
-      color: EXTRA_COLORS[extraUsed++],
-      fixed: false,
     });
     e.target.reset();
-    document.getElementById('cf-year').value = 2026;
-    document.getElementById('cf-term').value = 36;
-    document.getElementById('cap-status').textContent = '';
+    $('cf-start').value = startDefault;
+    $('cf-years').value = 3;
+    $('cap-status').textContent = '';
     buildControls();
     recalc();
   };
 
-  const chartEl = document.getElementById('chart-forecast');
-
-  function monthsInYear(year, c) {
-    const m0 = (c.startY - 2026) * 12 + (c.startM - 1);
-    const m1 = m0 + c.term;
-    const y0 = (year - 2026) * 12, y1 = y0 + 12;
-    return Math.max(0, Math.min(m1, y1) - Math.max(m0, y0));
-  }
+  const chartEl = $('chart-forecast');
 
   function recalc() {
-    const rate = parseFloat(document.getElementById('in-rate').value) || 0;
-    document.getElementById('out-rate').textContent = rate.toFixed(1) + '%';
-    const baseYr = (parseFloat(utilIn.value) || 0) * 12 +
-      (parseFloat(document.getElementById('in-ins').value) || 0) +
-      (parseFloat(document.getElementById('in-tax').value) || 0) +
-      (parseFloat(document.getElementById('in-maint').value) || 0);
+    const rate = parseFloat($('in-rate').value) || 0;
+    $('out-rate').textContent = rate.toFixed(1) + '%';
+    const utilBase = parseFloat($('in-util').value) || 0;
+    const upkeepBase = parseFloat($('in-upkeep').value) || 0;
+    const taxYr = parseFloat($('in-tax').value) || 0;
+    const insYr = parseFloat($('in-ins').value) || 0;
 
+    // per-month projected values for each concept (null in the history region)
+    const proj = base => Array.from({ length: N }, (_, i) =>
+      i < iNow ? null : (i === iNow ? null : base)); // projection starts the month after now
+    const seam = (hist, projArr) => { // connect the dash to the last recorded point
+      const p = projArr.slice();
+      p[iNow] = hist ? (hist[iNow] != null ? hist[iNow] : p[iNow + 1]) : p[iNow + 1];
+      return p;
+    };
+
+    const taxLine = Array.from({ length: N }, (_, i) => (taxByYear[yearOf(i)] ?? taxYr) / 12);
+    const insLine = Array.from({ length: N }, (_, i) => (insByYear[yearOf(i)] ?? insYr) / 12);
+    const taxHist = taxLine.map((v, i) => i <= iNow ? v : null);
+    const insHist = insLine.map((v, i) => i <= iNow ? v : null);
+    const taxProj = taxLine.map((v, i) => i >= iNow ? v : null);
+    const insProj = insLine.map((v, i) => i >= iNow ? v : null);
+    const utilProj = seam(utilHist, proj(utilBase));
+    const oneProj = seam(oneHist, proj(upkeepBase));
+
+    // capital projects: financed payment inside [start, start + years*12)
     const active = items.map(c => {
-      const on = document.getElementById('on-' + c.id)?.checked ?? c.on;
-      const cost = parseFloat(document.getElementById('cost-' + c.id)?.value) || 0;
-      if (c.fixed) {
-        c.startY = Math.min(2030, Math.max(2026, parseInt(document.getElementById('start-' + c.id)?.value) || c.startY));
-      }
-      c.on = on; c.cost = cost;
-      const monthly = on && cost > 0 ? W.pmt(cost, rate, c.term) : 0;
-      const payEl = document.getElementById('pay-' + c.id);
-      if (payEl) payEl.innerHTML = on && cost > 0
-        ? '<span class="num">' + usd(monthly, 0) + '/mo</span> for ' + c.term + ' mo · total <span class="num">' + usd(monthly * c.term, 0) + '</span>'
+      c.on = $('on-' + c.id)?.checked ?? c.on;
+      c.cost = parseFloat($('cost-' + c.id)?.value) || c.cost || 0;
+      c.start = $('start-' + c.id)?.value || c.start;
+      c.years = Math.min(10, Math.max(1, parseInt($('years-' + c.id)?.value) || c.years));
+      const term = c.years * 12;
+      const monthly = c.on && c.cost > 0 ? W.pmt(c.cost, rate, term) : 0;
+      const s0 = absOf(c.start) - START, s1 = s0 + term;
+      const values = Array.from({ length: N }, (_, i) => (monthly && i >= s0 && i < s1 ? monthly : null));
+      const payEl = $('pay-' + c.id);
+      if (payEl) payEl.innerHTML = monthly
+        ? '<span class="num">' + usd(monthly, 0) + '/mo</span> for ' + c.years + ' yr · total <span class="num">' + usd(monthly * term, 0) + '</span>' +
+          (rate ? ' (<span class="num">' + usd(monthly * term - c.cost, 0) + '</span> interest)' : '')
         : 'not included';
-      return { ...c, monthly };
+      return { ...c, monthly, values, s0, s1 };
     });
 
-    const series = [{ name: 'Baseline', color: SERIES_COLORS.electricity, values: YEARS.map(() => Math.round(baseYr)) }]
-      .concat(active.map(c => ({
-        name: c.name, color: c.color,
-        values: YEARS.map(y => Math.round(c.monthly * monthsInYear(y, c))),
-      })));
+    // effective monthly total: recorded history, then projection with capital payments
+    const capAt = i => active.reduce((a, c) => a + (c.values[i] || 0), 0);
+    const totalEff = Array.from({ length: N }, (_, i) => {
+      const base = i <= iNow
+        ? (utilHist[i] || 0) + (oneHist[i] || 0) + taxLine[i] + insLine[i]
+        : utilBase + upkeepBase + taxLine[i] + insLine[i];
+      return base + capAt(i);
+    });
+    const totalHist = totalEff.map((v, i) => i <= iNow ? v : null);
+    const totalProj = totalEff.map((v, i) => i >= iNow ? v : null);
+
+    const series = [
+      { name: 'Total', color: INK, values: totalHist, width: 2.5 },
+      { name: 'Total', color: INK, values: totalProj, width: 2.5, dash: true },
+      { name: 'Utilities', color: SERIES_COLORS.electricity, values: utilHist },
+      { name: 'Utilities', color: SERIES_COLORS.electricity, values: utilProj, dash: true },
+      { name: 'One-time & upkeep', color: SERIES_COLORS.maintenance, values: oneHist },
+      { name: 'One-time & upkeep', color: SERIES_COLORS.maintenance, values: oneProj, dash: true },
+      { name: 'Property tax', color: SERIES_COLORS.tax, values: taxHist },
+      { name: 'Property tax', color: SERIES_COLORS.tax, values: taxProj, dash: true },
+      { name: 'Insurance', color: SERIES_COLORS.insurance, values: insHist },
+      { name: 'Insurance', color: SERIES_COLORS.insurance, values: insProj, dash: true },
+    ].concat(active.filter(c => c.monthly).map(c => ({
+      name: c.name, color: c.color, values: c.values, dash: true,
+    })));
 
     chartEl.innerHTML = '';
     chartEl.className = '';
-    WCharts.barChart(chartEl, {
-      labels: YEARS.map(String),
+    WCharts.lineChart(chartEl, {
+      labels, labelIndices,
       series,
-      height: 250,
-      ariaLabel: 'Projected annual cost 2026 to 2030',
+      height: 320,
+      hideNullRows: true,
+      ariaLabel: 'Monthly house cost, recorded 2024 to today and projected seven years out',
     });
 
-    document.getElementById('forecast-thead').innerHTML =
-      '<tr><th>Year</th>' + series.map(s => '<th class="r">' + s.name + '</th>').join('') + '<th class="r">Total</th></tr>';
-    let html = '', grand = 0;
-    YEARS.forEach((y, i) => {
-      const vals = series.map(s => s.values[i]);
-      const tot = vals.reduce((a, b) => a + b, 0);
-      grand += tot;
-      html += '<tr><td class="num">' + y + '</td>' +
-        vals.map(v => '<td class="r num">' + (v ? usd(v, 0) : '—') + '</td>').join('') +
+    /* tiles */
+    const baseNow = utilBase + upkeepBase + taxYr / 12 + insYr / 12;
+    $('sum-base').textContent = usd(baseNow, 0) + '/mo';
+    let peakI = iNow + 1;
+    for (let i = iNow + 1; i < N; i++) if (totalEff[i] > totalEff[peakI]) peakI = i;
+    $('sum-peak').textContent = usd(totalEff[peakI], 0) + '/mo';
+    $('sum-peak-note').textContent = 'in ' + MONTHS[moOf(peakI)] + ' ' + yearOf(peakI);
+    const total7 = totalEff.slice(iNow + 1).reduce((a, b) => a + b, 0);
+    $('sum-7yr').textContent = usd(total7, 0);
+    $('sum-7yr-note').textContent = ymOf(iNow + 1).slice(0, 4) + '–' + yearOf(N - 1) + ', everything in';
+
+    /* annual rollup table */
+    const years = [];
+    for (let y = yearOf(0); y <= yearOf(N - 1); y++) years.push(y);
+    const sumYear = (arr, y) => {
+      let s = 0;
+      for (let i = 0; i < N; i++) if (yearOf(i) === y && arr[i] != null) s += arr[i];
+      return s;
+    };
+    const utilEff = utilHist.map((v, i) => i <= iNow ? (v || 0) : utilBase);
+    const oneEff = oneHist.map((v, i) => i <= iNow ? (v || 0) : upkeepBase);
+    const capEff = Array.from({ length: N }, (_, i) => capAt(i));
+    $('forecast-thead').innerHTML =
+      '<tr><th>Year</th><th class="r">Utilities</th><th class="r">Property tax</th><th class="r">Insurance</th>' +
+      '<th class="r">One-time &amp; upkeep</th><th class="r">Capital payments</th><th class="r">Total</th></tr>';
+    let html = '';
+    years.forEach(y => {
+      const nowYear = yearOf(iNow);
+      const tag = y < nowYear ? ' <span class="prio">recorded</span>'
+        : y === nowYear ? ' <span class="prio">recorded + projected</span>'
+        : ' <span class="prio">projected</span>';
+      const cells = [sumYear(utilEff, y), sumYear(taxLine, y), sumYear(insLine, y), sumYear(oneEff, y), sumYear(capEff, y)];
+      const tot = cells.reduce((a, b) => a + b, 0);
+      html += '<tr><td class="num">' + y + tag + '</td>' +
+        cells.map(v => '<td class="r num">' + (v ? usd(v, 0) : '—') + '</td>').join('') +
         '<td class="r num"><strong>' + usd(tot, 0) + '</strong></td></tr>';
     });
     document.querySelector('#forecast-table tbody').innerHTML = html;
 
-    const capMonthly = active.reduce((a, c) => a + c.monthly, 0);
-    document.getElementById('sum-cap').textContent = usd(capMonthly, 0) + '/mo';
-    const peak = Math.max(...YEARS.map((y, i) => series.slice(1).reduce((a, s) => a + s.values[i], 0)));
-    document.getElementById('sum-allin').textContent = usd(baseYr / 12 + peak / 12, 0) + '/mo';
-    document.getElementById('sum-5yr').textContent = usd(grand, 0);
+    /* persist */
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      settings: { util: utilBase, upkeep: upkeepBase, tax: taxYr, ins: insYr, rate },
+      items: items.map(({ id, name, cost, start, years: yrs, on }) => ({ id, name, cost, start, years: yrs, on })),
+    }));
   }
 
-  document.querySelectorAll('.controls input, #in-rate').forEach(i => i.addEventListener('input', recalc));
+  document.querySelectorAll('.controls input').forEach(i => i.addEventListener('input', recalc));
   buildControls();
   recalc();
 })();

@@ -297,7 +297,7 @@ table.data td.act { white-space: nowrap; text-align: right; }
 .capitem .ci-head { display: flex; align-items: center; gap: 9px; }
 .capitem .ci-head input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); }
 .capitem .ci-head label { font-weight: 600; font-size: 14.5px; }
-.capitem .ci-fields { display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px; margin-top: 10px; }
+.capitem .ci-fields { display: grid; grid-template-columns: 1fr 1.2fr .7fr; gap: 8px; margin-top: 10px; }
 .capitem .ci-fields input { min-width: 0; }
 .capitem .ci-pay { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
 .capitem .ci-pay .num { color: var(--ink); }

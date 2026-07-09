@@ -39,7 +39,10 @@
   function legend(container, series) {
     const lg = document.createElement('div');
     lg.className = 'legend';
+    const seen = {};
     series.forEach(s => {
+      if (seen[s.name]) return; // history + projection pairs share a name — one legend entry
+      seen[s.name] = true;
       const item = document.createElement('span');
       item.className = 'lg';
       const swatch = s.dash
@@ -73,10 +76,16 @@
       el('text', { x: P.l - 7, y: y(gv) + 4, 'text-anchor': 'end', class: 'axis-label' }, svg)
         .textContent = axisFmt(gv);
     }
-    // x labels — sparse
-    const step = Math.max(1, Math.ceil(n / 8));
-    for (let i = 0; i < n; i += step) {
-      el('text', { x: x(i), y: H - 7, 'text-anchor': 'middle', class: 'axis-label' }, svg).textContent = opts.labels[i];
+    // x labels — sparse by default, or exactly the indices the caller asks for
+    if (opts.labelIndices) {
+      opts.labelIndices.forEach(i => {
+        el('text', { x: x(i), y: H - 7, 'text-anchor': 'middle', class: 'axis-label' }, svg).textContent = opts.labels[i];
+      });
+    } else {
+      const step = Math.max(1, Math.ceil(n / 8));
+      for (let i = 0; i < n; i += step) {
+        el('text', { x: x(i), y: H - 7, 'text-anchor': 'middle', class: 'axis-label' }, svg).textContent = opts.labels[i];
+      }
     }
 
     // lines (2px), gaps where data is null
@@ -88,7 +97,7 @@
         pen = true;
       });
       if (d) {
-        const attrs = { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
+        const attrs = { d, fill: 'none', stroke: s.color, 'stroke-width': s.width || 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
         if (s.dash) attrs['stroke-dasharray'] = '7 6'; // dashed = estimate, not a recorded number
         el('path', attrs, svg);
       }
@@ -115,12 +124,18 @@
     function show(i) {
       cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('opacity', 1);
       let rows = '';
+      const seen = {};
       opts.series.forEach((s, si) => {
         const v = s.values[i];
         if (v == null) { dots[si].setAttribute('opacity', 0); }
         else { dots[si].setAttribute('cx', x(i)); dots[si].setAttribute('cy', y(v)); dots[si].setAttribute('opacity', 1); }
-        rows += '<div class="tt-row"><i style="background:' + s.color + '"></i>' + s.name +
-          '<span class="v">' + fmtUSD(v, 2) + '</span></div>';
+        if (v == null && opts.hideNullRows) return;
+        if (seen[s.name]) return; // history/projection pairs: show whichever has a value first
+        if (v != null || !opts.series.some(o => o !== s && o.name === s.name && o.values[i] != null)) {
+          seen[s.name] = true;
+          rows += '<div class="tt-row"><i style="background:' + s.color + '"></i>' + s.name +
+            '<span class="v">' + fmtUSD(v, 2) + '</span></div>';
+        }
       });
       tt.innerHTML = '<div class="tt-title">' + opts.labels[i] + '</div>' + rows;
       const rect = svg.getBoundingClientRect();
