@@ -4,7 +4,7 @@ import Footer from './components/Footer'
 import pastryImg from './assets/pastry.png'
 import bubbleImg from './assets/bubble.png'
 import penImg from './assets/pen.png'
-import andImg from './assets/and.png'
+import blackmoorSplashImg from './assets/blackmoor-splash.webp'
 import windImg from './assets/windstorm.png'
 import backWorkoutImg from './assets/back-workout-card.png'
 import { FeedOverlay } from './components/FeedOverlay'
@@ -49,7 +49,7 @@ function Homepage() {
       {/* Blackmoor — position 4 (r2c1) */}
       <div className="relative overflow-hidden">
         <a href="https://blackmoor.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Shadow of the Wolf')}>
-          <img src={andImg} alt="Blackmoor" className="w-full h-full object-cover" />
+          <img src={blackmoorSplashImg} alt="Blackmoor — Season of the Witch" className="w-full h-full object-cover" style={{ objectPosition: 'center 22%' }} />
         </a>
         <CornerDot slug="blackmoor" />
       </div>
