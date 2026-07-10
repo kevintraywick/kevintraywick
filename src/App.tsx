@@ -14,17 +14,6 @@ import BlogEntry from './pages/BlogEntry'
 
 const kFont = { fontFamily: '"Barlow Condensed", sans-serif', fontWeight: 900 } as const
 
-const CornerDot = ({ slug }: { slug: string }) => (
-  <a
-    href={`/${slug}`}
-    aria-label={`Collect items for ${slug}`}
-    title={`Collect: ${slug}`}
-    className="absolute bottom-2 right-2 w-5 h-5 rounded-full block z-10"
-    style={{ background: '#999', opacity: 0.4 }}
-    onClick={e => e.stopPropagation()}
-  />
-)
-
 function Homepage() {
   const [hoverText, setHoverText] = useState<string | null>(null)
   const hover = (text: string) => ({ onMouseEnter: () => setHoverText(text), onMouseLeave: () => setHoverText(null) })
@@ -44,15 +33,13 @@ function Homepage() {
         <a href="/workout/back-workout.pdf" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('20-minute back workout')}>
           <img src={backWorkoutImg} alt="A 20-Minute Workout to Keep Your Body Limber" className="w-full h-full object-cover" />
         </a>
-        <CornerDot slug="cs1" />
       </div>
 
       {/* Blackmoor — position 4 (r2c1) */}
       <div className="relative overflow-hidden">
-        <a href="https://blackmoor.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Shadow of the Wolf')}>
+        <a href="https://blackmoor.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('My D&D campaign:\nShadow of the Wolf')}>
           <img src={blackmoorSplashImg} alt="Blackmoor — Season of the Witch" className="w-full h-full object-cover" style={{ objectPosition: 'center 22%' }} />
         </a>
-        <CornerDot slug="blackmoor" />
       </div>
       {/* K — position 5 (center) */}
       <div className="relative flex items-center justify-center">
@@ -64,14 +51,12 @@ function Homepage() {
             {hoverText}
           </span>
         )}
-        <CornerDot slug="k" />
       </div>
       {/* JustEdit — position 6 (r2c3) */}
       <div className="relative overflow-hidden">
         <a href="/justedit/justedit.html" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Write me here')}>
           <img src={penImg} alt="JustEdit" className="w-full h-full object-cover" />
         </a>
-        <CornerDot slug="justedit" />
       </div>
 
       {/* Dark Skies — position 7 (r3c1) */}
@@ -79,21 +64,18 @@ function Homepage() {
         <a href="https://darkskies.kevintraywick.com" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Dark Skies,\nWest Texas 2026')}>
           <img src={darkSkiesImg} alt="Dark Skies — West Texas 2026" className="w-full h-full object-cover" />
         </a>
-        <CornerDot slug="darkskies" />
       </div>
       {/* Fast French — position 8 (r3c2) */}
       <div className="relative overflow-hidden">
         <a href="/fast-french/" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Fast French,\nmy French learning game')}>
           <img src={pastryImg} alt="Fast French" className="w-full h-full object-cover" />
         </a>
-        <CornerDot slug="ff" />
       </div>
       {/* Wind — position 9 (r3c3) */}
       <div className="relative overflow-hidden">
         <a href="https://meticulous-eagerness-production-411f.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Windy,\nmy real time wind project')}>
           <img src={windImg} alt="Wind" className="w-full h-full object-cover" />
         </a>
-        <CornerDot slug="windy" />
       </div>
     </div>
   )
