@@ -6,6 +6,7 @@ import bubbleImg from './assets/bubble.png'
 import penImg from './assets/pen.png'
 import blackmoorSplashImg from './assets/blackmoor-splash.webp'
 import windImg from './assets/windstorm.png'
+import darkSkiesImg from './assets/darkskies-purple.jpg'
 import backWorkoutImg from './assets/back-workout-card.png'
 import { FeedOverlay } from './components/FeedOverlay'
 import Blog from './pages/Blog'
@@ -73,12 +74,12 @@ function Homepage() {
         <CornerDot slug="justedit" />
       </div>
 
-      {/* Coming soon — position 7 (r3c1) */}
-      <div className="relative flex items-center justify-center bg-white">
-        <span style={{ ...kFont, fontSize: 'clamp(28px, 5vw, 72px)', lineHeight: 1.1 }}>
-          coming soon
-        </span>
-        <CornerDot slug="cs2" />
+      {/* Dark Skies — position 7 (r3c1) */}
+      <div className="relative overflow-hidden">
+        <a href="https://darkskies.kevintraywick.com" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Dark Skies,\nWest Texas 2026')}>
+          <img src={darkSkiesImg} alt="Dark Skies — West Texas 2026" className="w-full h-full object-cover" />
+        </a>
+        <CornerDot slug="darkskies" />
       </div>
       {/* Fast French — position 8 (r3c2) */}
       <div className="relative overflow-hidden">
