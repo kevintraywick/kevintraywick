@@ -59,6 +59,8 @@ npx vitest run src/components/PhotoPanel.test.tsx
 ## Gotchas
 
 - `.gitignore` ignores `*.svg` repo-wide — `git add -f` any SVG that must be committed (e.g. favicons).
+- Bare `npx vitest run` / `npm run lint` also sweep stale checkout copies under `.claude/worktrees/**` and `basher/.claude/worktrees/**` — scope to your files (`npx vitest run src`, `npx eslint <files>`) to judge a change; repo-wide lint carries ~80 pre-existing problems.
+- Multiple Claude sessions often share this checkout and its git index — commit with explicit pathspecs and check `git diff --cached --stat` first; a blanket commit once swept another session's staged deletions to main and broke the Pages build.
 - `railway logs` shows the **current deployment only** — a push/redeploy restarts the container and wipes prior output. weldon-api logs errors only, so debug by reproducing the request, not by log archaeology.
 - Anthropic structured outputs: enums may not mix strings with null — use an `'unsure'` sentinel and map to NULL server-side; nullable scalars (`type: ['number','null']`) are fine.
 - Multiple Claude sessions may work in this repo at once — `git commit` sweeps in ANY staged changes, including another session's. Check `git status` for foreign staged work first, or commit with explicit pathspecs (`git commit -m … -- <paths>`).
