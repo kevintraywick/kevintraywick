@@ -131,18 +131,23 @@
         dzEl.classList.add('busy');
         try {
           const r = await WAPI.upload('/documents', f);
-          if (r.routed === 'expenses') {
-            serverRows.push(r.entry);
-            render();
-            say('Added: ' + r.entry.vendor + ' — ' + usd(r.entry.amount, 2) + ' (' + (r.entry.date || 'no date') + ')' +
-              (r.entry.work ? ' · filed as ' + r.entry.work : ''), 'ok');
-          } else {
-            const b = r.entry;
-            const isAnnual = b.utility === 'tax' || b.utility === 'insurance';
-            say('That’s ' + (isAnnual ? 'a ' + b.utility + ' statement' : 'a ' + b.utility + ' bill') +
-              ' — recorded on the Utilities page (' + (isAnnual ? b.month.slice(0, 4) + ' annual' : b.month) +
-              ', ' + usd(b.amount, 2) + ')', 'ok');
+          const added = [];
+          for (const item of r.results) {
+            if (item.routed === 'expenses') {
+              serverRows.push(item.entry);
+              added.push(item.entry.vendor + ' ' + usd(item.entry.amount, 2));
+            } else {
+              const b = item.entry;
+              added.push(b.utility + ' bill ' + usd(b.amount, 2) + ' (→ Utilities page)');
+            }
           }
+          render();
+          let msg = 'Added ' + r.results.length + (r.results.length === 1 ? ' entry: ' : ' entries: ') + added.join(', ');
+          if (r.skipped && r.skipped.length) {
+            msg += ' — skipped ' + r.skipped.length + ' with no legible total (' +
+              r.skipped.map(s => s.vendor).join(', ') + ')';
+          }
+          say(msg, 'ok');
         } catch (e) {
           say('Could not read ' + f.name + ': ' + e.message, 'err');
         } finally { dzEl.classList.remove('busy'); }

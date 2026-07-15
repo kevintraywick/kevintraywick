@@ -114,17 +114,21 @@
         dzEl.classList.add('busy');
         try {
           const r = await WAPI.upload('/documents', f);
-          if (r.routed === 'utility-bills') {
-            const bill = r.entry;
-            bills.push(bill);
-            render();
-            const isAnnual = bill.utility === 'tax' || bill.utility === 'insurance';
-            say('Recorded: ' + bill.utility + ', ' + (isAnnual ? bill.month.slice(0, 4) + ' annual' : bill.month) +
-              ' — ' + usd(bill.amount, 2), 'ok');
-          } else {
-            say('That looked like a one-time purchase — added to the Expenses ledger (' +
-              r.entry.vendor + ', ' + usd(r.entry.amount, 2) + ')', 'ok');
+          const added = [];
+          for (const item of r.results) {
+            if (item.routed === 'utility-bills') {
+              bills.push(item.entry);
+              added.push(item.entry.utility + ' ' + usd(item.entry.amount, 2));
+            } else {
+              added.push(item.entry.vendor + ' ' + usd(item.entry.amount, 2) + ' (→ Expenses ledger)');
+            }
           }
+          render();
+          let msg = 'Recorded ' + r.results.length + (r.results.length === 1 ? ' entry: ' : ' entries: ') + added.join(', ');
+          if (r.skipped && r.skipped.length) {
+            msg += ' — skipped ' + r.skipped.length + ' with no legible total';
+          }
+          say(msg, 'ok');
         } catch (e) {
           say('Could not read ' + f.name + ': ' + e.message, 'err');
         } finally { dzEl.classList.remove('busy'); }

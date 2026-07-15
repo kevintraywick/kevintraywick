@@ -90,13 +90,16 @@ function scanBlock(filePath) {
 }
 
 async function readScan(filePath, prompt, schema) {
+  // max_tokens caps thinking + JSON combined; sonnet-5 thinks adaptively by
+  // default and 1500 was cutting responses off before any JSON was emitted
   const response = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 1500,
+    max_tokens: 16000,
     output_config: { format: { type: 'json_schema', schema } },
     messages: [{ role: 'user', content: [scanBlock(filePath), { type: 'text', text: prompt }] }],
   });
   if (response.stop_reason === 'refusal') throw new Error('The model declined to read this document.');
+  if (response.stop_reason === 'max_tokens') throw new Error('The scan result was cut off — try a file with fewer pages.');
   const text = response.content.find(b => b.type === 'text')?.text;
   if (!text) throw new Error('No readable result from the scan.');
   return JSON.parse(text);
@@ -104,8 +107,10 @@ async function readScan(filePath, prompt, schema) {
 
 /* One classifier for every document dropped anywhere on the site. `kind`
    decides where it's filed: receipts land in the expenses ledger, everything
-   else in utility_bills (tax/insurance as annual totals). */
-const DOC_SCHEMA = {
+   else in utility_bills (tax/insurance as annual totals). A single upload may
+   hold several documents (e.g. a PDF of many scanned receipts) — the model
+   returns one entry per document found. */
+const DOC_ENTRY_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: ['kind', 'receipt', 'bill'],
@@ -124,7 +129,7 @@ const DOC_SCHEMA = {
         date: { type: ['string', 'null'], description: 'Purchase date as YYYY-MM-DD, or null if not visible' },
         vendor: { type: 'string', description: 'Store or company name' },
         description: { type: 'string', description: 'Short summary of what was bought, a few words' },
-        amount: { type: 'number', description: 'Grand total paid in dollars' },
+        amount: { type: ['number', 'null'], description: 'Grand total paid in dollars, or null if no total is legible anywhere in the document' },
         category: {
           type: 'string',
           enum: ['Paint & finishes', 'Garden & grounds', 'Systems & appliances', 'Patio & furnishings', 'Hardware & misc'],
@@ -156,16 +161,31 @@ const DOC_SCHEMA = {
   },
 };
 
+const DOCS_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['documents'],
+  properties: {
+    documents: {
+      type: 'array',
+      description: 'One entry per distinct document found in the file. A multi-page scan may hold several separate receipts or bills — list each one. A single receipt spanning multiple pages is ONE entry.',
+      items: DOC_ENTRY_SCHEMA,
+    },
+  },
+};
+
 const DOC_PROMPT =
-  'This document relates to a residential house in Martin, Tennessee. Classify it: ' +
-  'a one-time purchase receipt or service invoice (receipt); a monthly utility bill — electricity, ' +
-  'water/sewer/garbage counts as water, WK&T fiber or Spectrum counts as internet (utility-bill); ' +
-  'a property tax statement or notice, city or county (tax); or a homeowner\'s insurance premium ' +
-  'notice or declarations page (insurance). Fill in `receipt` for receipts and `bill` for everything ' +
-  'else. For tax and insurance set bill.utility to "tax" or "insurance" and use the ANNUAL total ' +
-  'and the first month of the tax/policy year. For receipts use the grand total, pick the closest ' +
-  'category, and judge `work`: improvement if it adds value or extends the house\'s life, repair if ' +
-  'it fixes or maintains what exists, unsure if unclear.';
+  'This file relates to a residential house in Martin, Tennessee. It may contain one document or ' +
+  'several scanned into one file (commonly one receipt per page). Identify each distinct document ' +
+  'and classify it: a one-time purchase receipt or service invoice (receipt); a monthly utility ' +
+  'bill — electricity, water/sewer/garbage counts as water, WK&T fiber or Spectrum counts as ' +
+  'internet (utility-bill); a property tax statement or notice, city or county (tax); or a ' +
+  'homeowner\'s insurance premium notice or declarations page (insurance). Fill in `receipt` for ' +
+  'receipts and `bill` for everything else. For tax and insurance set bill.utility to "tax" or ' +
+  '"insurance" and use the ANNUAL total and the first month of the tax/policy year. For receipts ' +
+  'use the grand total (null if no total is legible), pick the closest category, and judge `work`: ' +
+  'improvement if it adds value or extends the house\'s life, repair if it fixes or maintains what ' +
+  'exists, unsure if unclear.';
 
 /* ---------- app ---------- */
 const app = express();
@@ -275,26 +295,38 @@ app.delete('/api/expenses/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-/* unified document intake — classifies the scan and files it in the right place */
+/* unified document intake — classifies the scan and files each document found
+   in the right place. One upload may yield several ledger rows. */
 app.post('/api/documents', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).send('no file');
   try {
-    const parsed = await readScan(req.file.path, DOC_PROMPT, DOC_SCHEMA);
-    if (parsed.kind === 'receipt' && parsed.receipt) {
-      const r = parsed.receipt;
-      const info = db.prepare(
-        `INSERT INTO expenses (date, vendor, description, amount, category, work, source, receipt_file) VALUES (?,?,?,?,?,?, 'receipt', ?)`
-      ).run(r.date, r.vendor, r.description, r.amount, r.category, workOrNull(r.work), req.file.filename);
-      return res.json({ routed: 'expenses', entry: db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid) });
+    const parsed = await readScan(req.file.path, DOC_PROMPT, DOCS_SCHEMA);
+    const results = [];
+    const skipped = [];
+    for (const doc of parsed.documents || []) {
+      if (doc.kind === 'receipt' && doc.receipt) {
+        const r = doc.receipt;
+        if (!(r.amount > 0)) {
+          skipped.push({ vendor: r.vendor, reason: 'no legible total' });
+          continue;
+        }
+        const info = db.prepare(
+          `INSERT INTO expenses (date, vendor, description, amount, category, work, source, receipt_file) VALUES (?,?,?,?,?,?, 'receipt', ?)`
+        ).run(r.date, r.vendor, r.description, r.amount, r.category, workOrNull(r.work), req.file.filename);
+        results.push({ routed: 'expenses', entry: db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid) });
+      } else if (doc.bill) {
+        const b = doc.bill;
+        const info = db.prepare(
+          `INSERT INTO utility_bills (month, utility, amount, scan_file) VALUES (?,?,?,?)`
+        ).run(b.month, b.utility, b.amount, req.file.filename);
+        results.push({ routed: 'utility-bills', entry: db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(info.lastInsertRowid) });
+      }
     }
-    if (parsed.bill) {
-      const b = parsed.bill;
-      const info = db.prepare(
-        `INSERT INTO utility_bills (month, utility, amount, scan_file) VALUES (?,?,?,?)`
-      ).run(b.month, b.utility, b.amount, req.file.filename);
-      return res.json({ routed: 'utility-bills', entry: db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(info.lastInsertRowid) });
+    if (!results.length && skipped.length) {
+      return res.status(422).send('Found ' + skipped.length + ' document(s) but no legible totals — check the scan quality.');
     }
-    res.status(422).send('could not classify this document');
+    if (!results.length) return res.status(422).send('could not find any receipt or bill in this document');
+    res.json({ results, skipped });
   } catch (e) {
     console.error('document scan failed:', e.message);
     res.status(422).send(e.message);
