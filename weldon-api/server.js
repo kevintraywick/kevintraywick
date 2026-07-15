@@ -354,6 +354,27 @@ app.post('/api/documents', upload.single('file'), async (req, res) => {
 });
 
 /* utility bills */
+const UTILITIES = ['electricity', 'water', 'internet', 'tax', 'insurance', 'other'];
+
+app.patch('/api/utility-bills/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such bill');
+  const { month, utility, amount } = req.body || {};
+  const m = /^\d{4}-\d{2}$/.test(month || '') ? month : row.month;
+  const u = UTILITIES.includes(utility) ? utility : row.utility;
+  const a = Number.isFinite(+amount) && +amount >= 0 ? +amount : row.amount;
+  db.prepare(`UPDATE utility_bills SET month=?, utility=?, amount=? WHERE id=?`).run(m, u, a, row.id);
+  res.json(db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(row.id));
+});
+
+app.delete('/api/utility-bills/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such bill');
+  db.prepare(`DELETE FROM utility_bills WHERE id=?`).run(row.id);
+  // scan_file deliberately kept — one uploaded PDF can back several rows
+  res.json({ ok: true });
+});
+
 app.get('/api/utility-bills', (req, res) => {
   res.json(db.prepare(`SELECT * FROM utility_bills ORDER BY month`).all());
 });

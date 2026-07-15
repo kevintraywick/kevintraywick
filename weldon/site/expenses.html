@@ -115,26 +115,30 @@
   const BILL_LABELS = { electricity: 'Electricity', water: 'Water / sewer / garbage', internet: 'WK&T internet', other: 'Utility' };
   const ANNUAL_EST = { tax: 1646, insurance: W.INSURANCE_YR };
   function billRows() {
-    const monthly = {}; // 'YYYY-MM' -> { electricity: amt, ... }, scans override seed
+    const monthly = {}; // 'YYYY-MM' -> { electricity: {v, id?}, ... }, scans override seed
     ['electricity', 'water', 'internet'].forEach(k => {
       D.utilities[k].forEach((v, i) => {
         if (v == null) return;
         const ym = (i < 12 ? 2024 : 2025) + '-' + String((i % 12) + 1).padStart(2, '0');
-        (monthly[ym] = monthly[ym] || {})[k] = v;
+        (monthly[ym] = monthly[ym] || {})[k] = { v };
       });
     });
     bills.forEach(b => {
-      if (BILL_LABELS[b.utility]) (monthly[b.month] = monthly[b.month] || {})[b.utility] = b.amount;
+      if (BILL_LABELS[b.utility]) (monthly[b.month] = monthly[b.month] || {})[b.utility] = { v: b.amount, id: b.id };
     });
 
     const rows = [];
-    const put = (ym, label, amount, description, est) => rows.push({
+    const put = (ym, label, amount, description, est, extra) => rows.push({
       bill: true, est, date: ym + '-01', year: +ym.slice(0, 4),
       vendor: label, description, amount,
-      category: 'Utilities', work: null, warranty: '', notes: '',
+      category: 'Utilities', work: null, warranty: '', notes: '', ...(extra || {}),
     });
     Object.keys(monthly).forEach(ym => {
-      Object.keys(monthly[ym]).forEach(k => put(ym, BILL_LABELS[k], monthly[ym][k], 'monthly bill'));
+      Object.keys(monthly[ym]).forEach(k => {
+        const cell = monthly[ym][k];
+        // bid = server row id → scanned bills can be edited/deleted in place
+        put(ym, BILL_LABELS[k], cell.v, cell.id ? 'scanned bill' : 'monthly bill', false, cell.id ? { bid: cell.id, ukind: k } : null);
+      });
     });
 
     // annual obligations, amortized Jan 2024 → current month; a scanned
@@ -215,6 +219,7 @@
   catSel.innerHTML = CATS.map(c => '<option>' + c + '</option>').join('');
 
   let editingId = null; // server row id being edited, or null for a new entry
+  let editingBillId = null; // scanned bill row in inline edit mode
   function setEditMode(row) {
     editingId = row ? row.id : null;
     document.getElementById('manual-title').textContent = row ? 'Edit entry' : 'New entry';
@@ -315,11 +320,25 @@
       const mo = e.date ? new Date(e.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Undated';
       if (mo !== lastMonth) { flushSubtotal(); lastMonth = mo; }
       monthSum += e.amount; total += e.amount;
-      // only server-backed rows (manual entries, scanned receipts) can be edited;
-      // rows from the record book seed are read-only
+      // inline edit mode for a scanned bill row
+      if (e.bid && e.bid === editingBillId) {
+        html += '<tr class="bill"><td><input type="month" id="be-month" value="' + e.date.slice(0, 7) + '"></td>' +
+          '<td><select id="be-util">' + ['electricity', 'water', 'internet'].map(u =>
+            '<option value="' + u + '"' + (u === e.ukind ? ' selected' : '') + '>' + BILL_LABELS[u] + '</option>').join('') + '</select></td>' +
+          '<td>scanned bill</td><td>' + e.category + '</td>' +
+          '<td class="r"><input type="number" id="be-amount" step="0.01" min="0" value="' + e.amount + '" style="width:90px;text-align:right"></td>' +
+          '<td class="act"><button class="rowbtn" data-bsave="' + e.bid + '" title="Save bill" aria-label="Save bill">✓</button>' +
+          '<button class="rowbtn" data-bcancel="1" title="Cancel" aria-label="Cancel">✕</button></td></tr>';
+        return;
+      }
+      // only server-backed rows (manual entries, scanned receipts/bills) can be
+      // edited; record book seed and amortized estimate rows are read-only
       const actions = e.sid
         ? '<button class="rowbtn" data-edit="' + e.sid + '" title="Edit entry" aria-label="Edit entry">✎</button>' +
           '<button class="rowbtn danger" data-del="' + e.sid + '" title="Delete entry" aria-label="Delete entry">✕</button>'
+        : e.bid
+        ? '<button class="rowbtn" data-bedit="' + e.bid + '" title="Edit bill" aria-label="Edit bill">✎</button>' +
+          '<button class="rowbtn danger" data-bdel="' + e.bid + '" title="Delete bill" aria-label="Delete bill">✕</button>'
         : '';
       const cls = e.incomplete ? ' class="incomplete"' : e.bill ? ' class="bill"' : '';
       html += '<tr' + cls + '><td class="num">' + (e.bill ? mo.replace(/(\w+) (\d+)/, '$1 ’$2').replace(/’20/, '’') : fmtDate(e.date)) + '</td><td>' + e.vendor + '</td><td>' + e.description +
@@ -342,6 +361,40 @@
   }
 
   document.querySelector('#ledger tbody').addEventListener('click', async ev => {
+    // scanned bill rows: inline edit / delete
+    const bbtn = ev.target.closest('button[data-bedit], button[data-bdel], button[data-bsave], button[data-bcancel]');
+    if (bbtn) {
+      if (bbtn.dataset.bedit) { editingBillId = +bbtn.dataset.bedit; render(); return; }
+      if (bbtn.dataset.bcancel) { editingBillId = null; render(); return; }
+      if (bbtn.dataset.bsave) {
+        const id = +bbtn.dataset.bsave;
+        const body = {
+          month: document.getElementById('be-month').value,
+          utility: document.getElementById('be-util').value,
+          amount: parseFloat(document.getElementById('be-amount').value),
+        };
+        try {
+          const entry = await WAPI.patch('/utility-bills/' + id, body);
+          bills = bills.map(b => b.id === entry.id ? entry : b);
+          editingBillId = null;
+          render();
+          say('Updated bill: ' + entry.utility + ' ' + entry.month + ' — ' + usd(entry.amount, 2), 'ok');
+        } catch (e) { say('Could not save bill: ' + e.message, 'err'); }
+        return;
+      }
+      const id = +bbtn.dataset.bdel;
+      const bill = bills.find(b => b.id === id);
+      if (!bill) return;
+      if (!confirm('Delete ' + bill.utility + ' bill ' + bill.month + ' — ' + usd(bill.amount, 2) + '?')) return;
+      try {
+        await WAPI.del('/utility-bills/' + id);
+        bills = bills.filter(b => b.id !== id);
+        if (editingBillId === id) editingBillId = null;
+        render();
+        say('Deleted bill: ' + bill.utility + ' ' + bill.month + ' — ' + usd(bill.amount, 2), 'ok');
+      } catch (e) { say('Could not delete bill: ' + e.message, 'err'); }
+      return;
+    }
     const btn = ev.target.closest('button[data-edit], button[data-del]');
     if (!btn) return;
     const id = +(btn.dataset.edit || btn.dataset.del);

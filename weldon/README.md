@@ -75,6 +75,10 @@ they contain live credentials.
 
 ## Still to come
 
+- **10–15 year ownership-cost model** (Forecast page): extends the capital-project
+  amortization to a long horizon so Keith can see how a roof or HVAC decision
+  changes his monthly cost. Waiting on Kevin: capital project list + timing,
+  cash vs financed per project, inflation assumptions.
 - Scanned blueprints / floor plans gallery on the House page.
 - `SMTP_URL` + `MAIL_FROM` so maintenance email reminders actually send.
 

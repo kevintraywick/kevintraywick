@@ -211,15 +211,64 @@
     });
     document.querySelector('#util-table tbody').innerHTML = html;
 
-    if (bills.length) {
-      document.getElementById('scan-list').innerHTML = bills.slice().reverse().map(b => {
+    const listEl = document.getElementById('scan-list');
+    if (!bills.length) {
+      listEl.innerHTML = '<li class="card-sub">Nothing scanned yet.</li>';
+    } else {
+      listEl.innerHTML = bills.slice().reverse().map(b => {
+        if (b.id === editingBillId) {
+          return '<li><input type="month" id="sb-month" value="' + b.month + '" style="font:inherit;font-size:13px"> ' +
+            '<select id="sb-util" style="font:inherit;font-size:13px">' +
+            ['electricity', 'water', 'internet', 'tax', 'insurance', 'other'].map(u =>
+              '<option value="' + u + '"' + (u === b.utility ? ' selected' : '') + '>' + u + '</option>').join('') +
+            '</select> <input type="number" id="sb-amount" step="0.01" min="0" value="' + b.amount + '" style="font:inherit;font-size:13px;width:90px"> ' +
+            '<span class="where"><button class="rowbtn" data-bsave="' + b.id + '" title="Save">✓</button>' +
+            '<button class="rowbtn" data-bcancel="1" title="Cancel">✕</button></span></li>';
+        }
         const isAnnual = b.utility === 'tax' || b.utility === 'insurance';
         const when = isAnnual ? b.month.slice(0, 4) + ' annual' : b.month;
         return '<li><span class="prio">' + when + '</span>' + b.utility +
-          '<span class="where num">' + usd(b.amount, 2) + '</span></li>';
+          '<span class="where num">' + usd(b.amount, 2) +
+          ' <button class="rowbtn" data-bedit="' + b.id + '" title="Edit bill" aria-label="Edit bill">✎</button>' +
+          '<button class="rowbtn danger" data-bdel="' + b.id + '" title="Delete bill" aria-label="Delete bill">✕</button></span></li>';
       }).join('');
     }
   }
+
+  let editingBillId = null;
+  document.getElementById('scan-list').addEventListener('click', async ev => {
+    const btn = ev.target.closest('button[data-bedit], button[data-bdel], button[data-bsave], button[data-bcancel]');
+    if (!btn) return;
+    if (btn.dataset.bedit) { editingBillId = +btn.dataset.bedit; render(); return; }
+    if (btn.dataset.bcancel) { editingBillId = null; render(); return; }
+    if (btn.dataset.bsave) {
+      const id = +btn.dataset.bsave;
+      const body = {
+        month: document.getElementById('sb-month').value,
+        utility: document.getElementById('sb-util').value,
+        amount: parseFloat(document.getElementById('sb-amount').value),
+      };
+      try {
+        const entry = await WAPI.patch('/utility-bills/' + id, body);
+        bills = bills.map(b => b.id === entry.id ? entry : b);
+        editingBillId = null;
+        render();
+        say('Updated: ' + entry.utility + ' ' + entry.month + ' — ' + usd(entry.amount, 2), 'ok');
+      } catch (e) { say('Could not save: ' + e.message, 'err'); }
+      return;
+    }
+    const id = +btn.dataset.bdel;
+    const bill = bills.find(b => b.id === id);
+    if (!bill) return;
+    if (!confirm('Delete ' + bill.utility + ' ' + bill.month + ' — ' + usd(bill.amount, 2) + '?')) return;
+    try {
+      await WAPI.del('/utility-bills/' + id);
+      bills = bills.filter(b => b.id !== id);
+      render();
+      say('Deleted: ' + bill.utility + ' ' + bill.month + ' — ' + usd(bill.amount, 2), 'ok');
+    } catch (e) { say('Could not delete: ' + e.message, 'err'); }
+  });
+
   render();
 })();
 </script>

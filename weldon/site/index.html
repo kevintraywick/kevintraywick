@@ -38,9 +38,9 @@
 <main class="wrap">
   <div class="tiles overlap">
     <div class="tile">
-      <div class="t-label">Monthly run-rate</div>
+      <div class="t-label">Cost per month</div>
       <div class="t-value" id="tile-runrate">—</div>
-      <div class="t-note">utilities + insurance, latest averages</div>
+      <div class="t-note" id="tile-runrate-note">utilities + insurance, latest averages</div>
     </div>
     <div class="tile">
       <div class="t-label">2025 project spend</div>
@@ -123,12 +123,48 @@
 <script src="js/data.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/common.js"></script>
+<script src="js/api.js"></script>
 <script>
-(function () {
+(async function () {
   const { D, usd, SERIES_COLORS } = W;
 
-  // tiles
-  document.getElementById('tile-runrate').textContent = usd(W.runRate(), 0) + '/mo';
+  /* headline tile: what the house costs per month, trailing-12-month view —
+     recorded utility bills (record book + scans, scans win), property tax +
+     insurance amortized 1/12 (scanned annual statements override estimates),
+     and one-time purchases averaged over the last 12 months */
+  let sBills = [], sExp = [];
+  if (await WAPI.health()) {
+    try { sBills = await WAPI.get('/utility-bills'); } catch {}
+    try { sExp = await WAPI.get('/expenses'); } catch {}
+  }
+  const umap = {};
+  ['electricity', 'water', 'internet'].forEach(k => D.utilities[k].forEach((v, i) => {
+    if (v == null) return;
+    const ym = (i < 12 ? 2024 : 2025) + '-' + String((i % 12) + 1).padStart(2, '0');
+    (umap[ym] = umap[ym] || {})[k] = v;
+  }));
+  sBills.forEach(b => {
+    if (['electricity', 'water', 'internet'].includes(b.utility)) (umap[b.month] = umap[b.month] || {})[b.utility] = b.amount;
+  });
+  const avgRecent = k => {
+    const vals = Object.keys(umap).sort().map(ym => umap[ym][k]).filter(v => v != null).slice(-12);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  };
+  const billsMo = avgRecent('electricity') + avgRecent('water') + avgRecent('internet');
+  const annual = { tax: 1646, insurance: W.INSURANCE_YR };
+  sBills.forEach(b => { if (b.utility === 'tax' || b.utility === 'insurance') annual[b.utility] = b.amount; });
+  const taxInsMo = (annual.tax + annual.insurance) / 12;
+  const now = new Date();
+  const cut = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const cutIso = cut.getFullYear() + '-' + String(cut.getMonth() + 1).padStart(2, '0') + '-01';
+  let spend12 = 0;
+  D.expenses.forEach(e => { if (e.date && e.date >= cutIso) spend12 += e.amount; });
+  sExp.forEach(e => { if (e.date && e.date >= cutIso) spend12 += e.amount; });
+  const upkeepMo = spend12 / 12;
+
+  document.getElementById('tile-runrate').textContent = usd(billsMo + taxInsMo + upkeepMo, 0) + '/mo';
+  document.getElementById('tile-runrate-note').textContent =
+    usd(billsMo, 0) + ' bills + ' + usd(taxInsMo, 0) + ' tax/ins + ' + usd(upkeepMo, 0) + ' upkeep, trailing 12 mo';
   document.getElementById('tile-2025').textContent = usd(W.yearTotal(2025), 0);
   document.getElementById('tile-2024').textContent = usd(W.yearTotal(2024), 0);
   const open = W.openTasks(), high = W.highPriority();
