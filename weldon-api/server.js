@@ -210,7 +210,7 @@ app.post('/api/gate', (req, res) => {
 });
 
 app.use((req, res, next) => {
-  if (req.path === '/gate.html' || req.path === '/api/gate') return next();
+  if (req.path === '/gate.html' || req.path === '/api/gate' || req.path === '/assets/favicon.svg') return next();
   if (hasGateCookie(req)) return next();
   if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
     return res.status(401).send('locked');

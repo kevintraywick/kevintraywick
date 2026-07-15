@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Monopoly-style house, 3/4 view -->
+  <!-- front gable face -->
+  <polygon points="3,14 10,5 17,14 17,28 3,28" fill="#E23D2E"/>
+  <!-- roof plane -->
+  <polygon points="10,5 22,5 29,14 17,14" fill="#A82418"/>
+  <!-- side wall -->
+  <polygon points="17,14 29,14 29,28 17,28" fill="#C42F20"/>
+</svg>
