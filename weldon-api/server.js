@@ -90,14 +90,16 @@ function scanBlock(filePath) {
 }
 
 async function readScan(filePath, prompt, schema) {
-  // max_tokens caps thinking + JSON combined; sonnet-5 thinks adaptively by
-  // default and 1500 was cutting responses off before any JSON was emitted
-  const response = await anthropic.messages.create({
+  // max_tokens caps the model's thinking + the JSON combined; sonnet-5 thinks
+  // adaptively and long scans need real headroom. Streaming avoids the SDK's
+  // HTTP timeout on large caps — 64k comfortably covers ~20 receipts per file.
+  const stream = anthropic.messages.stream({
     model: MODEL,
-    max_tokens: 16000,
+    max_tokens: 64000,
     output_config: { format: { type: 'json_schema', schema } },
     messages: [{ role: 'user', content: [scanBlock(filePath), { type: 'text', text: prompt }] }],
   });
+  const response = await stream.finalMessage();
   if (response.stop_reason === 'refusal') throw new Error('The model declined to read this document.');
   if (response.stop_reason === 'max_tokens') throw new Error('The scan result was cut off — try a file with fewer pages.');
   const text = response.content.find(b => b.type === 'text')?.text;
@@ -302,17 +304,14 @@ app.post('/api/documents', upload.single('file'), async (req, res) => {
   try {
     const parsed = await readScan(req.file.path, DOC_PROMPT, DOCS_SCHEMA);
     const results = [];
-    const skipped = [];
     for (const doc of parsed.documents || []) {
       if (doc.kind === 'receipt' && doc.receipt) {
+        // a receipt with no legible total is still filed (amount 0) — the
+        // ledger flags it in red so the user can edit in the real number
         const r = doc.receipt;
-        if (!(r.amount > 0)) {
-          skipped.push({ vendor: r.vendor, reason: 'no legible total' });
-          continue;
-        }
         const info = db.prepare(
           `INSERT INTO expenses (date, vendor, description, amount, category, work, source, receipt_file) VALUES (?,?,?,?,?,?, 'receipt', ?)`
-        ).run(r.date, r.vendor, r.description, r.amount, r.category, workOrNull(r.work), req.file.filename);
+        ).run(r.date, r.vendor, r.description, r.amount > 0 ? r.amount : 0, r.category, workOrNull(r.work), req.file.filename);
         results.push({ routed: 'expenses', entry: db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid) });
       } else if (doc.bill) {
         const b = doc.bill;
@@ -322,11 +321,8 @@ app.post('/api/documents', upload.single('file'), async (req, res) => {
         results.push({ routed: 'utility-bills', entry: db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(info.lastInsertRowid) });
       }
     }
-    if (!results.length && skipped.length) {
-      return res.status(422).send('Found ' + skipped.length + ' document(s) but no legible totals — check the scan quality.');
-    }
     if (!results.length) return res.status(422).send('could not find any receipt or bill in this document');
-    res.json({ results, skipped });
+    res.json({ results });
   } catch (e) {
     console.error('document scan failed:', e.message);
     res.status(422).send(e.message);

@@ -38,6 +38,7 @@
       <input type="file" accept="image/*,.pdf" multiple>
       <div class="dz-big">Drop any receipt or bill here</div>
       <div class="dz-small">purchases, utility bills, tax statements, insurance — it reads the document and files it in the right place</div>
+      <div class="dz-tiny">handles multi-receipt PDFs — up to ~20 receipts per file</div>
     </div>
     <button class="addbtn" id="btn-add" aria-expanded="false" title="Add an entry by hand"><span>+</span></button>
   </div>
@@ -111,6 +112,7 @@
       date: r.date, vendor: r.vendor, description: r.description,
       amount: r.amount, category: r.category || 'Hardware & misc',
       work: r.work || null,
+      incomplete: r.source === 'receipt' && !(r.amount > 0),
       warranty: '', notes: r.source === 'receipt' ? 'from scanned receipt' : '',
     })));
   }
@@ -143,9 +145,9 @@
           }
           render();
           let msg = 'Added ' + r.results.length + (r.results.length === 1 ? ' entry: ' : ' entries: ') + added.join(', ');
-          if (r.skipped && r.skipped.length) {
-            msg += ' — skipped ' + r.skipped.length + ' with no legible total (' +
-              r.skipped.map(s => s.vendor).join(', ') + ')';
+          const needFix = r.results.filter(it => it.routed === 'expenses' && !(it.entry.amount > 0)).length;
+          if (needFix) {
+            msg += ' — ' + needFix + ' had no legible total (flagged in red below — edit to fill in the amount)';
           }
           say(msg, 'ok');
         } catch (e) {
@@ -264,7 +266,8 @@
         ? '<button class="rowbtn" data-edit="' + e.sid + '" title="Edit entry" aria-label="Edit entry">✎</button>' +
           '<button class="rowbtn danger" data-del="' + e.sid + '" title="Delete entry" aria-label="Delete entry">✕</button>'
         : '';
-      html += '<tr><td class="num">' + fmtDate(e.date) + '</td><td>' + e.vendor + '</td><td>' + e.description +
+      html += '<tr' + (e.incomplete ? ' class="incomplete"' : '') + '><td class="num">' + fmtDate(e.date) + '</td><td>' + e.vendor + '</td><td>' + e.description +
+        (e.incomplete ? ' <span class="chip-incomplete">no total read — edit to fix</span>' : '') +
         (e.work === 'improvement' ? ' <span class="chip-improve">improvement</span>' : '') +
         (e.warranty ? ' <span class="prio">· warranty: ' + e.warranty + '</span>' : '') +
         (e.notes ? ' <span class="prio">· ' + e.notes + '</span>' : '') +

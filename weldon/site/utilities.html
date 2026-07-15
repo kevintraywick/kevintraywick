@@ -125,8 +125,9 @@
           }
           render();
           let msg = 'Recorded ' + r.results.length + (r.results.length === 1 ? ' entry: ' : ' entries: ') + added.join(', ');
-          if (r.skipped && r.skipped.length) {
-            msg += ' — skipped ' + r.skipped.length + ' with no legible total';
+          const needFix = r.results.filter(it => !(it.entry.amount > 0)).length;
+          if (needFix) {
+            msg += ' — ' + needFix + ' had no legible total (edit on the Expenses page)';
           }
           say(msg, 'ok');
         } catch (e) {
