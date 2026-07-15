@@ -436,7 +436,15 @@ sendReminders();
 
 /* ---------- static ---------- */
 app.use('/uploads', express.static(UPLOADS, { maxAge: '30d' }));
-app.use(express.static(path.join(__dirname, 'site')));
+app.use(express.static(path.join(__dirname, 'site'), {
+  setHeaders(res, filePath) {
+    // HTML must revalidate on every load so deploys take effect immediately
+    // (Safari's heuristic cache once served a stale page against a newer API);
+    // css/js/assets may cache but revalidate via ETag.
+    if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+    else res.setHeader('Cache-Control', 'max-age=0, must-revalidate');
+  },
+}));
 app.get('/160weldon', (req, res) => res.redirect('/'));
 app.get('/160weldon/*', (req, res) => res.redirect(req.path.replace(/^\/160weldon/, '') || '/'));
 
