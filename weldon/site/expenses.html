@@ -29,7 +29,7 @@
 <div class="page-title">
   <p class="eyebrow"><i style="background:var(--chip-champagne)"></i>The ledger</p>
   <h1>Expenses ledger</h1>
-  <p>One-time purchases for the house — materials, plants, fixtures, and the occasional big-ticket repair. Recurring bills live on the <a href="utilities.html">Utilities</a> page.</p>
+  <p>The full cost of the house, month by month — one-time purchases in black, recurring bills in <span style="color:var(--c-electricity)">blue</span> (utilities as billed; property tax and insurance amortized to a monthly number). Each month's total is what the house actually cost that month. Bills are also charted on the <a href="utilities.html">Utilities</a> page.</p>
 </div>
 
 <main class="wrap">
@@ -101,10 +101,60 @@
 
   // merge server-side entries (manual + scanned receipts) into the seed ledger
   let serverRows = [];
+  let bills = [];
   const hasApi = await WAPI.health();
   if (hasApi) {
     try { serverRows = await WAPI.get('/expenses'); } catch {}
+    try { bills = await WAPI.get('/utility-bills'); } catch {}
   }
+
+  /* recurring bills shown inline (blue rows): monthly utilities from the
+     record book + scanned bills, plus property tax and insurance amortized
+     to 1/12 per month — so each month's subtotal is the true cost of the
+     house that month. Mirrors the estimate logic on the Utilities page. */
+  const BILL_LABELS = { electricity: 'Electricity', water: 'Water / sewer / garbage', internet: 'WK&T internet', other: 'Utility' };
+  const ANNUAL_EST = { tax: 1646, insurance: W.INSURANCE_YR };
+  function billRows() {
+    const monthly = {}; // 'YYYY-MM' -> { electricity: amt, ... }, scans override seed
+    ['electricity', 'water', 'internet'].forEach(k => {
+      D.utilities[k].forEach((v, i) => {
+        if (v == null) return;
+        const ym = (i < 12 ? 2024 : 2025) + '-' + String((i % 12) + 1).padStart(2, '0');
+        (monthly[ym] = monthly[ym] || {})[k] = v;
+      });
+    });
+    bills.forEach(b => {
+      if (BILL_LABELS[b.utility]) (monthly[b.month] = monthly[b.month] || {})[b.utility] = b.amount;
+    });
+
+    const rows = [];
+    const put = (ym, label, amount, description, est) => rows.push({
+      bill: true, est, date: ym + '-01', year: +ym.slice(0, 4),
+      vendor: label, description, amount,
+      category: 'Utilities', work: null, warranty: '', notes: '',
+    });
+    Object.keys(monthly).forEach(ym => {
+      Object.keys(monthly[ym]).forEach(k => put(ym, BILL_LABELS[k], monthly[ym][k], 'monthly bill'));
+    });
+
+    // annual obligations, amortized Jan 2024 → current month; a scanned
+    // statement replaces the estimate for its year
+    const nowYm = new Date().toISOString().slice(0, 7);
+    const byYear = { tax: {}, insurance: {} };
+    bills.forEach(b => { if (b.utility === 'tax' || b.utility === 'insurance') byYear[b.utility][b.month.slice(0, 4)] = b.amount; });
+    for (let y = 2024, m = 1; y + '-' + String(m).padStart(2, '0') <= nowYm;) {
+      const ym = y + '-' + String(m).padStart(2, '0');
+      ['tax', 'insurance'].forEach(k => {
+        const actual = byYear[k][String(y)];
+        const yr = actual ?? ANNUAL_EST[k];
+        put(ym, k === 'tax' ? 'Property tax' : 'Insurance',
+          yr / 12, '1/12 of ' + usd(yr, 0) + '/yr', actual == null);
+      });
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    return rows;
+  }
+
   function allRows() {
     return D.expenses.concat(serverRows.map(r => ({
       sid: r.id, // server-side id — these rows can be edited and deleted
@@ -114,7 +164,7 @@
       work: r.work || null,
       incomplete: r.source === 'receipt' && !(r.amount > 0),
       warranty: '', notes: r.source === 'receipt' ? 'from scanned receipt' : '',
-    })));
+    }))).concat(billRows());
   }
 
   // receipt drop zone + manual entry
@@ -140,7 +190,8 @@
               added.push(item.entry.vendor + ' ' + usd(item.entry.amount, 2));
             } else {
               const b = item.entry;
-              added.push(b.utility + ' bill ' + usd(b.amount, 2) + ' (→ Utilities page)');
+              bills.push(b);
+              added.push(b.utility + ' bill ' + usd(b.amount, 2) + ' (in blue below, charted on the Utilities page)');
             }
           }
           render();
@@ -224,7 +275,9 @@
   const cats = CATS;
   const filters = [{ key: 'all', label: 'Everything' },
                    { key: 'y2026', label: '2026' }, { key: 'y2025', label: '2025' }, { key: 'y2024', label: '2024' },
-                   { key: 'w:improvement', label: 'Improvements' }]
+                   { key: 'w:improvement', label: 'Improvements' },
+                   { key: 'bills', label: 'Monthly bills' },
+                   { key: 'purchases', label: 'Purchases only' }]
     .concat(cats.map(c => ({ key: 'c:' + c, label: c })));
   let active = 'all';
 
@@ -248,6 +301,8 @@
     if (active === 'y2025') rows = rows.filter(e => e.year === 2025);
     if (active === 'y2026') rows = rows.filter(e => e.year === 2026);
     if (active === 'w:improvement') rows = rows.filter(e => e.work === 'improvement');
+    if (active === 'bills') rows = rows.filter(e => e.bill);
+    if (active === 'purchases') rows = rows.filter(e => !e.bill);
     if (active.startsWith('c:')) rows = rows.filter(e => e.category === active.slice(2));
 
     const tbody = document.querySelector('#ledger tbody');
@@ -266,8 +321,10 @@
         ? '<button class="rowbtn" data-edit="' + e.sid + '" title="Edit entry" aria-label="Edit entry">✎</button>' +
           '<button class="rowbtn danger" data-del="' + e.sid + '" title="Delete entry" aria-label="Delete entry">✕</button>'
         : '';
-      html += '<tr' + (e.incomplete ? ' class="incomplete"' : '') + '><td class="num">' + fmtDate(e.date) + '</td><td>' + e.vendor + '</td><td>' + e.description +
+      const cls = e.incomplete ? ' class="incomplete"' : e.bill ? ' class="bill"' : '';
+      html += '<tr' + cls + '><td class="num">' + (e.bill ? mo.replace(/(\w+) (\d+)/, '$1 ’$2').replace(/’20/, '’') : fmtDate(e.date)) + '</td><td>' + e.vendor + '</td><td>' + e.description +
         (e.incomplete ? ' <span class="chip-incomplete">no total read — edit to fix</span>' : '') +
+        (e.est ? ' <span class="chip-est">est.</span>' : '') +
         (e.work === 'improvement' ? ' <span class="chip-improve">improvement</span>' : '') +
         (e.warranty ? ' <span class="prio">· warranty: ' + e.warranty + '</span>' : '') +
         (e.notes ? ' <span class="prio">· ' + e.notes + '</span>' : '') +
@@ -276,8 +333,11 @@
     flushSubtotal();
     tbody.innerHTML = html;
     const improvements = rows.filter(e => e.work === 'improvement').reduce((a, e) => a + e.amount, 0);
+    const billTotal = rows.filter(e => e.bill).reduce((a, e) => a + e.amount, 0);
+    const purchases = rows.length - rows.filter(e => e.bill).length;
     document.getElementById('ledger-sub').textContent =
-      rows.length + ' receipts · ' + usd(total, 2) + ' total' +
+      purchases + ' purchases · ' + usd(total - billTotal, 2) +
+      (billTotal ? ' + ' + usd(billTotal, 2) + ' in bills = ' + usd(total, 2) : ' total') +
       (improvements ? ' · ' + usd(improvements, 2) + ' in improvements (adds to cost basis)' : '');
   }
 

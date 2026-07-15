@@ -261,6 +261,16 @@ tr.incomplete td:first-child { border-left: 3px solid var(--st-block); }
   border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 1px;
   white-space: nowrap;
 }
+/* recurring bills inlined into the expenses ledger — blue so they read
+   apart from one-time purchases at a glance */
+tr.bill td { color: var(--c-electricity); }
+tr.bill td.num { color: var(--c-electricity); }
+.chip-est {
+  display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--c-electricity); border: 1px solid var(--c-electricity);
+  border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 1px;
+  white-space: nowrap; opacity: .75;
+}
 
 /* ---------- pills, badges, filters ---------- */
 
