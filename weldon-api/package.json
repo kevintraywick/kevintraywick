@@ -16,6 +16,7 @@
     "better-sqlite3": "^11.6.0",
     "express": "^4.21.1",
     "multer": "^2.1.1",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "sharp": "^0.35.3"
   }
 }

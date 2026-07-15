@@ -17,9 +17,11 @@ import express from 'express';
 import multer from 'multer';
 import Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
+import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -233,6 +235,7 @@ app.post('/api/gate', (req, res) => {
 
 app.use((req, res, next) => {
   if (req.path === '/gate.html' || req.path === '/api/gate' || req.path === '/assets/favicon.svg') return next();
+  if (req.path === '/api/backup') return next(); // has its own bearer auth (BACKUP_KEY)
   if (hasGateCookie(req)) return next();
   if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
     return res.status(401).send('locked');
@@ -252,6 +255,27 @@ const upload = multer({
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+/* off-site backup — the private weldon-backups repo's weekly GitHub Action
+   fetches this tarball (consistent sqlite snapshot + all uploaded scans) */
+app.get('/api/backup', async (req, res) => {
+  const key = process.env.BACKUP_KEY;
+  if (!key || req.headers.authorization !== 'Bearer ' + key) return res.status(401).send('locked');
+  const snap = path.join(DATA_DIR, 'weldon-backup.db');
+  try {
+    await db.backup(snap);
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', 'attachment; filename="weldon-data.tar.gz"');
+    const tar = spawn('tar', ['-czf', '-', '-C', DATA_DIR, 'weldon-backup.db', 'uploads']);
+    tar.stdout.pipe(res);
+    tar.on('close', () => { try { fs.unlinkSync(snap); } catch {} });
+    tar.on('error', () => { try { fs.unlinkSync(snap); } catch {} res.destroy(); });
+  } catch (e) {
+    console.error('backup failed:', e.message);
+    try { fs.unlinkSync(snap); } catch {}
+    if (!res.headersSent) res.status(500).send('backup failed');
+  }
+});
 
 // current gate combination — sits behind the gate middleware, so only
 // visitors who already passed can read it (footer hint on every page)
@@ -340,16 +364,30 @@ app.get('/api/photos', (req, res) => {
   res.json(rows.map(r => ({ ...r, url: '/uploads/' + r.filename })));
 });
 
-app.post('/api/photos', upload.single('file'), (req, res) => {
+app.post('/api/photos', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).send('no file');
   if (!MEDIA[path.extname(req.file.filename).toLowerCase()]) {
     fs.unlinkSync(req.file.path);
     return res.status(400).send('photos must be images');
   }
+  // photos are documentation, not evidence like receipts — recompress to webp
+  // (capped at 2400px) to keep the volume lean; gif kept as-is for animation
+  let filename = req.file.filename;
+  if (!/\.(webp|gif)$/i.test(filename)) {
+    const webpName = filename.replace(/\.[^.]*$/, '') + '.webp';
+    try {
+      await sharp(req.file.path).rotate()
+        .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(path.join(UPLOADS, webpName));
+      fs.unlinkSync(req.file.path);
+      filename = webpName;
+    } catch { /* not decodable as an image — keep the original file */ }
+  }
   const area = (req.body.area || 'general').slice(0, 60);
   const info = db.prepare(
     `INSERT INTO photos (area, filename, original_name) VALUES (?,?,?)`
-  ).run(area, req.file.filename, req.file.originalname || null);
+  ).run(area, filename, req.file.originalname || null);
   const row = db.prepare(`SELECT * FROM photos WHERE id=?`).get(info.lastInsertRowid);
   res.json({ ...row, url: '/uploads/' + row.filename });
 });
