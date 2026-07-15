@@ -8,7 +8,7 @@ import blackmoorSplashImg from './assets/blackmoor-splash.webp'
 import windImg from './assets/windstorm.png'
 import darkSkiesImg from './assets/darkskies-purple.jpg'
 import backWorkoutImg from './assets/back-workout-card.png'
-import { FeedOverlay } from './components/FeedOverlay'
+import { PhotoPanel } from './components/PhotoPanel'
 import Blog from './pages/Blog'
 import BlogEntry from './pages/BlogEntry'
 
@@ -20,9 +20,9 @@ function Homepage() {
 
   return (
     <div className="grid h-screen w-screen bg-white" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)' }}>
-      {/* Blog — position 1 (r1c1) */}
-      <div className="relative overflow-hidden bg-black" {...hover('My blog')}>
-        <FeedOverlay />
+      {/* Photos — position 1 (r1c1) */}
+      <div className="relative overflow-hidden bg-black" {...hover('My photos')}>
+        <PhotoPanel />
       </div>
       {/* Text Me — position 2 (r1c2) */}
       <a href="sms:+12068608292" className="overflow-hidden" {...hover('Text me here')}>
