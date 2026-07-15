@@ -15,7 +15,7 @@ npm run test:watch   # Vitest watch mode
 
 To run a single test file:
 ```bash
-npx vitest run src/components/FeedOverlay.test.tsx
+npx vitest run src/components/PhotoPanel.test.tsx
 ```
 
 ## Architecture
@@ -27,19 +27,19 @@ npx vitest run src/components/FeedOverlay.test.tsx
 **Backend**: External API at `https://kt-feed-api-production.up.railway.app` (Railway). Configured via `VITE_API_URL` env var. The `useFeed` hook handles all API calls. A Bearer token from `VITE_POST_SECRET` gates POST requests.
 
 **Routing** (in `App.tsx`):
-- `/` → Homepage with 9-panel (3×3) image-link grid + `FeedOverlay` in left column
+- `/` → Homepage with 9-panel (3×3) image-link grid + `PhotoPanel` (photo blog: latest photo, hover arrows to step back in time, drag-and-drop upload) in position 1
 - `/blog` → Blog feed (all entries)
 - `/blog/:id` → Individual entry with comments
 
 **External links from homepage**:
-- FeedOverlay header arrow (→) links to MoveAlong app at `https://movealong-production.up.railway.app`
-- FeedOverlay header circle links to `/cc`
+- PhotoPanel header arrow (→) links to MoveAlong app at `https://movealong-production.up.railway.app`
+- PhotoPanel header circle links to `/cc`
 - Blackmoor panel links to `https://blackmoor.up.railway.app`
 - Wind panel links to `https://meticulous-eagerness-production-411f.up.railway.app`
 
 `index.html` includes a GitHub Pages SPA redirect shim: query param `?path=` is rewritten to the real path via `window.history.replaceState`.
 
-**Data flow**: `useFeed` (custom hook) → fetches entries/comments, exposes `postEntry`/`postComment` → consumed by `FeedOverlay`, `Blog`, `BlogEntry`.
+**Data flow**: `useFeed` (custom hook) → fetches entries/comments, exposes `postEntry`/`postComment` → consumed by `PhotoPanel`, `Blog`, `BlogEntry`. `PhotoPanel` shows entries that have `image_url`; an image drop uploads via `POST /uploads` then posts an entry with the date as title.
 
 **Entry model**: `{ id, title, link?, note?, created_at, comment_count }`
 **Comment model**: `{ id, entry_id, body, created_at }`
@@ -54,7 +54,7 @@ npx vitest run src/components/FeedOverlay.test.tsx
 
 **Dark Skies** (`darkskies/`, live at `darkskies.kevintraywick.com`): A **standalone** Node + Express + Postgres app (own `package.json`) — NOT part of the Vite build. West Texas 2026 trip planner: shared chat, availability painter (Sep 1–Nov 30, `AV_DAYS=91`), and idea board (URL/image drops), all persisted in Postgres and polled from `/api/state`. Runs as its own Railway service in the **`inspiring-optimism`** project with **GitHub auto-deploy** (root dir `darkskies`, watch paths `darkskies/**`) — pushing to `main` redeploys only when `darkskies/` changes. Gotchas: set `PGSSL=disable` for the internal Postgres connection; Railway root-dir/watch-paths are set via the GraphQL API (`serviceInstanceUpdate`), not the CLI; run admin SQL with `psql "$DATABASE_PUBLIC_URL"` (from `railway variables --service Postgres --json` — internal `DATABASE_URL` only resolves inside Railway); keep `AV_DAYS` in sync between `darkskies/db.js` and `darkskies/public/index.html`; single-file frontend is `darkskies/public/index.html` (Chart.js via CDN).
 
-**160 Weldon** (`weldon/` + `weldon-api/`, live at `160weldon.kevintraywick.com`): House-info site + API for 160 Weldon Dr — a **standalone** Railway service (project `inspiring-optimism`, GitHub auto-deploy: rootDir `weldon-api`, watch `weldon-api/**`), NOT part of the Vite build. Site source of truth is `weldon/site/`; sync before committing: `rsync -a --delete weldon/site/ weldon-api/site/`. Backend is Express + better-sqlite3 + Anthropic SDK (`weldon-api/server.js`), volume at `/app/data`. The whole site sits behind an emoji gate (signed cookie via `POST /api/gate {"picks":[...]}`; live code in Railway var `GATE_CODE`, repo default is dev-only; `/assets/favicon.svg` is exempted). Unified intake `POST /api/documents`: claude-sonnet-5 reads a scan (image or multi-receipt PDF) and returns an **array** of classified documents — receipts → `expenses`, utility-bill/tax/insurance → `utility_bills`; a receipt with no legible total is filed at $0 and flagged red in the ledger (`tr.incomplete`, clears when the amount is edited). Scan calls stream with `max_tokens: 64000` — on sonnet-5 `max_tokens` caps adaptive thinking + JSON **combined**, so a small cap fails intermittently with "No readable result from the scan"; don't lower it. Local test pattern: `DATA_DIR=<scratch> PORT=8899 node server.js` with `ANTHROPIC_API_KEY` from `railway variables --service weldon-api --json`, then curl with the gate cookie jar. Synthetic multi-receipt test PDFs: one-doc-per-page HTML → `chrome --headless --print-to-pdf`.
+**160 Weldon** (`weldon/` + `weldon-api/`, live at `160weldon.kevintraywick.com`): House-info site + API for 160 Weldon Dr — a **standalone** Railway service (project `inspiring-optimism`, GitHub auto-deploy: rootDir `weldon-api`, watch `weldon-api/**`), NOT part of the Vite build. Site source of truth is `weldon/site/`; sync before committing: `rsync -a --delete weldon/site/ weldon-api/site/`. Backend is Express + better-sqlite3 + Anthropic SDK (`weldon-api/server.js`), volume at `/app/data`. The whole site sits behind an emoji gate (signed cookie via `POST /api/gate {"picks":[...]}`; live code in Railway var `GATE_CODE`, repo default is dev-only; `/assets/favicon.svg` is exempted). Unified intake `POST /api/documents`: claude-sonnet-5 reads a scan (image or multi-receipt PDF) and returns an **array** of classified documents — receipts → `expenses`, utility-bill/tax/insurance → `utility_bills`; a receipt with no legible total is filed at $0 and flagged red in the ledger (`tr.incomplete`, clears when the amount is edited). Scan calls stream with `max_tokens: 64000` — on sonnet-5 `max_tokens` caps adaptive thinking + JSON **combined**, so a small cap fails intermittently with "No readable result from the scan"; don't lower it. Local test pattern: `DATA_DIR=<scratch> PORT=8899 node server.js` with `ANTHROPIC_API_KEY` from `railway variables --service weldon-api --json`, then curl with the gate cookie jar. Synthetic multi-receipt test PDFs: one-doc-per-page HTML → `chrome --headless --print-to-pdf`. Backups: private repo `kevintraywick/weldon-backups` pulls `GET /api/backup` (bearer `BACKUP_KEY`, gate-exempt) weekly via GitHub Action — Railway volume backups are Pro-gated, don't retry them. Photo uploads are recompressed to webp (sharp, 2400px cap); receipt/document scans are stored as uploaded.
 
 ## Gotchas
 
