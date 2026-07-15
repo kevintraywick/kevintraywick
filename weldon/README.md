@@ -42,9 +42,26 @@ Railway service settings:
 - **Root directory**: `weldon-api`
 - **Volume**: mount at `/app/data` (SQLite DB + uploaded scans/photos live there)
 - **Variables**: `DATA_DIR=/app/data`, `ANTHROPIC_API_KEY` (receipt/bill reading,
-  uses claude-sonnet-5), optionally `SMTP_URL` + `MAIL_FROM` (maintenance email reminders)
+  uses claude-sonnet-5), `GATE_CODE` (the live 3-emoji gate combination — the repo
+  default is dev-only), `BACKUP_KEY` (bearer token for `/api/backup`), optionally
+  `SMTP_URL` + `MAIL_FROM` (maintenance email reminders)
 - **Custom domain**: `160weldon.kevintraywick.com` (add the CNAME Railway shows you
   at the DNS provider for kevintraywick.com)
+
+## Backups
+
+Railway's built-in volume backups are Pro-plan only, so backups are DIY:
+the private repo **`kevintraywick/weldon-backups`** runs a GitHub Action every
+Sunday 08:00 UTC (plus manual runs from its Actions tab) that fetches
+`GET /api/backup` — a consistent SQLite snapshot plus all uploaded scans/photos,
+authenticated by the `BACKUP_KEY` secret (same value as the Railway var) — and
+commits the extracted contents. **Restore**: copy `data/weldon.db` and
+`data/uploads/` from that repo onto the volume at `/app/data/` and redeploy;
+git history gives point-in-time recovery.
+
+Photos uploaded on the Photos page are recompressed to webp (sharp, 2400px cap)
+before hitting the volume; receipt/document scans are kept byte-for-byte as
+uploaded — they're documentation.
 
 ## Updating the sheet-derived data
 
@@ -58,5 +75,8 @@ they contain live credentials.
 
 ## Still to come
 
-- Privacy gate for the whole site (deliberately last, per Kevin).
 - Scanned blueprints / floor plans gallery on the House page.
+- `SMTP_URL` + `MAIL_FROM` so maintenance email reminders actually send.
+
+(The privacy gate shipped 2026-07-07 — the whole site sits behind the emoji
+gate in `gate.html` + server-side middleware.)
