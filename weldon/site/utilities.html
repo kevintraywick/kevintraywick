@@ -123,8 +123,31 @@
               added.push(item.entry.vendor + ' ' + usd(item.entry.amount, 2) + ' (→ Expenses ledger)');
             }
           }
+          // documents held back as possible duplicates — ask per item
+          let skipped = 0;
+          for (const s of (r.suspects || [])) {
+            if (s.routed === 'utility-bills') {
+              const b = s.doc.bill;
+              const ok = confirm('Already recorded: ' + s.match.utility + ' for ' + s.match.month + ' at ' + usd(s.match.amount, 2) +
+                '\n\nReplace it with this scan (' + usd(b.amount, 2) + ')?');
+              if (!ok) { skipped++; continue; }
+              const item = await WAPI.post('/documents/confirm', { doc: s.doc, scan_file: r.scan_file, replaceId: s.match.id });
+              bills = bills.map(x => x.id === item.entry.id ? item.entry : x);
+              added.push(b.utility + ' ' + usd(b.amount, 2) + ' (replaced ' + s.match.month + ')');
+            } else {
+              const rc = s.doc.receipt;
+              const ok = confirm('Possible duplicate: ' + rc.vendor + ' — ' + usd(rc.amount > 0 ? rc.amount : 0, 2) +
+                (rc.date ? ' on ' + rc.date : '') + '\nAn identical entry is already in the expenses ledger.\n\nAdd it anyway?');
+              if (!ok) { skipped++; continue; }
+              const item = await WAPI.post('/documents/confirm', { doc: s.doc, scan_file: r.scan_file });
+              added.push(item.entry.vendor + ' ' + usd(item.entry.amount, 2) + ' (→ Expenses ledger)');
+            }
+          }
           render();
-          let msg = 'Recorded ' + r.results.length + (r.results.length === 1 ? ' entry: ' : ' entries: ') + added.join(', ');
+          let msg = added.length
+            ? 'Recorded ' + added.length + (added.length === 1 ? ' entry: ' : ' entries: ') + added.join(', ')
+            : 'Nothing new recorded';
+          if (skipped) msg += ' — ' + skipped + ' skipped as duplicate' + (skipped === 1 ? '' : 's');
           const needFix = r.results.filter(it => !(it.entry.amount > 0)).length;
           if (needFix) {
             msg += ' — ' + needFix + ' had no legible total (edit on the Expenses page)';

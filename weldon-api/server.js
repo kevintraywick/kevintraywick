@@ -322,35 +322,75 @@ app.delete('/api/expenses/:id', (req, res) => {
 });
 
 /* unified document intake — classifies the scan and files each document found
-   in the right place. One upload may yield several ledger rows. */
+   in the right place. One upload may yield several ledger rows. Documents that
+   look like duplicates of existing rows are NOT inserted — they come back in
+   `suspects` and the page asks the user before posting them to /confirm. */
+function insertReceipt(r, scanFile) {
+  const info = db.prepare(
+    `INSERT INTO expenses (date, vendor, description, amount, category, work, source, receipt_file) VALUES (?,?,?,?,?,?, 'receipt', ?)`
+  ).run(r.date, r.vendor, r.description, r.amount > 0 ? r.amount : 0, r.category, workOrNull(r.work), scanFile);
+  return { routed: 'expenses', entry: db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid) };
+}
+function insertBill(b, scanFile) {
+  const info = db.prepare(
+    `INSERT INTO utility_bills (month, utility, amount, scan_file) VALUES (?,?,?,?)`
+  ).run(b.month, b.utility, b.amount, scanFile);
+  return { routed: 'utility-bills', entry: db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(info.lastInsertRowid) };
+}
+
 app.post('/api/documents', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).send('no file');
   try {
     const parsed = await readScan(req.file.path, DOC_PROMPT, DOCS_SCHEMA);
     const results = [];
+    const suspects = [];
     for (const doc of parsed.documents || []) {
       if (doc.kind === 'receipt' && doc.receipt) {
         // a receipt with no legible total is still filed (amount 0) — the
         // ledger flags it in red so the user can edit in the real number
         const r = doc.receipt;
-        const info = db.prepare(
-          `INSERT INTO expenses (date, vendor, description, amount, category, work, source, receipt_file) VALUES (?,?,?,?,?,?, 'receipt', ?)`
-        ).run(r.date, r.vendor, r.description, r.amount > 0 ? r.amount : 0, r.category, workOrNull(r.work), req.file.filename);
-        results.push({ routed: 'expenses', entry: db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid) });
+        // vendor matched loosely (case/whitespace jitter between scans of the
+        // same receipt); amount and date must match exactly
+        const match = db.prepare(
+          `SELECT * FROM expenses WHERE TRIM(vendor)=TRIM(?) COLLATE NOCASE AND amount=? AND COALESCE(date,'')=COALESCE(?,'')`
+        ).get(r.vendor, r.amount > 0 ? r.amount : 0, r.date);
+        if (match) { suspects.push({ routed: 'expenses', doc, match }); continue; }
+        results.push(insertReceipt(r, req.file.filename));
       } else if (doc.bill) {
         const b = doc.bill;
-        const info = db.prepare(
-          `INSERT INTO utility_bills (month, utility, amount, scan_file) VALUES (?,?,?,?)`
-        ).run(b.month, b.utility, b.amount, req.file.filename);
-        results.push({ routed: 'utility-bills', entry: db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(info.lastInsertRowid) });
+        const match = db.prepare(`SELECT * FROM utility_bills WHERE month=? AND utility=?`).get(b.month, b.utility);
+        if (match) { suspects.push({ routed: 'utility-bills', doc, match }); continue; }
+        results.push(insertBill(b, req.file.filename));
       }
     }
-    if (!results.length) return res.status(422).send('could not find any receipt or bill in this document');
-    res.json({ results });
+    if (!results.length && !suspects.length) return res.status(422).send('could not find any receipt or bill in this document');
+    res.json({ results, suspects, scan_file: req.file.filename });
   } catch (e) {
     console.error('document scan failed:', e.message);
     res.status(422).send(e.message);
   }
+});
+
+/* second half of the duplicate dialog: the user said "add it anyway" (or, for
+   a bill, "replace the existing month") */
+app.post('/api/documents/confirm', (req, res) => {
+  const { doc, scan_file, replaceId } = req.body || {};
+  const scanFile = typeof scan_file === 'string' ? path.basename(scan_file) : null;
+  if (doc?.kind === 'receipt' && doc.receipt?.vendor) {
+    return res.json(insertReceipt(doc.receipt, scanFile));
+  }
+  if (doc?.bill?.month && doc.bill.utility) {
+    const b = doc.bill;
+    if (replaceId) {
+      const row = db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(replaceId);
+      if (!row) return res.status(404).send('no such bill');
+      db.prepare(`UPDATE utility_bills SET month=?, utility=?, amount=?, scan_file=? WHERE id=?`)
+        .run(b.month, b.utility, b.amount, scanFile || row.scan_file, row.id);
+      return res.json({ routed: 'utility-bills', replaced: true, entry: db.prepare(`SELECT * FROM utility_bills WHERE id=?`).get(row.id) });
+    }
+    return res.json(insertBill(b, scanFile));
+  }
+  res.status(400).send('nothing to confirm');
 });
 
 /* utility bills */
