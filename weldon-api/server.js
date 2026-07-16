@@ -148,13 +148,17 @@ const DOC_ENTRY_SCHEMA = {
     receipt: {
       type: ['object', 'null'],
       additionalProperties: false,
-      required: ['date', 'vendor', 'description', 'amount', 'category', 'work'],
+      required: ['date', 'vendor', 'description', 'amount', 'category', 'work', 'marked'],
       description: 'Filled when kind=receipt, null otherwise',
       properties: {
         date: { type: ['string', 'null'], description: 'Purchase date as YYYY-MM-DD, or null if not visible' },
         vendor: { type: 'string', description: 'Store or company name' },
         description: { type: 'string', description: 'Short summary of what was bought, a few words' },
-        amount: { type: ['number', 'null'], description: 'Grand total paid in dollars, or null if no total is legible anywhere in the document' },
+        amount: { type: ['number', 'null'], description: 'Grand total paid in dollars — or, when line items are hand-marked, the sum of just the marked items. Null if no total is legible anywhere in the document' },
+        marked: {
+          type: 'boolean',
+          description: 'true when amount covers only hand-marked (circled / highlighted / underlined) line items instead of the receipt grand total',
+        },
         category: {
           type: 'string',
           enum: ['Paint & finishes', 'Garden & grounds', 'Systems & appliances', 'Patio & furnishings', 'Hardware & misc'],
@@ -210,7 +214,13 @@ const DOC_PROMPT =
   '"insurance" and use the ANNUAL total and the first month of the tax/policy year. For receipts ' +
   'use the grand total (null if no total is legible), pick the closest category, and judge `work`: ' +
   'improvement if it adds value or extends the house\'s life, repair if it fixes or maintains what ' +
-  'exists, unsure if unclear.';
+  'exists, unsure if unclear. EXCEPTION — hand-marked items: if a receipt has one or more line ' +
+  'items singled out by hand (circled, highlighted, underlined, starred, or an arrow drawn at ' +
+  'them), only those items belong in the ledger: set amount to the sum of the marked items\' line ' +
+  'prices (include tax only where the receipt itemizes it per line), name the marked item(s) in ' +
+  'the description, and set marked=true — ignore every unmarked item (e.g. groceries bought ' +
+  'alongside one house item). A mark on the total line itself, or store-printed emphasis, does ' +
+  'not count — that\'s still the grand total with marked=false.';
 
 /* ---------- app ---------- */
 const app = express();
@@ -347,9 +357,12 @@ app.delete('/api/expenses/:id', (req, res) => {
    look like duplicates of existing rows are NOT inserted — they come back in
    `suspects` and the page asks the user before posting them to /confirm. */
 function insertReceipt(r, scanFile) {
+  // marked = the scan had circled/highlighted items and amount covers only those;
+  // tag the row so the partial total is explainable (and editable) in the ledger
+  const desc = r.marked ? `${r.description} (marked item only)` : r.description;
   const info = db.prepare(
     `INSERT INTO expenses (date, vendor, description, amount, category, work, source, receipt_file) VALUES (?,?,?,?,?,?, 'receipt', ?)`
-  ).run(r.date, r.vendor, r.description, r.amount > 0 ? r.amount : 0, r.category, workOrNull(r.work), scanFile);
+  ).run(r.date, r.vendor, desc, r.amount > 0 ? r.amount : 0, r.category, workOrNull(r.work), scanFile);
   return { routed: 'expenses', entry: db.prepare(`SELECT * FROM expenses WHERE id=?`).get(info.lastInsertRowid) };
 }
 function insertBill(b, scanFile) {
