@@ -48,6 +48,18 @@ Railway service settings:
 - **Custom domain**: `160weldon.kevintraywick.com` (add the CNAME Railway shows you
   at the DNS provider for kevintraywick.com)
 
+## Document intake
+
+Any drop zone accepts photos or PDFs (including multi-receipt PDFs, ~20 docs
+per file). Claude classifies each document and files it: receipts → expenses
+ledger, utility bills / tax / insurance → utility bills. Receipts with no
+legible total are filed at $0 and flagged red until edited. Suspected
+duplicates are **not** filed — the page asks per item (receipts: add anyway?
+bills: replace the existing month?). Recurring bills also appear inline on the
+expenses ledger in blue, with tax + insurance amortized to 1/12 per month, so
+month subtotals — and the dashboard "Cost per month" tile — reflect the true
+monthly cost of the house.
+
 ## Backups
 
 Railway's built-in volume backups are Pro-plan only, so backups are DIY:
