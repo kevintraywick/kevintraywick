@@ -16,7 +16,7 @@
 import express from 'express';
 import multer from 'multer';
 import Database from 'better-sqlite3';
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic, { toFile } from '@anthropic-ai/sdk';
 import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -80,33 +80,54 @@ const MODEL = 'claude-sonnet-5';
 
 const MEDIA = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' };
 
-function scanBlock(filePath) {
+const FILES_BETA = 'files-api-2025-04-14';
+// base64 inflates a file by ~33%, and the Messages API caps requests at 32MB —
+// so PDFs past this size are uploaded via the Files API and referenced by id
+const SCAN_INLINE_MAX = Number(process.env.SCAN_INLINE_MAX || 20 * 1024 * 1024);
+
+async function scanBlock(filePath) {
   const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.pdf' && fs.statSync(filePath).size > SCAN_INLINE_MAX) {
+    const uploaded = await anthropic.beta.files.upload({
+      file: await toFile(fs.createReadStream(filePath), path.basename(filePath), { type: 'application/pdf' }),
+      betas: [FILES_BETA],
+    });
+    return { block: { type: 'document', source: { type: 'file', file_id: uploaded.id } }, fileId: uploaded.id };
+  }
   const data = fs.readFileSync(filePath).toString('base64');
   if (ext === '.pdf') {
-    return { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } };
+    return { block: { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } } };
   }
   const media = MEDIA[ext];
   if (!media) throw new Error('Unsupported file type: ' + ext);
-  return { type: 'image', source: { type: 'base64', media_type: media, data } };
+  return { block: { type: 'image', source: { type: 'base64', media_type: media, data } } };
 }
 
 async function readScan(filePath, prompt, schema) {
   // max_tokens caps the model's thinking + the JSON combined; sonnet-5 thinks
   // adaptively and long scans need real headroom. Streaming avoids the SDK's
   // HTTP timeout on large caps — 64k comfortably covers ~20 receipts per file.
-  const stream = anthropic.messages.stream({
+  const { block, fileId } = await scanBlock(filePath);
+  const params = {
     model: MODEL,
     max_tokens: 64000,
     output_config: { format: { type: 'json_schema', schema } },
-    messages: [{ role: 'user', content: [scanBlock(filePath), { type: 'text', text: prompt }] }],
-  });
-  const response = await stream.finalMessage();
-  if (response.stop_reason === 'refusal') throw new Error('The model declined to read this document.');
-  if (response.stop_reason === 'max_tokens') throw new Error('The scan result was cut off — try a file with fewer pages.');
-  const text = response.content.find(b => b.type === 'text')?.text;
-  if (!text) throw new Error('No readable result from the scan.');
-  return JSON.parse(text);
+    messages: [{ role: 'user', content: [block, { type: 'text', text: prompt }] }],
+  };
+  const stream = fileId
+    ? anthropic.beta.messages.stream({ ...params, betas: [FILES_BETA] })
+    : anthropic.messages.stream(params);
+  try {
+    const response = await stream.finalMessage();
+    if (response.stop_reason === 'refusal') throw new Error('The model declined to read this document.');
+    if (response.stop_reason === 'max_tokens') throw new Error('The scan result was cut off — try a file with fewer pages.');
+    const text = response.content.find(b => b.type === 'text')?.text;
+    if (!text) throw new Error('No readable result from the scan.');
+    return JSON.parse(text);
+  } finally {
+    // Anthropic file storage is capped per org — clean up after the scan
+    if (fileId) anthropic.beta.files.delete(fileId, { betas: [FILES_BETA] }).catch(() => {});
+  }
 }
 
 /* One classifier for every document dropped anywhere on the site. `kind`
@@ -251,7 +272,7 @@ const upload = multer({
       cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + ext);
     },
   }),
-  limits: { fileSize: 25 * 1024 * 1024 },
+  limits: { fileSize: 32 * 1024 * 1024 }, // matches the Claude API's 32MB PDF ceiling
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
@@ -532,6 +553,18 @@ async function sendReminders() {
 }
 setInterval(sendReminders, 12 * 3600_000);
 sendReminders();
+
+/* upload errors (multer throws before any route logic) — a plain message
+   instead of Express's default HTML error page */
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    const msg = err.code === 'LIMIT_FILE_SIZE'
+      ? 'that file is too big — the limit is 32MB per upload. Split the PDF (or re-scan at lower quality) and drop the parts separately'
+      : 'upload failed: ' + err.message;
+    return res.status(413).send(msg);
+  }
+  next(err);
+});
 
 /* ---------- static ---------- */
 app.use('/uploads', express.static(UPLOADS, { maxAge: '30d' }));
