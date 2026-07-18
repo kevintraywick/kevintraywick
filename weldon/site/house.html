@@ -121,7 +121,9 @@
         <div class="dz" id="dz-paint" style="padding:12px 18px;max-width:280px;text-align:center;align-self:flex-start">
           <input type="file" accept="image/*,.heic,.heif" multiple>
           <div class="dz-big">Drop a paint chip photo</div>
-          <div class="dz-small">it reads the color name, brand, and code off the chip</div>
+          <div class="dz-small">it reads the color name, brand, and code off the chip, and looks up the brand's official color value</div>
+          <div class="dz-tiny">name the file <b>paint_&lt;room&gt;_&lt;store&gt;</b> — e.g. paint_entrance_foyer_walmart.heic</div>
+          <div class="dz-tiny">re-drop the same filename to replace a chip's photo</div>
         </div>
       </div>
       <div class="statusline" id="paint-status"></div>
@@ -279,7 +281,7 @@
       '<div class="swatch" style="background:' + (c.hex || swatch(c.color)) + '"></div>' +
       '<div class="pc-body"><div class="pc-color">' + c.color + (c.code ? ' · ' + c.code : '') + '</div>' +
       '<div class="pc-room">' + (c.room || 'room not set') + '</div>' +
-      '<div class="pc-meta">' + [c.brand, c.store, 'scanned chip'].filter(Boolean).join(' · ') +
+      '<div class="pc-meta">' + [c.brand, c.store, c.hex_source === 'official' ? 'official color' : c.hex_source === 'photo' ? 'photo estimate' : 'scanned chip'].filter(Boolean).join(' · ') +
       (c.photo ? ' <a href="/uploads/' + c.photo + '" target="_blank" rel="noopener" title="View the chip photo" style="text-decoration:none;opacity:.65">🧾</a>' : '') +
       ' <button class="rowbtn danger" data-chipdel="' + c.id + '" title="Remove this chip" aria-label="Remove this chip" style="margin-left:4px">✕</button></div></div>';
     return card;
@@ -297,9 +299,23 @@
       for (const f of files) {
         paintSay('Reading ' + f.name + '…');
         try {
-          const chip = await WAPI.upload('/paint-chips', f);
-          grid.prepend(chipCard(chip));
-          paintSay('Added ' + chip.color + (chip.brand ? ' (' + chip.brand + ')' : '') + '.', 'ok');
+          const result = await WAPI.upload('/paint-chips', f);
+          if (result.suspect) {
+            // same filename or color as an existing chip — replace it?
+            const m = result.match;
+            if (confirm('Does this image replace the previous image for "' + m.color + '"' + (m.room ? ' (' + m.room + ')' : '') + '?')) {
+              const rep = await WAPI.post('/paint-chips/confirm', { replaceId: m.id, pending: result.pending });
+              const old = grid.querySelector('[data-chip="' + m.id + '"]');
+              if (old) old.replaceWith(chipCard(rep.entry));
+              else grid.prepend(chipCard(rep.entry));
+              paintSay('Replaced ' + rep.entry.color + '.', 'ok');
+            } else {
+              paintSay('Kept the existing chip — nothing added.');
+            }
+            continue;
+          }
+          grid.prepend(chipCard(result));
+          paintSay('Added ' + result.color + (result.brand ? ' (' + result.brand + ')' : '') + '.', 'ok');
         } catch (e) {
           paintSay(f.name + ': ' + e.message, 'err');
         }

@@ -71,6 +71,12 @@ CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
 // Improvements add to the house's cost basis; repairs don't.
 try { db.exec(`ALTER TABLE expenses ADD COLUMN work TEXT`); } catch { /* already added */ }
 
+// migration: paint chips keep the drop's original filename (duplicate detection)
+// and where the hex came from — 'official' (brand's published value, via web
+// search) or 'photo' (estimated from the picture).
+try { db.exec(`ALTER TABLE paint_chips ADD COLUMN original_name TEXT`); } catch { /* already added */ }
+try { db.exec(`ALTER TABLE paint_chips ADD COLUMN hex_source TEXT`); } catch { /* already added */ }
+
 // one-time seed of the maintenance schedule from the record book
 if (!db.prepare(`SELECT v FROM meta WHERE k='seeded'`).get()) {
   const ins = db.prepare(`INSERT INTO maintenance (title, due_date, repeat, cost, done_at) VALUES (?,?,?,?,?)`);
@@ -129,7 +135,9 @@ async function readScan(filePath, prompt, schema) {
     const response = await stream.finalMessage();
     if (response.stop_reason === 'refusal') throw new Error('The model declined to read this document.');
     if (response.stop_reason === 'max_tokens') throw new Error('The scan result was cut off — try a file with fewer pages.');
-    const text = response.content.find(b => b.type === 'text')?.text;
+    // with server tools the content interleaves text and tool blocks — the
+    // schema-conforming JSON is always the LAST text block
+    const text = response.content.filter(b => b.type === 'text').pop()?.text;
     if (!text) throw new Error('No readable result from the scan.');
     return JSON.parse(text);
   } finally {
@@ -481,12 +489,17 @@ app.get('/api/utility-bills', (req, res) => {
 const PAINT_CHIP_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['color', 'brand', 'code', 'hex', 'room', 'store'],
+  required: ['color', 'brand', 'code', 'hex', 'hex_source', 'room', 'store'],
   properties: {
     color: { type: 'string', description: 'The paint color name as printed on the chip (or the best reading of it)' },
-    brand: { type: ['string', 'null'], description: 'Paint brand (Sherwin-Williams, Behr, Valspar, ColorPlace, ...) or null if not visible' },
+    brand: { type: ['string', 'null'], description: 'Paint brand (Sherwin-Williams, Behr, Valspar, Glidden, PPG, ColorPlace, ...) or null if not visible' },
     code: { type: ['string', 'null'], description: 'Printed color code / number on the chip, or null' },
-    hex: { type: ['string', 'null'], description: 'Best-estimate #RRGGBB of the swatch color itself, judged from the photo' },
+    hex: { type: ['string', 'null'], description: 'The paint color as #RRGGBB — the official published value if found, else estimated from the photo' },
+    hex_source: {
+      type: 'string',
+      enum: ['official', 'photo', 'none'],
+      description: 'official = hex is the brand\'s published value found via web search; photo = estimated from the picture; none = no hex determinable',
+    },
     room: { type: ['string', 'null'], description: 'Room this paint is for, if the filename or photo hints at it; null otherwise' },
     store: { type: ['string', 'null'], description: 'Store it came from, if the filename or photo hints at it; null otherwise' },
   },
@@ -495,9 +508,48 @@ const PAINT_CHIP_SCHEMA = {
 const paintChipPrompt = originalName =>
   'This photo shows a paint chip / swatch / sample card (or a paint can label) for a residential ' +
   'house. Read the color name, brand, and any printed color code. Estimate the swatch color ' +
-  'itself as a #RRGGBB hex value from the photo (compensate for lighting — chips are usually ' +
-  'photographed indoors). The original filename may carry the room and store, use it as a hint: ' +
-  JSON.stringify(originalName || '') + '. Use null for anything you cannot determine.';
+  'itself as a #RRGGBB hex value from the photo with hex_source "photo" (compensate for lighting ' +
+  '— chips are usually photographed indoors). The original filename may carry the room and store, ' +
+  'use it as a hint: ' + JSON.stringify(originalName || '') + '. Use null for anything you cannot determine.';
+
+/* official hex lookup — a chip photo's color shifts badly with indoor
+ * lighting, so after the vision scan we fetch the brand's PUBLISHED value via
+ * the web-search server tool. Deliberately a separate text-only call: pairing
+ * web search with the image request proved 5-10x slower (>4 min vs ~25 s). */
+const HEX_LOOKUP_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['hex', 'found'],
+  properties: {
+    hex: { type: ['string', 'null'], description: 'The official published #RRGGBB, or null if not found' },
+    found: { type: 'boolean' },
+  },
+};
+
+async function lookupOfficialHex(brand, code, color) {
+  const q = [brand, code, color].filter(Boolean).join(' ');
+  if (!q) return null;
+  const stream = anthropic.messages.stream({
+    model: MODEL,
+    max_tokens: 8000,
+    output_config: { format: { type: 'json_schema', schema: HEX_LOOKUP_SCHEMA } },
+    tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 2 }],
+    messages: [{ role: 'user', content:
+      'Search the web for the official published hex value of the paint color ' + q + '. ' +
+      'Paint reference sites (encycolorpedia, the brand\'s own site) publish these. ' +
+      'Return it as #RRGGBB; null if you cannot find this exact color.' }],
+  });
+  const r = await stream.finalMessage();
+  const text = r.content.filter(b => b.type === 'text').pop()?.text;
+  const parsed = JSON.parse(text || '{}');
+  return /^#[0-9a-fA-F]{6}$/.test(parsed.hex || '') ? parsed.hex.toUpperCase() : null;
+}
+
+// duplicate detection key: the drop's filename, normalized hard (case,
+// separators, extension all stripped) so "Paint_Entrance-Foyer_Walmart.HEIC"
+// and "paint_entrance_foyer_walmart.jpg" collide
+const chipNameKey = name =>
+  String(name || '').replace(/\.[^.]*$/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 app.get('/api/paint-chips', (req, res) => {
   res.json(db.prepare(`SELECT * FROM paint_chips ORDER BY created_at, id`).all());
@@ -509,15 +561,52 @@ app.post('/api/paint-chips', upload.single('file'), async (req, res) => {
     await normalizeHeic(req.file);
     const p = await readScan(req.file.path, paintChipPrompt(req.file.originalname), PAINT_CHIP_SCHEMA);
     if (!p.color) return res.status(422).send('could not read a color name off this photo');
-    const hex = /^#[0-9a-fA-F]{6}$/.test(p.hex || '') ? p.hex.toUpperCase() : null;
+    let hex = /^#[0-9a-fA-F]{6}$/.test(p.hex || '') ? p.hex.toUpperCase() : null;
+    let hexSource = hex ? 'photo' : null;
+    try {
+      const official = await lookupOfficialHex(p.brand, p.code, p.color);
+      if (official) { hex = official; hexSource = 'official'; }
+    } catch (e) {
+      console.error('official hex lookup failed (photo estimate stands):', e.message);
+    }
+    const pending = {
+      color: p.color, brand: p.brand || null, code: p.code || null,
+      hex, hex_source: hexSource,
+      room: p.room || null, store: p.store || null,
+      photo: req.file.filename, original_name: req.file.originalname || null,
+    };
+    // same (or near-same) filename, or same color name → probably a re-scan of
+    // a chip already on the wall; ask before touching anything
+    const key = chipNameKey(pending.original_name);
+    const match = db.prepare(`SELECT * FROM paint_chips`).all().find(row =>
+      (key && chipNameKey(row.original_name) === key) ||
+      row.color.trim().toLowerCase() === pending.color.trim().toLowerCase()
+    );
+    if (match) return res.json({ suspect: true, match, pending });
     const info = db.prepare(
-      `INSERT INTO paint_chips (color, brand, code, hex, room, store, photo) VALUES (?,?,?,?,?,?,?)`
-    ).run(p.color, p.brand || null, p.code || null, hex, p.room || null, p.store || null, req.file.filename);
+      `INSERT INTO paint_chips (color, brand, code, hex, hex_source, room, store, photo, original_name) VALUES (?,?,?,?,?,?,?,?,?)`
+    ).run(pending.color, pending.brand, pending.code, pending.hex, pending.hex_source, pending.room, pending.store, pending.photo, pending.original_name);
     res.json(db.prepare(`SELECT * FROM paint_chips WHERE id=?`).get(info.lastInsertRowid));
   } catch (e) {
     console.error('paint chip scan failed:', e.message);
     res.status(422).send(e.message);
   }
+});
+
+/* second half of the duplicate dialog: the user said "yes, this photo
+   replaces the previous chip" — the row is updated in place, the old photo
+   becomes an orphan for the sweep */
+app.post('/api/paint-chips/confirm', (req, res) => {
+  const { replaceId, pending } = req.body || {};
+  if (!replaceId || !pending?.color) return res.status(400).send('nothing to confirm');
+  const row = db.prepare(`SELECT * FROM paint_chips WHERE id=?`).get(replaceId);
+  if (!row) return res.status(404).send('no such chip');
+  db.prepare(
+    `UPDATE paint_chips SET color=?, brand=?, code=?, hex=?, hex_source=?, room=?, store=?, photo=?, original_name=? WHERE id=?`
+  ).run(pending.color, pending.brand || null, pending.code || null, pending.hex || null,
+    pending.hex_source || null, pending.room || null, pending.store || null,
+    pending.photo || row.photo, pending.original_name || null, row.id);
+  res.json({ replaced: true, entry: db.prepare(`SELECT * FROM paint_chips WHERE id=?`).get(row.id) });
 });
 
 app.delete('/api/paint-chips/:id', (req, res) => {
