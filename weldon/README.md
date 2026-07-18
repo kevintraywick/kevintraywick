@@ -51,14 +51,29 @@ Railway service settings:
 ## Document intake
 
 Any drop zone accepts photos or PDFs (including multi-receipt PDFs, ~20 docs
-per file). Claude classifies each document and files it: receipts → expenses
-ledger, utility bills / tax / insurance → utility bills. Receipts with no
-legible total are filed at $0 and flagged red until edited. Suspected
-duplicates are **not** filed — the page asks per item (receipts: add anyway?
-bills: replace the existing month?). Recurring bills also appear inline on the
-expenses ledger in blue, with tax + insurance amortized to 1/12 per month, so
-month subtotals — and the dashboard "Cost per month" tile — reflect the true
-monthly cost of the house.
+per file); iPhone HEIC photos are converted to JPEG on arrival. Claude
+classifies each document and files it: receipts → expenses ledger, utility
+bills / tax / insurance → utility bills. **Circle, highlight, or underline an
+item on a mixed receipt** (a house item among groceries) and only the marked
+item is filed — the row is tagged "(marked item only)". Receipts with no
+legible total are filed at $0 and flagged red until edited. Every scanned row
+gets a 🧾 link to its stored scan. Suspected duplicates are **not** filed —
+the page asks per item (receipts: add anyway? bills: replace the existing
+month?). Recurring bills also appear inline on the expenses ledger in blue,
+with tax + insurance amortized to 1/12 per month, so month subtotals — and
+the dashboard "Cost per month" tile — reflect the true monthly cost of the
+house.
+
+## Paint chips
+
+The House page's paint section has its own drop zone: photograph a paint chip
+and name the file `paint_<room>_<store>` (e.g.
+`paint_entrance_foyer_walmart.heic`). Claude reads the color name, brand, and
+code off the chip, then looks up the brand's **official published hex** via
+web search — a chip photographed indoors shifts badly, so the photo estimate
+is only the fallback (cards say "official color" or "photo estimate").
+Re-dropping the same filename (or same color name) asks whether the new photo
+replaces the existing chip instead of adding a duplicate.
 
 ## Backups
 
@@ -73,7 +88,10 @@ git history gives point-in-time recovery.
 
 Photos uploaded on the Photos page are recompressed to webp (sharp, 2400px cap)
 before hitting the volume; receipt/document scans are kept byte-for-byte as
-uploaded — they're documentation.
+uploaded — they're documentation (HEIC being the one exception: it's converted
+to JPEG so browsers and the scanner can read it). Photos can be deleted from
+the slideshow's ✕ button. Files no ledger/photo/chip row references anymore
+are removed by a daily orphan sweep after a 24-hour grace period.
 
 ## Updating the sheet-derived data
 
