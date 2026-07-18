@@ -118,7 +118,13 @@
     <section class="card span-12">
       <div class="card-head">
         <div><h2>Paint, room by room</h2><p class="card-sub">the exact colors on the walls — swatches are on-screen approximations; the cans have the truth</p></div>
+        <div class="dz" id="dz-paint" style="padding:12px 18px;max-width:280px;text-align:center;align-self:flex-start">
+          <input type="file" accept="image/*,.heic,.heif" multiple>
+          <div class="dz-big">Drop a paint chip photo</div>
+          <div class="dz-small">it reads the color name, brand, and code off the chip</div>
+        </div>
       </div>
+      <div class="statusline" id="paint-status"></div>
       <div class="paintgrid" id="paintgrid"></div>
     </section>
   </div>
@@ -258,6 +264,60 @@
       '<div class="pc-meta">' + p.brand + (p.notes ? ' · ' + p.notes : '') + (p.store ? ' · ' + p.store : '') + '</div></div>';
     grid.appendChild(card);
   });
+
+  /* scanned paint chips — photographed swatch cards read by the API; they
+     render ahead of the record-book chips, newest first */
+  const paintStatus = document.getElementById('paint-status');
+  const paintDz = document.getElementById('dz-paint');
+  function paintSay(msg, cls) { paintStatus.textContent = msg; paintStatus.className = 'statusline ' + (cls || ''); }
+
+  function chipCard(c) {
+    const card = document.createElement('div');
+    card.className = 'paintcard';
+    card.dataset.chip = c.id;
+    card.innerHTML =
+      '<div class="swatch" style="background:' + (c.hex || swatch(c.color)) + '"></div>' +
+      '<div class="pc-body"><div class="pc-color">' + c.color + (c.code ? ' · ' + c.code : '') + '</div>' +
+      '<div class="pc-room">' + (c.room || 'room not set') + '</div>' +
+      '<div class="pc-meta">' + [c.brand, c.store, 'scanned chip'].filter(Boolean).join(' · ') +
+      (c.photo ? ' <a href="/uploads/' + c.photo + '" target="_blank" rel="noopener" title="View the chip photo" style="text-decoration:none;opacity:.65">🧾</a>' : '') +
+      ' <button class="rowbtn danger" data-chipdel="' + c.id + '" title="Remove this chip" aria-label="Remove this chip" style="margin-left:4px">✕</button></div></div>';
+    return card;
+  }
+
+  (async () => {
+    if (!await WAPI.health()) { paintDz.style.display = 'none'; return; }
+    try {
+      const chips = await WAPI.get('/paint-chips');
+      chips.reverse().forEach(c => grid.prepend(chipCard(c)));
+    } catch {}
+
+    WAPI.wireDropZone(paintDz, async files => {
+      paintDz.classList.add('busy');
+      for (const f of files) {
+        paintSay('Reading ' + f.name + '…');
+        try {
+          const chip = await WAPI.upload('/paint-chips', f);
+          grid.prepend(chipCard(chip));
+          paintSay('Added ' + chip.color + (chip.brand ? ' (' + chip.brand + ')' : '') + '.', 'ok');
+        } catch (e) {
+          paintSay(f.name + ': ' + e.message, 'err');
+        }
+      }
+      paintDz.classList.remove('busy');
+    });
+
+    grid.addEventListener('click', async ev => {
+      const btn = ev.target.closest('button[data-chipdel]');
+      if (!btn) return;
+      if (!confirm('Remove this scanned chip?')) return;
+      try {
+        await WAPI.del('/paint-chips/' + btn.dataset.chipdel);
+        btn.closest('.paintcard').remove();
+        paintSay('Chip removed.', 'ok');
+      } catch (e) { paintSay(e.message, 'err'); }
+    });
+  })();
 
   document.getElementById('vendors').innerHTML = D.vendors.map(v =>
     '<tr><td>' + v.name + '</td><td class="num">' + (v.phone || '') + '</td><td>' + (v.notes || '') + '</td></tr>'

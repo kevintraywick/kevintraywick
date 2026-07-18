@@ -8,6 +8,8 @@
  *                                  utility bill vs tax vs insurance and files it)
  *   GET  /api/utility-bills
  *   GET  /api/photos              POST /api/photos            (multipart, field `area`)
+ *   GET  /api/paint-chips         POST /api/paint-chips       (multipart chip photo → Claude
+ *                                 DELETE /api/paint-chips/:id  reads color/brand/code/hex)
  *   GET  /api/maintenance         POST /api/maintenance       PATCH /api/maintenance/:id
  *
  * Storage: SQLite + uploaded files under DATA_DIR (Railway volume → mount at /app/data).
@@ -17,6 +19,7 @@ import express from 'express';
 import multer from 'multer';
 import Database from 'better-sqlite3';
 import Anthropic, { toFile } from '@anthropic-ai/sdk';
+import heicConvert from 'heic-convert';
 import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -55,6 +58,11 @@ CREATE TABLE IF NOT EXISTS maintenance (
   title TEXT NOT NULL, due_date TEXT, repeat TEXT NOT NULL DEFAULT 'none',
   cost REAL, email TEXT, done_at TEXT, reminded_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS paint_chips (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  color TEXT NOT NULL, brand TEXT, code TEXT, hex TEXT, room TEXT, store TEXT,
+  photo TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
 `);
@@ -285,6 +293,20 @@ const upload = multer({
   limits: { fileSize: 32 * 1024 * 1024 }, // matches the Claude API's 32MB PDF ceiling
 });
 
+/* iPhone photos arrive as HEIC, which neither sharp's prebuilt libvips nor
+ * the Claude API can read — convert to JPEG on arrival (in place: the file
+ * is renamed, so everything downstream sees a plain .jpg). */
+async function normalizeHeic(file) {
+  if (!/\.hei[cf]$/i.test(file.filename)) return;
+  const jpeg = await heicConvert({ buffer: fs.readFileSync(file.path), format: 'JPEG', quality: 0.9 });
+  const newName = file.filename.replace(/\.[^.]*$/, '.jpg');
+  const newPath = path.join(UPLOADS, newName);
+  fs.writeFileSync(newPath, Buffer.from(jpeg));
+  fs.unlinkSync(file.path);
+  file.filename = newName;
+  file.path = newPath;
+}
+
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 /* off-site backup — the private weldon-backups repo's weekly GitHub Action
@@ -375,6 +397,7 @@ function insertBill(b, scanFile) {
 app.post('/api/documents', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).send('no file');
   try {
+    await normalizeHeic(req.file);
     const parsed = await readScan(req.file.path, DOC_PROMPT, DOCS_SCHEMA);
     const results = [];
     const suspects = [];
@@ -453,6 +476,58 @@ app.get('/api/utility-bills', (req, res) => {
   res.json(db.prepare(`SELECT * FROM utility_bills ORDER BY month`).all());
 });
 
+/* paint chips — photograph a chip / swatch card and Claude reads the color.
+   The filename often carries context (room, store) — passed as a hint. */
+const PAINT_CHIP_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['color', 'brand', 'code', 'hex', 'room', 'store'],
+  properties: {
+    color: { type: 'string', description: 'The paint color name as printed on the chip (or the best reading of it)' },
+    brand: { type: ['string', 'null'], description: 'Paint brand (Sherwin-Williams, Behr, Valspar, ColorPlace, ...) or null if not visible' },
+    code: { type: ['string', 'null'], description: 'Printed color code / number on the chip, or null' },
+    hex: { type: ['string', 'null'], description: 'Best-estimate #RRGGBB of the swatch color itself, judged from the photo' },
+    room: { type: ['string', 'null'], description: 'Room this paint is for, if the filename or photo hints at it; null otherwise' },
+    store: { type: ['string', 'null'], description: 'Store it came from, if the filename or photo hints at it; null otherwise' },
+  },
+};
+
+const paintChipPrompt = originalName =>
+  'This photo shows a paint chip / swatch / sample card (or a paint can label) for a residential ' +
+  'house. Read the color name, brand, and any printed color code. Estimate the swatch color ' +
+  'itself as a #RRGGBB hex value from the photo (compensate for lighting — chips are usually ' +
+  'photographed indoors). The original filename may carry the room and store, use it as a hint: ' +
+  JSON.stringify(originalName || '') + '. Use null for anything you cannot determine.';
+
+app.get('/api/paint-chips', (req, res) => {
+  res.json(db.prepare(`SELECT * FROM paint_chips ORDER BY created_at, id`).all());
+});
+
+app.post('/api/paint-chips', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).send('no file');
+  try {
+    await normalizeHeic(req.file);
+    const p = await readScan(req.file.path, paintChipPrompt(req.file.originalname), PAINT_CHIP_SCHEMA);
+    if (!p.color) return res.status(422).send('could not read a color name off this photo');
+    const hex = /^#[0-9a-fA-F]{6}$/.test(p.hex || '') ? p.hex.toUpperCase() : null;
+    const info = db.prepare(
+      `INSERT INTO paint_chips (color, brand, code, hex, room, store, photo) VALUES (?,?,?,?,?,?,?)`
+    ).run(p.color, p.brand || null, p.code || null, hex, p.room || null, p.store || null, req.file.filename);
+    res.json(db.prepare(`SELECT * FROM paint_chips WHERE id=?`).get(info.lastInsertRowid));
+  } catch (e) {
+    console.error('paint chip scan failed:', e.message);
+    res.status(422).send(e.message);
+  }
+});
+
+app.delete('/api/paint-chips/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM paint_chips WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such chip');
+  db.prepare(`DELETE FROM paint_chips WHERE id=?`).run(row.id);
+  // photo file is left for the orphan sweep (same policy as receipts)
+  res.json({ ok: true });
+});
+
 /* photos */
 app.get('/api/photos', (req, res) => {
   const rows = db.prepare(`SELECT * FROM photos ORDER BY created_at, id`).all();
@@ -461,6 +536,7 @@ app.get('/api/photos', (req, res) => {
 
 app.post('/api/photos', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).send('no file');
+  try { await normalizeHeic(req.file); } catch { /* fall through to the type check */ }
   if (!MEDIA[path.extname(req.file.filename).toLowerCase()]) {
     fs.unlinkSync(req.file.path);
     return res.status(400).send('photos must be images');
@@ -591,6 +667,7 @@ function sweepOrphanUploads() {
       ...db.prepare(`SELECT receipt_file f FROM expenses WHERE receipt_file IS NOT NULL`).all(),
       ...db.prepare(`SELECT scan_file f FROM utility_bills WHERE scan_file IS NOT NULL`).all(),
       ...db.prepare(`SELECT filename f FROM photos`).all(),
+      ...db.prepare(`SELECT photo f FROM paint_chips WHERE photo IS NOT NULL`).all(),
     ].map(r => r.f));
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     let removed = 0;
