@@ -125,7 +125,7 @@
       });
     });
     bills.forEach(b => {
-      if (BILL_LABELS[b.utility]) (monthly[b.month] = monthly[b.month] || {})[b.utility] = { v: b.amount, id: b.id };
+      if (BILL_LABELS[b.utility]) (monthly[b.month] = monthly[b.month] || {})[b.utility] = { v: b.amount, id: b.id, f: b.scan_file };
     });
 
     const rows = [];
@@ -138,7 +138,7 @@
       Object.keys(monthly[ym]).forEach(k => {
         const cell = monthly[ym][k];
         // bid = server row id → scanned bills can be edited/deleted in place
-        put(ym, BILL_LABELS[k], cell.v, cell.id ? 'scanned bill' : 'monthly bill', false, cell.id ? { bid: cell.id, ukind: k } : null);
+        put(ym, BILL_LABELS[k], cell.v, cell.id ? 'scanned bill' : 'monthly bill', false, cell.id ? { bid: cell.id, ukind: k, file: cell.f || null } : null);
       });
     });
 
@@ -146,14 +146,15 @@
     // statement replaces the estimate for its year
     const nowYm = new Date().toISOString().slice(0, 7);
     const byYear = { tax: {}, insurance: {} };
-    bills.forEach(b => { if (b.utility === 'tax' || b.utility === 'insurance') byYear[b.utility][b.month.slice(0, 4)] = b.amount; });
+    bills.forEach(b => { if (b.utility === 'tax' || b.utility === 'insurance') byYear[b.utility][b.month.slice(0, 4)] = { v: b.amount, f: b.scan_file }; });
     for (let y = 2024, m = 1; y + '-' + String(m).padStart(2, '0') <= nowYm;) {
       const ym = y + '-' + String(m).padStart(2, '0');
       ['tax', 'insurance'].forEach(k => {
         const actual = byYear[k][String(y)];
-        const yr = actual ?? ANNUAL_EST[k];
+        const yr = actual ? actual.v : ANNUAL_EST[k];
         put(ym, k === 'tax' ? 'Property tax' : 'Insurance',
-          yr / 12, '1/12 of ' + usd(yr, 0) + '/yr', actual == null);
+          yr / 12, '1/12 of ' + usd(yr, 0) + '/yr', actual == null,
+          actual && actual.f ? { file: actual.f } : null);
       });
       m++; if (m > 12) { m = 1; y++; }
     }
@@ -169,6 +170,7 @@
       work: r.work || null,
       incomplete: r.source === 'receipt' && !(r.amount > 0),
       warranty: '', notes: r.source === 'receipt' ? 'from scanned receipt' : '',
+      file: r.receipt_file || null,
     }))).concat(billRows());
   }
 
@@ -372,6 +374,7 @@
         (e.work === 'improvement' ? ' <span class="chip-improve">improvement</span>' : '') +
         (e.warranty ? ' <span class="prio">· warranty: ' + e.warranty + '</span>' : '') +
         (e.notes ? ' <span class="prio">· ' + e.notes + '</span>' : '') +
+        (e.file ? ' <a href="/uploads/' + e.file + '" target="_blank" rel="noopener" title="View the scanned ' + (e.bill ? 'bill' : 'receipt') + '" style="text-decoration:none;opacity:.65">🧾</a>' : '') +
         '</td><td>' + e.category + '</td><td class="r num">' + usd(e.amount, 2) + '</td><td class="act">' + actions + '</td></tr>';
     });
     flushSubtotal();

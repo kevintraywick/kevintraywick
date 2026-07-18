@@ -346,9 +346,9 @@ app.delete('/api/expenses/:id', (req, res) => {
   const row = db.prepare(`SELECT * FROM expenses WHERE id=?`).get(req.params.id);
   if (!row) return res.status(404).send('no such entry');
   db.prepare(`DELETE FROM expenses WHERE id=?`).run(row.id);
-  if (row.receipt_file) {
-    try { fs.unlinkSync(path.join(UPLOADS, row.receipt_file)); } catch {}
-  }
+  // the scan file is NOT unlinked here — a multi-receipt PDF is shared by
+  // several rows, so deleting one row must not break the siblings' links.
+  // The daily orphan sweep removes the file once nothing references it.
   res.json({ ok: true });
 });
 
@@ -580,6 +580,35 @@ app.use((err, req, res, next) => {
 });
 
 /* ---------- static ---------- */
+/* orphan sweep — uploads no expense, bill, or photo row points at. Declined
+ * duplicates, failed scans, replaced bill scans, and deleted rows all leave
+ * (or strand) a file here. A pending duplicate dialog references its file
+ * only in client state, so only files older than 24h are removed. Runs at
+ * boot and daily. */
+function sweepOrphanUploads() {
+  try {
+    const keep = new Set([
+      ...db.prepare(`SELECT receipt_file f FROM expenses WHERE receipt_file IS NOT NULL`).all(),
+      ...db.prepare(`SELECT scan_file f FROM utility_bills WHERE scan_file IS NOT NULL`).all(),
+      ...db.prepare(`SELECT filename f FROM photos`).all(),
+    ].map(r => r.f));
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    let removed = 0;
+    for (const name of fs.readdirSync(UPLOADS)) {
+      if (keep.has(name)) continue;
+      const full = path.join(UPLOADS, name);
+      try {
+        if (fs.statSync(full).mtimeMs < cutoff) { fs.unlinkSync(full); removed++; }
+      } catch {}
+    }
+    if (removed) console.log('orphan sweep: removed ' + removed + ' unreferenced upload(s)');
+  } catch (e) {
+    console.error('orphan sweep failed:', e.message);
+  }
+}
+sweepOrphanUploads();
+setInterval(sweepOrphanUploads, 24 * 60 * 60 * 1000).unref();
+
 app.use('/uploads', express.static(UPLOADS, { maxAge: '30d' }));
 app.use(express.static(path.join(__dirname, 'site'), {
   setHeaders(res, filePath) {
