@@ -448,6 +448,11 @@ footer.site-foot .gate-hint { font-size: 15px; letter-spacing: 3px; margin-left:
 .slideshow .ss-nav:hover { background: rgba(24,29,38,.8); }
 .slideshow .ss-prev { left: 12px; }
 .slideshow .ss-next { right: 12px; }
+.slideshow .ss-del {
+  top: 12px; right: 12px; transform: none;
+  width: 32px; height: 32px; font-size: 14px;
+}
+.slideshow .ss-del:hover { background: rgba(160,40,40,.85); }
 .slideshow .ss-count {
   position: absolute; bottom: 10px; right: 14px; z-index: 3;
   font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,.85);

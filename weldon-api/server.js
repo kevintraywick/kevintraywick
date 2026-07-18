@@ -8,6 +8,7 @@
  *                                  utility bill vs tax vs insurance and files it)
  *   GET  /api/utility-bills
  *   GET  /api/photos              POST /api/photos            (multipart, field `area`)
+ *   DELETE /api/photos/:id
  *   GET  /api/paint-chips         POST /api/paint-chips       (multipart chip photo → Claude
  *                                 DELETE /api/paint-chips/:id  reads color/brand/code/hex)
  *   GET  /api/maintenance         POST /api/maintenance       PATCH /api/maintenance/:id
@@ -650,6 +651,14 @@ app.post('/api/photos', upload.single('file'), async (req, res) => {
   ).run(area, filename, req.file.originalname || null);
   const row = db.prepare(`SELECT * FROM photos WHERE id=?`).get(info.lastInsertRowid);
   res.json({ ...row, url: '/uploads/' + row.filename });
+});
+
+app.delete('/api/photos/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM photos WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such photo');
+  db.prepare(`DELETE FROM photos WHERE id=?`).run(row.id);
+  // file left to the orphan sweep (same policy as receipts and chips)
+  res.json({ ok: true });
 });
 
 /* maintenance */
