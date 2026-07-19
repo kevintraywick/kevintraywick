@@ -24,10 +24,10 @@ npx vitest run src/components/PhotoPanel.test.tsx
 
 **Deployment**: GitHub Actions → GitHub Pages (kevintraywick.com). The `deploy.yml` workflow builds on push to `main` and injects `VITE_API_URL` and `VITE_POST_SECRET` from GitHub secrets.
 
-**Backend**: External API at `https://kt-feed-api-production.up.railway.app` — Railway service **"kev's web site"** in project `inspiring-optimism` (don't trust `~/kt-feed-api`'s link; it once pointed at the empty `airy-flexibility` project). Source is the separate repo `~/kt-feed-api` (GitHub auto-deploy). Configured via `VITE_API_URL` env var. The `useFeed` hook handles all API calls. `POST /entries` needs the `VITE_POST_SECRET` Bearer token; `POST /uploads` needs no auth (images, 10MB cap); `GET /entries` returns only the 20 newest. CORS allows only kevintraywick.com and localhost 5173/4173 — a Vite dev server that falls back to another port (e.g. 5174) silently can't reach the API. If every request 502s while Railway shows the service "Online", the app has hung: `cd ~/kt-feed-api && railway redeploy -y`.
+**Backend**: External API at `https://kt-feed-api-production.up.railway.app` — Railway service **"kev's web site"** in project `inspiring-optimism` (don't trust `~/kt-feed-api`'s link; it once pointed at the empty `airy-flexibility` project). Source is the separate repo `~/kt-feed-api` (GitHub auto-deploy). Configured via `VITE_API_URL` env var. The `useFeed` hook handles all API calls. `POST /entries` and `PATCH /entries/:id` (pan position) need the `VITE_POST_SECRET` Bearer token; `POST /uploads` needs no auth (images, 10MB cap); `GET /entries` returns only the 20 newest. Note the "secret" ships in the public JS bundle — any visitor could technically post or re-pan; accepted for a personal site. CORS allows only kevintraywick.com and localhost 5173/4173 — a Vite dev server that falls back to another port (e.g. 5174) silently can't reach the API. If every request 502s while Railway shows the service "Online", the app has hung: `cd ~/kt-feed-api && railway redeploy -y`.
 
 **Routing** (in `App.tsx`):
-- `/` → Homepage with 9-panel (3×3) image-link grid + `PhotoPanel` (photo blog: latest photo, hover arrows to step back in time, drag-and-drop upload) in position 1
+- `/` → Homepage with 9-panel (3×3) image-link grid + `PhotoPanel` (photo blog: latest photo, hover arrows to step back in time, drag-and-drop upload, drag-to-pan reframing) in position 1
 - `/blog` → Blog feed (all entries)
 - `/blog/:id` → Individual entry with comments
 
@@ -39,9 +39,9 @@ npx vitest run src/components/PhotoPanel.test.tsx
 
 `index.html` includes a GitHub Pages SPA redirect shim: query param `?path=` is rewritten to the real path via `window.history.replaceState`.
 
-**Data flow**: `useFeed` (custom hook) → fetches entries/comments, exposes `postEntry`/`postComment` → consumed by `PhotoPanel`, `Blog`, `BlogEntry`. `PhotoPanel` shows entries that have `image_url`; an image drop downscales client-side to 2400px JPEG (10MB API cap), uploads via `POST /uploads`, then posts an entry with the date as title. Dragging straight from the macOS Photos app works (Photos exports a JPEG mid-drag) — that's the intended one-step "share to site" path; a Photos share-sheet entry would need a Shortcut or an Xcode share extension, deliberately skipped.
+**Data flow**: `useFeed` (custom hook) → fetches entries/comments, exposes `postEntry`/`postComment` → consumed by `PhotoPanel`, `Blog`, `BlogEntry`. `PhotoPanel` shows entries that have `image_url`; an image drop downscales client-side to 2400px JPEG (10MB API cap), uploads via `POST /uploads`, then posts an entry with the date as title. Dragging straight from the macOS Photos app works (Photos exports a JPEG mid-drag) — that's the intended one-step "share to site" path; a Photos share-sheet entry would need a Shortcut or an Xcode share extension, deliberately skipped. The photo renders with `object-cover` (center-crop by default); pointer-dragging the image pans it by adjusting `object-position`, and on release the position saves to the entry (`pan_x`/`pan_y`, 0–100 percentages) via `updateEntryPan` → `PATCH /entries/:id`, so all visitors see the same framing. Pan drag distance maps 1:1 to the image's cover overflow (computed from `naturalWidth/Height` vs the rendered rect); `draggable={false}` keeps it from fighting the file-drop zone.
 
-**Entry model**: `{ id, title, link?, note?, created_at, comment_count }`
+**Entry model**: `{ id, title, link?, note?, image_url?, pan_x?, pan_y?, created_at, comment_count }`
 **Comment model**: `{ id, entry_id, body, created_at }`
 
 **Test co-location**: Test files live alongside source (e.g. `Component.test.tsx` next to `Component.tsx`).
@@ -59,6 +59,7 @@ npx vitest run src/components/PhotoPanel.test.tsx
 ## Gotchas
 
 - `.gitignore` ignores `*.svg` repo-wide — `git add -f` any SVG that must be committed (e.g. favicons).
+- ESLint runs the strict React-compiler-era hooks rules: no ref reads during render (`react-hooks/refs` — e.g. use Tailwind `active:` for a drag cursor instead of `ref.current ? … : …` in JSX) and no plain `setState` in a `useEffect` body (`react-hooks/set-state-in-effect` — to reset state when a prop/id changes, use the documented adjust-state-during-render pattern: keep the previous id in state and call both setters inside an `if (id !== prevId)` during render).
 - Bare `npx vitest run` / `npm run lint` also sweep stale checkout copies under `.claude/worktrees/**` and `basher/.claude/worktrees/**` — scope to your files (`npx vitest run src`, `npx eslint <files>`) to judge a change; repo-wide lint carries ~80 pre-existing problems.
 - Multiple Claude sessions often share this checkout and its git index — commit with explicit pathspecs and check `git diff --cached --stat` first; a blanket commit once swept another session's staged deletions to main and broke the Pages build.
 - `railway logs` shows the **current deployment only** — a push/redeploy restarts the container and wipes prior output. weldon-api logs errors only, so debug by reproducing the request, not by log archaeology.
