@@ -8,6 +8,8 @@ export interface Entry {
   link?: string
   note?: string
   image_url?: string
+  pan_x?: number | null
+  pan_y?: number | null
   created_at: string
   comment_count: number
 }
@@ -71,7 +73,23 @@ export function useFeed() {
     return comment
   }
 
-  return { entries, loading, error, postEntry, postComment }
+  async function updateEntryPan(entryId: number, panX: number, panY: number): Promise<void> {
+    const secret = import.meta.env.VITE_POST_SECRET
+    const res = await fetch(`${API_URL}/entries/${entryId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${secret}`,
+      },
+      body: JSON.stringify({ pan_x: panX, pan_y: panY }),
+    })
+    if (!res.ok) throw new Error('Pan update failed')
+    setEntries(prev => prev.map(e =>
+      e.id === entryId ? { ...e, pan_x: panX, pan_y: panY } : e
+    ))
+  }
+
+  return { entries, loading, error, postEntry, postComment, updateEntryPan }
 }
 
 export async function fetchEntry(id: string): Promise<EntryDetail> {

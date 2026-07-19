@@ -1,26 +1,17 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useFeed, uploadImage } from '../hooks/useFeed'
+import { useFeed, uploadImage, type Entry } from '../hooks/useFeed'
 import { formatDate, hostname } from '../utils/format'
 
 const MAX_DIMENSION = 2400
 const RESIZE_THRESHOLD_BYTES = 4 * 1024 * 1024
 
-const PAN_KEY_PREFIX = 'photoPan:'
 const CENTER = { x: 50, y: 50 }
 
-function loadPan(id: number | undefined): { x: number; y: number } {
-  if (id == null) return CENTER
-  try {
-    const raw = localStorage.getItem(PAN_KEY_PREFIX + id)
-    if (raw) {
-      const p = JSON.parse(raw)
-      if (typeof p.x === 'number' && typeof p.y === 'number') return p
-    }
-  } catch {
-    // ignore
-  }
-  return CENTER
+function entryPan(entry: Entry | undefined): { x: number; y: number } {
+  return entry?.pan_x != null && entry?.pan_y != null
+    ? { x: entry.pan_x, y: entry.pan_y }
+    : CENTER
 }
 
 function clampPercent(n: number) {
@@ -49,7 +40,7 @@ async function downscaleImage(file: File): Promise<File> {
 }
 
 export function PhotoPanel() {
-  const { entries, postEntry } = useFeed()
+  const { entries, postEntry, updateEntryPan } = useFeed()
   const navigate = useNavigate()
   const [index, setIndex] = useState(0)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -60,8 +51,8 @@ export function PhotoPanel() {
   const photo = photos[index] ?? photos[photos.length - 1]
 
   // Pan: object-cover crops tall/wide photos; dragging the image adjusts
-  // object-position, remembered per photo in localStorage.
-  const [pan, setPan] = useState(() => loadPan(photo?.id))
+  // object-position, saved to the entry so every visitor sees the same framing.
+  const [pan, setPan] = useState(() => entryPan(photo))
   const panDrag = useRef<{
     startX: number
     startY: number
@@ -75,7 +66,7 @@ export function PhotoPanel() {
   const [panPhotoId, setPanPhotoId] = useState(photo?.id)
   if (photo?.id !== panPhotoId) {
     setPanPhotoId(photo?.id)
-    setPan(loadPan(photo?.id))
+    setPan(entryPan(photo))
   }
 
   function handlePanStart(e: React.PointerEvent<HTMLImageElement>) {
@@ -106,11 +97,8 @@ export function PhotoPanel() {
     panDrag.current = null
     e.currentTarget.releasePointerCapture?.(e.pointerId)
     if (d.last && photo) {
-      try {
-        localStorage.setItem(PAN_KEY_PREFIX + photo.id, JSON.stringify(d.last))
-      } catch {
-        // ignore
-      }
+      // Keep the visual position even if the save fails
+      updateEntryPan(photo.id, d.last.x, d.last.y).catch(() => {})
     }
   }
 

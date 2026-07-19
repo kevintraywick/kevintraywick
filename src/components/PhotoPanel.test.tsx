@@ -5,6 +5,7 @@ import { uploadImage } from '../hooks/useFeed'
 
 const mockNavigate = vi.fn()
 const mockPostEntry = vi.fn()
+const mockUpdateEntryPan = vi.fn()
 
 vi.mock('react-router-dom', async (importOriginal) => {
   const mod = await importOriginal<typeof import('react-router-dom')>()
@@ -15,13 +16,14 @@ vi.mock('../hooks/useFeed', () => ({
   useFeed: () => ({
     entries: [
       { id: 4, title: 'Text-only entry', note: 'no image', created_at: '2026-07-14T00:00:00', comment_count: 0 },
-      { id: 3, title: 'Newest photo', created_at: '2026-07-12T00:00:00', comment_count: 0, image_url: 'https://cdn.example.com/new.jpg' },
+      { id: 3, title: 'Newest photo', created_at: '2026-07-12T00:00:00', comment_count: 0, image_url: 'https://cdn.example.com/new.jpg', pan_x: 50, pan_y: 85 },
       { id: 2, title: 'Middle photo', created_at: '2026-06-01T00:00:00', comment_count: 0, image_url: 'https://cdn.example.com/mid.jpg' },
       { id: 1, title: 'Oldest photo', created_at: '2026-05-01T00:00:00', comment_count: 0, image_url: 'https://cdn.example.com/old.jpg' },
     ],
     loading: false,
     postEntry: mockPostEntry,
     postComment: vi.fn(),
+    updateEntryPan: mockUpdateEntryPan,
   }),
   uploadImage: vi.fn(),
 }))
@@ -29,8 +31,9 @@ vi.mock('../hooks/useFeed', () => ({
 beforeEach(() => {
   mockNavigate.mockClear()
   mockPostEntry.mockClear()
+  mockUpdateEntryPan.mockClear()
+  mockUpdateEntryPan.mockResolvedValue(undefined)
   vi.mocked(uploadImage).mockClear()
-  localStorage.clear()
 })
 
 function renderPanel() {
@@ -78,9 +81,10 @@ function makePannable(img: HTMLImageElement) {
   }) as DOMRect
 }
 
-test('dragging the photo pans it vertically and persists per photo', () => {
+test('dragging the photo pans it vertically and saves to the entry', () => {
   renderPanel()
-  const img = screen.getByAltText('Newest photo') as HTMLImageElement
+  fireEvent.click(screen.getByLabelText('Older photo'))
+  const img = screen.getByAltText('Middle photo') as HTMLImageElement
   makePannable(img)
 
   fireEvent.pointerDown(img, { pointerId: 1, clientX: 150, clientY: 150 })
@@ -89,18 +93,16 @@ test('dragging the photo pans it vertically and persists per photo', () => {
 
   // Dragged up 60px of 300px overflow → object-position moves 20% toward the bottom
   expect(img.style.objectPosition).toBe('50% 70%')
-  expect(JSON.parse(localStorage.getItem('photoPan:3')!)).toEqual({ x: 50, y: 70 })
+  expect(mockUpdateEntryPan).toHaveBeenCalledWith(2, 50, 70)
 })
 
-test('a saved pan position is restored on render', () => {
-  localStorage.setItem('photoPan:3', JSON.stringify({ x: 50, y: 85 }))
+test('a pan position saved on the entry is applied on render', () => {
   renderPanel()
   const img = screen.getByAltText('Newest photo') as HTMLImageElement
   expect(img.style.objectPosition).toBe('50% 85%')
 })
 
 test('pan resets to center when stepping to a photo without a saved position', () => {
-  localStorage.setItem('photoPan:3', JSON.stringify({ x: 50, y: 85 }))
   renderPanel()
   fireEvent.click(screen.getByLabelText('Older photo'))
   const img = screen.getByAltText('Middle photo') as HTMLImageElement
@@ -115,7 +117,7 @@ test('a click without movement does not save a pan position', () => {
   fireEvent.pointerDown(img, { pointerId: 1, clientX: 150, clientY: 150 })
   fireEvent.pointerUp(img, { pointerId: 1 })
 
-  expect(localStorage.getItem('photoPan:3')).toBeNull()
+  expect(mockUpdateEntryPan).not.toHaveBeenCalled()
 })
 
 // --- Drop zone ---
