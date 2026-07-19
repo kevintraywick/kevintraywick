@@ -30,6 +30,7 @@ beforeEach(() => {
   mockNavigate.mockClear()
   mockPostEntry.mockClear()
   vi.mocked(uploadImage).mockClear()
+  localStorage.clear()
 })
 
 function renderPanel() {
@@ -63,6 +64,58 @@ test('left arrow disappears at the oldest photo', () => {
   fireEvent.click(screen.getByLabelText('Older photo'))
   expect(screen.getByAltText('Oldest photo')).toBeInTheDocument()
   expect(screen.queryByLabelText('Older photo')).not.toBeInTheDocument()
+})
+
+// --- Pan ---
+
+// A 1000×2000 photo in a 300×300 panel: object-cover renders it 300×600,
+// so there are 300px of vertical overflow to pan through and none horizontally.
+function makePannable(img: HTMLImageElement) {
+  Object.defineProperty(img, 'naturalWidth', { value: 1000 })
+  Object.defineProperty(img, 'naturalHeight', { value: 2000 })
+  img.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 300, bottom: 300, width: 300, height: 300, toJSON: () => ({}),
+  }) as DOMRect
+}
+
+test('dragging the photo pans it vertically and persists per photo', () => {
+  renderPanel()
+  const img = screen.getByAltText('Newest photo') as HTMLImageElement
+  makePannable(img)
+
+  fireEvent.pointerDown(img, { pointerId: 1, clientX: 150, clientY: 150 })
+  fireEvent.pointerMove(img, { pointerId: 1, clientX: 150, clientY: 90 })
+  fireEvent.pointerUp(img, { pointerId: 1 })
+
+  // Dragged up 60px of 300px overflow → object-position moves 20% toward the bottom
+  expect(img.style.objectPosition).toBe('50% 70%')
+  expect(JSON.parse(localStorage.getItem('photoPan:3')!)).toEqual({ x: 50, y: 70 })
+})
+
+test('a saved pan position is restored on render', () => {
+  localStorage.setItem('photoPan:3', JSON.stringify({ x: 50, y: 85 }))
+  renderPanel()
+  const img = screen.getByAltText('Newest photo') as HTMLImageElement
+  expect(img.style.objectPosition).toBe('50% 85%')
+})
+
+test('pan resets to center when stepping to a photo without a saved position', () => {
+  localStorage.setItem('photoPan:3', JSON.stringify({ x: 50, y: 85 }))
+  renderPanel()
+  fireEvent.click(screen.getByLabelText('Older photo'))
+  const img = screen.getByAltText('Middle photo') as HTMLImageElement
+  expect(img.style.objectPosition).toBe('50% 50%')
+})
+
+test('a click without movement does not save a pan position', () => {
+  renderPanel()
+  const img = screen.getByAltText('Newest photo') as HTMLImageElement
+  makePannable(img)
+
+  fireEvent.pointerDown(img, { pointerId: 1, clientX: 150, clientY: 150 })
+  fireEvent.pointerUp(img, { pointerId: 1 })
+
+  expect(localStorage.getItem('photoPan:3')).toBeNull()
 })
 
 // --- Drop zone ---

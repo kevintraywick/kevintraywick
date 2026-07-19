@@ -1,10 +1,31 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFeed, uploadImage } from '../hooks/useFeed'
 import { formatDate, hostname } from '../utils/format'
 
 const MAX_DIMENSION = 2400
 const RESIZE_THRESHOLD_BYTES = 4 * 1024 * 1024
+
+const PAN_KEY_PREFIX = 'photoPan:'
+const CENTER = { x: 50, y: 50 }
+
+function loadPan(id: number | undefined): { x: number; y: number } {
+  if (id == null) return CENTER
+  try {
+    const raw = localStorage.getItem(PAN_KEY_PREFIX + id)
+    if (raw) {
+      const p = JSON.parse(raw)
+      if (typeof p.x === 'number' && typeof p.y === 'number') return p
+    }
+  } catch {
+    // ignore
+  }
+  return CENTER
+}
+
+function clampPercent(n: number) {
+  return Math.min(100, Math.max(0, n))
+}
 
 // Photos.app and modern cameras can hand us files past the API's 10MB cap;
 // downscale client-side and fall back to the original if decoding fails (e.g. jsdom, odd formats).
@@ -37,6 +58,61 @@ export function PhotoPanel() {
 
   const photos = entries.filter(e => e.image_url)
   const photo = photos[index] ?? photos[photos.length - 1]
+
+  // Pan: object-cover crops tall/wide photos; dragging the image adjusts
+  // object-position, remembered per photo in localStorage.
+  const [pan, setPan] = useState(() => loadPan(photo?.id))
+  const panDrag = useRef<{
+    startX: number
+    startY: number
+    panX: number
+    panY: number
+    overflowX: number
+    overflowY: number
+    last: { x: number; y: number } | null
+  } | null>(null)
+
+  const [panPhotoId, setPanPhotoId] = useState(photo?.id)
+  if (photo?.id !== panPhotoId) {
+    setPanPhotoId(photo?.id)
+    setPan(loadPan(photo?.id))
+  }
+
+  function handlePanStart(e: React.PointerEvent<HTMLImageElement>) {
+    const img = e.currentTarget
+    if (!img.naturalWidth || !img.naturalHeight) return
+    const rect = img.getBoundingClientRect()
+    const scale = Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight)
+    const overflowX = img.naturalWidth * scale - rect.width
+    const overflowY = img.naturalHeight * scale - rect.height
+    if (overflowX < 1 && overflowY < 1) return
+    panDrag.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y, overflowX, overflowY, last: null }
+    img.setPointerCapture?.(e.pointerId)
+  }
+
+  function handlePanMove(e: React.PointerEvent<HTMLImageElement>) {
+    const d = panDrag.current
+    if (!d) return
+    d.last = {
+      x: d.overflowX >= 1 ? clampPercent(d.panX - ((e.clientX - d.startX) / d.overflowX) * 100) : d.panX,
+      y: d.overflowY >= 1 ? clampPercent(d.panY - ((e.clientY - d.startY) / d.overflowY) * 100) : d.panY,
+    }
+    setPan(d.last)
+  }
+
+  function handlePanEnd(e: React.PointerEvent<HTMLImageElement>) {
+    const d = panDrag.current
+    if (!d) return
+    panDrag.current = null
+    e.currentTarget.releasePointerCapture?.(e.pointerId)
+    if (d.last && photo) {
+      try {
+        localStorage.setItem(PAN_KEY_PREFIX + photo.id, JSON.stringify(d.last))
+      } catch {
+        // ignore
+      }
+    }
+  }
 
   function handleDragOver(e: React.DragEvent) {
     e.preventDefault()
@@ -98,7 +174,20 @@ export function PhotoPanel() {
     >
       {/* Current photo */}
       {photo ? (
-        <img src={photo.image_url} alt={photo.title} className="absolute inset-0 w-full h-full object-cover" />
+        <img
+          src={photo.image_url}
+          alt={photo.title}
+          draggable={false}
+          className="absolute inset-0 w-full h-full object-cover select-none cursor-grab active:cursor-grabbing"
+          style={{
+            objectPosition: `${pan.x}% ${pan.y}%`,
+            touchAction: 'none',
+          }}
+          onPointerDown={handlePanStart}
+          onPointerMove={handlePanMove}
+          onPointerUp={handlePanEnd}
+          onPointerCancel={handlePanEnd}
+        />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-white/40 font-sans text-xs">drag a photo here</span>
