@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Dungeon Masters' Roundtable</title>
-<meta name="description" content="You're invited — an evening of beer and shop talk for Dungeon Masters.">
+<meta name="description" content="The night is set — Thursday, July 23 at 7:00 PM, Woodside Pizza. An evening of beer and shop talk for Dungeon Masters.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
@@ -32,7 +32,7 @@
     position: relative;
     height: min(62vh, 560px);
     min-height: 380px;
-    background: url('tavern.jpg') center 38% / cover no-repeat;
+    background: url('tavern-edit.jpg') center 38% / cover no-repeat;
   }
   .hero::after {
     content: '';
@@ -59,7 +59,7 @@
   .sheet {
     position: relative; z-index: 2;
     max-width: 660px;
-    margin: -84px auto 0;
+    margin: -230px auto 0;
     padding: 0 14px 56px;
   }
   .card {
@@ -82,6 +82,30 @@
     margin: 1.5rem 0; color: var(--amber-deep);
   }
   .rule::before, .rule::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+
+  /* ---------- confirmed-date banner ---------- */
+  .confirmed {
+    margin-top: 1.4rem;
+    background: linear-gradient(155deg, #fff6e4, var(--parchment-deep));
+    border: 1.5px solid var(--amber-deep);
+    border-radius: 12px;
+    padding: 1.05rem 1.15rem;
+    text-align: center;
+    box-shadow: 0 3px 0 rgba(176,109,26,.18);
+  }
+  .confirmed .flag {
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: .74rem;
+    letter-spacing: .2em; text-transform: uppercase; color: var(--ember);
+  }
+  .confirmed .when {
+    margin-top: .3rem; font-family: 'Cinzel', serif; font-weight: 700;
+    font-size: clamp(1.05rem, 4vw, 1.3rem); color: var(--ink);
+  }
+  .confirmed .where {
+    margin-top: .3rem; font-size: 1.05rem; color: var(--ink-soft);
+  }
+  .confirmed .where a { color: var(--ember); font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(138,47,43,.4); }
+  .confirmed .where a:hover { border-bottom-color: var(--ember); }
 
   /* ---------- form ---------- */
   label.field-label {
@@ -124,6 +148,26 @@
     font-size: 1rem; line-height: 1.3; font-style: italic; color: var(--ink-soft);
   }
   .date-opt.none input:checked + span { color: var(--ink); font-style: normal; }
+
+  .date-opt.winner { position: relative; }
+  .date-opt.winner .ribbon {
+    position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
+    background: var(--ember); color: #fdf4e0; font-family: 'Cinzel', serif;
+    font-weight: 700; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: .15rem .55rem; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25); z-index: 1;
+  }
+  .date-opt.winner > span { border-width: 2px; }
+
+  .date-opt.faded input { pointer-events: none; }
+  .date-opt.faded > span {
+    background: rgba(255,253,246,.4); border-style: dashed; opacity: .55; cursor: default;
+  }
+  .date-opt.faded .day { text-decoration: line-through; }
+  .date-opt.faded .not-picked {
+    display: block; margin-top: .15rem; font-size: .66rem; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--ink-soft); font-family: 'Alegreya', serif; font-weight: 700;
+  }
 
   .note-wrap { margin-top: 1.1rem; }
   button.submit {
@@ -194,7 +238,7 @@
 
 <div class="hero">
   <div class="hero-text">
-    <div class="kicker">You are cordially summoned</div>
+    <div class="kicker">The night is set</div>
     <h1>The Dungeon Masters'<br>Roundtable</h1>
   </div>
 </div>
@@ -206,7 +250,15 @@
       <div class="welcome">
         <h2>Welcome, friend — pull up a chair.</h2>
         <p>An evening of beer and shop talk for those of us who sit behind the screen.
-        Tell us who you are and which nights work, and we'll gather the party.</p>
+        The votes are in — here's when and where.</p>
+      </div>
+
+      <div class="confirmed">
+        <div class="flag">🎉 It's happening</div>
+        <div class="when">Thursday, July 23 · 7:00 PM</div>
+        <div class="where">
+          <a href="https://www.google.com/maps/search/?api=1&query=Woodside+Pizza" target="_blank" rel="noopener">Woodside Pizza — get directions</a>
+        </div>
       </div>
 
       <div class="rule">🍺</div>
@@ -223,13 +275,13 @@
         </div>
 
         <div style="height:1.2rem"></div>
-        <label class="field-label">Which nights can you make? (pick all that work)</label>
+        <label class="field-label">Here's how the vote landed</label>
         <div class="dates">
-          <label class="date-opt"><input type="checkbox" name="dates" value="jul21"><span><span class="dow">Tuesday</span><span class="day">July 21</span></span></label>
-          <label class="date-opt"><input type="checkbox" name="dates" value="jul23"><span><span class="dow">Thursday</span><span class="day">July 23</span></span></label>
-          <label class="date-opt"><input type="checkbox" name="dates" value="jul28"><span><span class="dow">Tuesday</span><span class="day">July 28</span></span></label>
-          <label class="date-opt"><input type="checkbox" name="dates" value="jul30"><span><span class="dow">Thursday</span><span class="day">July 30</span></span></label>
-          <label class="date-opt none"><input type="checkbox" name="dates" value="none"><span>🎲&nbsp; I can't make any of these — but I'd love to get together with you all</span></label>
+          <label class="date-opt faded"><input type="checkbox" name="dates" value="jul21" disabled><span><span class="dow">Tuesday</span><span class="day">July 21</span><span class="not-picked">Not picked</span></span></label>
+          <label class="date-opt winner"><span class="ribbon">🏆 Winner</span><input type="checkbox" name="dates" value="jul23" checked><span><span class="dow">Thursday</span><span class="day">July 23</span></span></label>
+          <label class="date-opt faded"><input type="checkbox" name="dates" value="jul28" disabled><span><span class="dow">Tuesday</span><span class="day">July 28</span><span class="not-picked">Not picked</span></span></label>
+          <label class="date-opt faded"><input type="checkbox" name="dates" value="jul30" disabled><span><span class="dow">Thursday</span><span class="day">July 30</span><span class="not-picked">Not picked</span></span></label>
+          <label class="date-opt none"><input type="checkbox" name="dates" value="none"><span>🎲&nbsp; I can't make it — but I'd love to get together with you all sometime</span></label>
         </div>
 
         <div class="note-wrap">
@@ -245,7 +297,7 @@
     <div class="success" id="success-view">
       <div class="big">🍻</div>
       <h2>Huzzah! You're on the list.</h2>
-      <p id="success-msg">We'll confirm the night once the ravens return.</p>
+      <p id="success-msg">See you Thursday, July 23 at 7:00 PM — Woodside Pizza.</p>
     </div>
 
     <div class="tabletalk">
@@ -308,7 +360,7 @@
           "Noted, " + name + " — we'll find another night to raise a glass together.";
       } else {
         document.getElementById('success-msg').textContent =
-          "Thanks, " + name + " — we'll confirm the night once everyone has weighed in.";
+          "Thanks, " + name + " — see you Thursday, July 23 at 7:00 PM, Woodside Pizza!";
       }
       document.getElementById('success-view').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
