@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plans — 160 Weldon</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./"><span class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-apricot"></i><i class="sw-mint"></i></span>160 Weldon</a>
+    <a class="navlink" href="./">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html">Utilities</a>
+    <a class="navlink" href="forecast.html">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="plans.html" aria-current="page">Plans</a>
+    <a class="navlink" href="references.html">References</a>
+    <a class="navlink" href="maintenance.html">Maintenance</a>
+    <a class="navlink" href="projects.html">Projects</a>
+    <a class="navlink" href="location.html">Location</a>
+    <a class="navlink" href="photos.html">Photos</a>
+  </nav>
+</div>
+
+<div class="page-title">
+  <p class="eyebrow"><i style="background:var(--chip-apricot)"></i>Blueprints &amp; sketches</p>
+  <h1>Plans</h1>
+  <p>Architectural drawings, floor plans, and sketches for the house — drop a scan or photo below and it's added to the gallery.</p>
+</div>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card span-12">
+      <div class="dz" id="dz-plans">
+        <input type="file" accept="image/*,.pdf,.heic,.heif" multiple>
+        <div class="dz-big">Drop a drawing, floor plan, or sketch here</div>
+        <div class="dz-small">images and PDFs both work — no reading or classification, just filed and shown below</div>
+      </div>
+      <div class="statusline" id="dz-status"></div>
+      <div class="section-gap"></div>
+      <div class="plangrid" id="plangrid"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr</span>
+    <div class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i></div>
+    <span class="gate-hint" data-gate-hint aria-hidden="true"></span>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+(async function () {
+  const dzEl = document.getElementById('dz-plans');
+  const statusEl = document.getElementById('dz-status');
+  const grid = document.getElementById('plangrid');
+  function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
+
+  const hasApi = await WAPI.health();
+  if (!hasApi) { say('Backend offline — plans can\'t be uploaded right now.', 'err'); dzEl.classList.add('busy'); return; }
+
+  let plans = [];
+  try { plans = await WAPI.get('/plans'); } catch {}
+
+  function isImage(p) { return /\.(jpe?g|png|webp|gif)$/i.test(p.filename); }
+
+  function planCard(p) {
+    const card = document.createElement('div');
+    card.className = 'plancard';
+    card.dataset.plan = p.id;
+    const thumb = isImage(p)
+      ? '<img src="' + p.url + '" alt="' + p.title + '">'
+      : '<span class="pc-doc">📄</span>';
+    card.innerHTML =
+      '<div class="pc-thumb">' + thumb + '</div>' +
+      '<div class="pc-body"><div class="pc-title">' + p.title + '</div>' +
+      '<div class="pc-meta">' + new Date(p.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' <button class="rowbtn" data-planrename="' + p.id + '" title="Rename" aria-label="Rename">✎</button>' +
+      '<button class="rowbtn danger" data-plandel="' + p.id + '" title="Delete" aria-label="Delete">✕</button></div></div>';
+    card.querySelector('.pc-thumb').addEventListener('click', () => window.open(p.url, '_blank', 'noopener'));
+    return card;
+  }
+
+  function render() {
+    grid.innerHTML = '';
+    plans.slice().reverse().forEach(p => grid.appendChild(planCard(p)));
+    if (!plans.length) grid.innerHTML = '<p class="card-sub">No plans yet — drop one above.</p>';
+  }
+  render();
+
+  WAPI.wireDropZone(dzEl, async files => {
+    dzEl.classList.add('busy');
+    let added = 0;
+    for (const f of files) {
+      say('Uploading ' + f.name + '…');
+      try {
+        const p = await WAPI.upload('/plans', f);
+        plans.push(p);
+        added++;
+      } catch (e) { say(f.name + ': ' + e.message, 'err'); }
+    }
+    dzEl.classList.remove('busy');
+    render();
+    if (added) say(added + ' plan' + (added > 1 ? 's' : '') + ' added.', 'ok');
+  });
+
+  grid.addEventListener('click', async ev => {
+    const renameBtn = ev.target.closest('button[data-planrename]');
+    if (renameBtn) {
+      const id = +renameBtn.dataset.planrename;
+      const p = plans.find(x => x.id === id);
+      const title = prompt('Rename this plan:', p.title);
+      if (!title || !title.trim() || title.trim() === p.title) return;
+      try {
+        const updated = await WAPI.patch('/plans/' + id, { title: title.trim() });
+        plans = plans.map(x => x.id === id ? updated : x);
+        render();
+        say('Renamed to ' + updated.title + '.', 'ok');
+      } catch (e) { say(e.message, 'err'); }
+      return;
+    }
+    const delBtn = ev.target.closest('button[data-plandel]');
+    if (!delBtn) return;
+    const id = +delBtn.dataset.plandel;
+    const p = plans.find(x => x.id === id);
+    if (!p || !confirm('Delete "' + p.title + '"?')) return;
+    try {
+      await WAPI.del('/plans/' + id);
+      plans = plans.filter(x => x.id !== id);
+      render();
+      say('Deleted.', 'ok');
+    } catch (e) { say(e.message, 'err'); }
+  });
+})();
+</script>
+<script src="js/footer.js"></script>
+</body>
+</html>

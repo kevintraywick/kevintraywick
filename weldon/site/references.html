@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>References — 160 Weldon</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./"><span class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-apricot"></i><i class="sw-mint"></i></span>160 Weldon</a>
+    <a class="navlink" href="./">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html">Utilities</a>
+    <a class="navlink" href="forecast.html">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="plans.html">Plans</a>
+    <a class="navlink" href="references.html" aria-current="page">References</a>
+    <a class="navlink" href="maintenance.html">Maintenance</a>
+    <a class="navlink" href="projects.html">Projects</a>
+    <a class="navlink" href="location.html">Location</a>
+    <a class="navlink" href="photos.html">Photos</a>
+  </nav>
+</div>
+
+<div class="page-title">
+  <p class="eyebrow"><i style="background:var(--chip-champagne)"></i>Who to call</p>
+  <h1>References</h1>
+  <p>Local tradesmen, neighbors, and other things worth remembering. Drop a photo of a business card or contact on a pane and it reads the name/phone/notes off it — or add one by hand.</p>
+</div>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card span-4 refpane" data-cat="tradesman">
+      <h2>Tradesmen</h2>
+      <p class="card-sub">people who've worked on the house, and other local suppliers</p>
+      <div class="tablewrap"><table class="data"><tbody id="ref-tradesman"></tbody></table></div>
+      <div class="dz mini" id="dz-tradesman"><input type="file" accept="image/*,.heic,.heif" multiple><span>📇 drop a business card / contact photo</span></div>
+      <div class="statusline" id="status-tradesman"></div>
+      <details>
+        <summary>＋ add by hand</summary>
+        <form class="entryform ref-form" data-cat="tradesman">
+          <div class="control"><label>Name</label><input type="text" name="name"></div>
+          <div class="control"><label>Company</label><input type="text" name="company"></div>
+          <div class="control"><label>Phone</label><input type="text" name="phone"></div>
+          <div class="control"><label>Notes</label><input type="text" name="notes" placeholder="trade, e.g. electrician"></div>
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </details>
+    </section>
+
+    <section class="card span-4 refpane" data-cat="neighbor">
+      <h2>Neighbors</h2>
+      <p class="card-sub">contact info for the people next door</p>
+      <div class="tablewrap"><table class="data"><tbody id="ref-neighbor"></tbody></table></div>
+      <div class="dz mini" id="dz-neighbor"><input type="file" accept="image/*,.heic,.heif" multiple><span>📇 drop a contact photo</span></div>
+      <div class="statusline" id="status-neighbor"></div>
+      <details>
+        <summary>＋ add by hand</summary>
+        <form class="entryform ref-form" data-cat="neighbor">
+          <div class="control"><label>Name</label><input type="text" name="name"></div>
+          <div class="control"><label>Company</label><input type="text" name="company" placeholder="optional"></div>
+          <div class="control"><label>Phone</label><input type="text" name="phone"></div>
+          <div class="control"><label>Notes</label><input type="text" name="notes" placeholder="e.g. next door, has a spare key"></div>
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </details>
+    </section>
+
+    <section class="card span-4 refpane" data-cat="local">
+      <h2>Local</h2>
+      <p class="card-sub">things of interest nearby — worth remembering, not always a contact</p>
+      <div class="tablewrap"><table class="data"><tbody id="ref-local"></tbody></table></div>
+      <div class="dz mini" id="dz-local"><input type="file" accept="image/*,.heic,.heif" multiple><span>📇 drop a photo</span></div>
+      <div class="statusline" id="status-local"></div>
+      <details>
+        <summary>＋ add by hand</summary>
+        <form class="entryform ref-form" data-cat="local">
+          <div class="control"><label>Name</label><input type="text" name="name"></div>
+          <div class="control"><label>Company</label><input type="text" name="company" placeholder="optional"></div>
+          <div class="control"><label>Phone</label><input type="text" name="phone" placeholder="optional"></div>
+          <div class="control"><label>Notes</label><input type="text" name="notes"></div>
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </details>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr</span>
+    <div class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i></div>
+    <span class="gate-hint" data-gate-hint aria-hidden="true"></span>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/api.js"></script>
+<script>
+(async function () {
+  const D = window.WELDON;
+  const CATS = ['tradesman', 'neighbor', 'local'];
+
+  const hasApi = await WAPI.health();
+  let contacts = [];
+  if (hasApi) { try { contacts = await WAPI.get('/contacts'); } catch {} }
+  else CATS.forEach(cat => { document.getElementById('status-' + cat).textContent = 'Backend offline — showing the record book only.'; });
+
+  // the old "Local resources" table from the House page seeds the Tradesmen
+  // pin — read-only record-book entries, no id, can't be edited or deleted here
+  const seed = { tradesman: (D.vendors || []).map(v => ({ name: v.name, phone: v.phone, notes: v.notes, seed: true })) };
+
+  function rowsFor(cat) { return (seed[cat] || []).concat(contacts.filter(c => c.category === cat)); }
+
+  function contactRow(c) {
+    const contactLine = [c.phone, c.email].filter(Boolean).join(' · ');
+    const actions = c.seed ? '' :
+      (c.photo ? '<a href="/uploads/' + c.photo + '" target="_blank" rel="noopener" title="View the photo" style="text-decoration:none;opacity:.65">🧾</a> ' : '') +
+      '<button class="rowbtn danger" data-refdel="' + c.id + '" title="Remove" aria-label="Remove">✕</button>';
+    return '<tr' + (c.id ? ' data-id="' + c.id + '"' : '') + '>' +
+      '<td>' + (c.name || c.company || '—') + (c.name && c.company ? '<br><span class="pc-meta" style="font-size:11.5px">' + c.company + '</span>' : '') + '</td>' +
+      '<td class="num">' + (contactLine || '') + '</td>' +
+      '<td>' + (c.notes || '') + '</td>' +
+      '<td class="act">' + actions + '</td></tr>';
+  }
+
+  function render(cat) {
+    const rows = rowsFor(cat);
+    document.getElementById('ref-' + cat).innerHTML = rows.length
+      ? rows.map(contactRow).join('')
+      : '<tr><td colspan="4" class="card-sub">Nothing yet.</td></tr>';
+  }
+  CATS.forEach(render);
+
+  if (!hasApi) return;
+
+  CATS.forEach(cat => {
+    const dz = document.getElementById('dz-' + cat);
+    const statusEl = document.getElementById('status-' + cat);
+    function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
+
+    WAPI.wireDropZone(dz, async files => {
+      dz.classList.add('busy');
+      for (const f of files) {
+        say('Reading ' + f.name + '…');
+        try {
+          const fd = new FormData();
+          fd.append('file', f);
+          fd.append('category', cat);
+          const r = await fetch('/api/contacts/scan', { method: 'POST', body: fd });
+          if (!r.ok) throw new Error((await r.text()) || r.statusText);
+          const entry = await r.json();
+          contacts.push(entry);
+          render(cat);
+          say('Added ' + (entry.name || entry.company) + '.', 'ok');
+        } catch (e) { say(f.name + ': ' + e.message, 'err'); }
+      }
+      dz.classList.remove('busy');
+    });
+
+    const form = document.querySelector('.ref-form[data-cat="' + cat + '"]');
+    form.onsubmit = async e => {
+      e.preventDefault();
+      const body = { category: cat };
+      new FormData(form).forEach((v, k) => { body[k] = v.trim() || null; });
+      if (!body.name && !body.company) { say('A name or company is required.', 'err'); return; }
+      try {
+        const entry = await WAPI.post('/contacts', body);
+        contacts.push(entry);
+        render(cat);
+        form.reset();
+        say('Added ' + (entry.name || entry.company) + '.', 'ok');
+      } catch (err) { say(err.message, 'err'); }
+    };
+  });
+
+  document.querySelectorAll('.refpane tbody').forEach(tbody => {
+    tbody.addEventListener('click', async ev => {
+      const btn = ev.target.closest('button[data-refdel]');
+      if (!btn) return;
+      const cat = tbody.closest('.refpane').dataset.cat;
+      const id = +btn.dataset.refdel;
+      if (!confirm('Remove this contact?')) return;
+      try {
+        await WAPI.del('/contacts/' + id);
+        contacts = contacts.filter(c => c.id !== id);
+        render(cat);
+        document.getElementById('status-' + cat).textContent = 'Removed.';
+      } catch (e) { document.getElementById('status-' + cat).textContent = e.message; }
+    });
+  });
+})();
+</script>
+<script src="js/footer.js"></script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maintenance — 160 Weldon</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <nav class="site-nav" aria-label="Site">
+    <a class="wordmark" href="./"><span class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-apricot"></i><i class="sw-mint"></i></span>160 Weldon</a>
+    <a class="navlink" href="./">Dashboard</a>
+    <a class="navlink" href="expenses.html">Expenses</a>
+    <a class="navlink" href="utilities.html">Utilities</a>
+    <a class="navlink" href="forecast.html">Forecast</a>
+    <a class="navlink" href="house.html">House</a>
+    <a class="navlink" href="plans.html">Plans</a>
+    <a class="navlink" href="references.html">References</a>
+    <a class="navlink" href="maintenance.html" aria-current="page">Maintenance</a>
+    <a class="navlink" href="projects.html">Projects</a>
+    <a class="navlink" href="location.html">Location</a>
+    <a class="navlink" href="photos.html">Photos</a>
+  </nav>
+</div>
+
+<div class="page-title">
+  <p class="eyebrow"><i style="background:var(--chip-mint)"></i>Upkeep schedule</p>
+  <h1>Maintenance</h1>
+  <p>What's done scrolls into the past — the highlighted row is what's next. The nav link up top turns red when something's overdue.</p>
+</div>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card span-12">
+      <div class="mt-list" id="mt-list"></div>
+      <div class="statusline" id="mt-status"></div>
+      <div class="section-gap"></div>
+      <details id="mt-add-details">
+        <summary style="cursor:pointer;font-weight:600;font-size:14px;color:var(--accent-ink)">＋ Add a maintenance task</summary>
+        <form class="entryform" id="mt-form" style="grid-template-columns:1.6fr 1fr 1fr 1fr;margin-top:12px">
+          <div class="control"><label for="mt-title">Task</label><input type="text" id="mt-title" required placeholder="Replace fridge water filter"></div>
+          <div class="control"><label for="mt-due">Due date</label><input type="date" id="mt-due" required style="font:inherit;font-family:var(--font-mono);font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)"></div>
+          <div class="control"><label for="mt-repeat">Repeats</label>
+            <select id="mt-repeat" style="font:inherit;font-size:14px;padding:9px 8px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)">
+              <option value="none">Doesn't repeat</option>
+              <option value="monthly">Monthly</option>
+              <option value="annual">Annually</option>
+            </select>
+          </div>
+          <div class="control"><label for="mt-cost">Cost ($, optional)</label><input type="number" id="mt-cost" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="control" style="grid-column:1/3"><label for="mt-email">Email me when it's due (optional)</label><input type="email" id="mt-email" placeholder="you@example.com"></div>
+          <div class="control" style="align-self:end;grid-column:4"><button class="btn" type="submit" style="width:100%">Add task</button></div>
+        </form>
+      </details>
+      <div class="section-gap"></div>
+      <p class="note"><strong>Checking a task done</strong> posts its cost to the <a href="expenses.html">expenses ledger</a> and, if it repeats, schedules the next one. The insurance photo walk-through lives here too — fresh room-by-room photos on the <a href="photos.html">Photos</a> page are your documentation if a claim ever happens.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>160 Weldon Dr</span>
+    <div class="chiprail" aria-hidden="true"><i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i></div>
+    <span class="gate-hint" data-gate-hint aria-hidden="true"></span>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/common.js"></script>
+<script src="js/api.js"></script>
+<script>
+(async function () {
+  const { usd } = W;
+
+  const listEl = document.getElementById('mt-list');
+  const statusEl = document.getElementById('mt-status');
+  function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
+
+  let tasks = [];
+  const hasApi = await WAPI.health();
+
+  const OFFLINE_TASKS = [
+    { id: 'o1', title: 'Flush hot water heater', due_date: '2025-06-15', repeat: 'annual', cost: null, done_at: '2025-06-15' },
+    { id: 'o2', title: 'Replace fridge water filter (W10295370A)', due_date: '2026-01-15', repeat: 'annual', cost: 45 },
+    { id: 'o3', title: 'Insurance photo walk-through — every room + exterior', due_date: '2026-07-15', repeat: 'annual', cost: null },
+    { id: 'o4', title: 'Flush hot water heater', due_date: '2026-06-15', repeat: 'annual', cost: null },
+  ];
+
+  async function loadTasks() {
+    if (hasApi) {
+      try { tasks = await WAPI.get('/maintenance'); return; } catch {}
+    }
+    tasks = OFFLINE_TASKS;
+  }
+
+  function renderTasks() {
+    const today = new Date().toISOString().slice(0, 10);
+    const sorted = tasks.slice().sort((a, b) => {
+      if (!!a.done_at !== !!b.done_at) return a.done_at ? -1 : 1;    // done first (the past)
+      const ka = a.done_at || a.due_date || '', kb = b.done_at || b.due_date || '';
+      return ka < kb ? -1 : 1;
+    });
+    const nextIdx = sorted.findIndex(t => !t.done_at);
+    listEl.innerHTML = sorted.map((t, i) => {
+      const cls = t.done_at ? 'done' : (i === nextIdx ? 'next' : '');
+      const meta = t.done_at
+        ? 'done ' + t.done_at
+        : (t.due_date ? 'due ' + t.due_date + (t.due_date < today ? ' · overdue' : '') : 'no date');
+      const extras = [
+        t.repeat && t.repeat !== 'none' ? t.repeat : '',
+        t.cost ? usd(t.cost, 0) : '',
+        t.email && !t.done_at ? '✉ reminder' : '',
+      ].filter(Boolean).join(' · ');
+      return '<div class="mt-item ' + cls + '" data-id="' + t.id + '">' +
+        '<input type="checkbox"' + (t.done_at ? ' checked disabled' : (hasApi ? '' : ' disabled')) + ' aria-label="Mark done">' +
+        '<div><div class="mt-title">' + t.title + '</div>' +
+        (extras ? '<span class="mt-badge">' + extras + '</span>' : '') + '</div>' +
+        '<span class="mt-meta">' + meta + '</span></div>';
+    }).join('') || '<p class="card-sub">No maintenance tasks yet — add one below.</p>';
+
+    // center the next-due row in the scroll window
+    const nextEl = listEl.querySelector('.mt-item.next');
+    if (nextEl) nextEl.scrollIntoView({ block: 'center' });
+
+    listEl.querySelectorAll('.mt-item input[type="checkbox"]:not(:disabled)').forEach(cb => {
+      cb.addEventListener('change', async () => {
+        const id = cb.closest('.mt-item').dataset.id;
+        try {
+          const res = await WAPI.patch('/maintenance/' + id, { done: true });
+          await loadTasks();
+          renderTasks();
+          let msg = 'Done.';
+          if (res.expense) msg += ' ' + usd(res.expense.amount, 2) + ' posted to the expenses ledger.';
+          if (res.next) msg += ' Next one scheduled for ' + res.next.due_date + '.';
+          say(msg, 'ok');
+        } catch (e) { say('Could not update: ' + e.message, 'err'); cb.checked = false; }
+      });
+    });
+  }
+
+  if (!hasApi) say('Backend offline — showing the planned schedule read-only.');
+
+  document.getElementById('mt-form').onsubmit = async e => {
+    e.preventDefault();
+    if (!hasApi) { say('Backend offline — can\'t save tasks right now.', 'err'); return; }
+    const body = {
+      title: document.getElementById('mt-title').value.trim(),
+      due_date: document.getElementById('mt-due').value,
+      repeat: document.getElementById('mt-repeat').value,
+      cost: parseFloat(document.getElementById('mt-cost').value) || null,
+      email: document.getElementById('mt-email').value.trim() || null,
+    };
+    try {
+      await WAPI.post('/maintenance', body);
+      await loadTasks();
+      renderTasks();
+      e.target.reset();
+      say('Added: ' + body.title, 'ok');
+    } catch (err) { say('Could not save: ' + err.message, 'err'); }
+  };
+
+  await loadTasks();
+  renderTasks();
+})();
+</script>
+<script src="js/footer.js"></script>
+</body>
+</html>

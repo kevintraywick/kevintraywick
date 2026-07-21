@@ -12,6 +12,11 @@
  *   GET  /api/paint-chips         POST /api/paint-chips       (multipart chip photo → Claude
  *                                 DELETE /api/paint-chips/:id  reads color/brand/code/hex)
  *   GET  /api/maintenance         POST /api/maintenance       PATCH /api/maintenance/:id
+ *   GET  /api/plans               POST /api/plans             (multipart drawing/sketch,
+ *   PATCH /api/plans/:id          DELETE /api/plans/:id        optional `title`)
+ *   GET  /api/contacts            POST /api/contacts          (manual add, JSON)
+ *   POST /api/contacts/scan       (multipart business-card/contact photo → Claude reads it)
+ *   PATCH /api/contacts/:id       DELETE /api/contacts/:id
  *
  * Storage: SQLite + uploaded files under DATA_DIR (Railway volume → mount at /app/data).
  * Env: ANTHROPIC_API_KEY (receipt/bill reading), SMTP_URL + MAIL_FROM (optional, reminders).
@@ -64,6 +69,17 @@ CREATE TABLE IF NOT EXISTS paint_chips (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   color TEXT NOT NULL, brand TEXT, code TEXT, hex TEXT, room TEXT, store TEXT,
   photo TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL, filename TEXT NOT NULL, original_name TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS contacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category TEXT NOT NULL, name TEXT, company TEXT, phone TEXT, email TEXT, notes TEXT,
+  photo TEXT, original_name TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
 `);
@@ -618,6 +634,119 @@ app.delete('/api/paint-chips/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+/* contacts — References page. Three pins: local tradesmen, neighbors, and
+   general local points of interest. A dropped business card / contact photo
+   is read by Claude vision; a manual form covers everything else. */
+const CONTACT_CATEGORIES = ['tradesman', 'neighbor', 'local'];
+const CATEGORY_LABELS = { tradesman: 'tradesperson or contractor', neighbor: 'neighbor', local: 'local point of interest' };
+
+const CONTACT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['name', 'company', 'phone', 'email', 'notes'],
+  properties: {
+    name: { type: ['string', 'null'], description: 'Person\'s name, or null if not legible' },
+    company: { type: ['string', 'null'], description: 'Business or company name, or null' },
+    phone: { type: ['string', 'null'], description: 'Phone number as printed, or null' },
+    email: { type: ['string', 'null'], description: 'Email address, or null' },
+    notes: { type: ['string', 'null'], description: 'Trade/specialty, address, or any other relevant detail visible — a few words' },
+  },
+};
+
+const contactPrompt = category =>
+  `This image is a business card, flyer, or photo relating to a ${CATEGORY_LABELS[category] || 'contact'} for a ` +
+  'residential house in Martin, Tennessee. Read off the name, company, phone, email, and any other useful detail ' +
+  '(trade/specialty, address, context) into notes. Use null for anything not legible.';
+
+function insertContact({ category, name, company, phone, email, notes, photo, original_name }) {
+  const info = db.prepare(
+    `INSERT INTO contacts (category, name, company, phone, email, notes, photo, original_name) VALUES (?,?,?,?,?,?,?,?)`
+  ).run(category, name || null, company || null, phone || null, email || null, notes || null, photo || null, original_name || null);
+  return db.prepare(`SELECT * FROM contacts WHERE id=?`).get(info.lastInsertRowid);
+}
+
+app.get('/api/contacts', (req, res) => {
+  res.json(db.prepare(`SELECT * FROM contacts ORDER BY created_at, id`).all());
+});
+
+app.post('/api/contacts', (req, res) => {
+  const { category, name, company, phone, email, notes } = req.body || {};
+  if (!CONTACT_CATEGORIES.includes(category)) return res.status(400).send('category must be one of ' + CONTACT_CATEGORIES.join(', '));
+  if (!(name || '').trim() && !(company || '').trim()) return res.status(400).send('a name or company is required');
+  res.json(insertContact({ category, name, company, phone, email, notes }));
+});
+
+app.post('/api/contacts/scan', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).send('no file');
+  const category = req.body.category;
+  if (!CONTACT_CATEGORIES.includes(category)) return res.status(400).send('category must be one of ' + CONTACT_CATEGORIES.join(', '));
+  try {
+    await normalizeHeic(req.file);
+    const c = await readScan(req.file.path, contactPrompt(category), CONTACT_SCHEMA);
+    if (!c.name && !c.company) return res.status(422).send('could not read a name or company off this image');
+    res.json(insertContact({ category, ...c, photo: req.file.filename, original_name: req.file.originalname || null }));
+  } catch (e) {
+    console.error('contact scan failed:', e.message);
+    res.status(422).send(e.message);
+  }
+});
+
+app.patch('/api/contacts/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM contacts WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such contact');
+  const { name, company, phone, email, notes } = req.body || {};
+  db.prepare(`UPDATE contacts SET name=?, company=?, phone=?, email=?, notes=? WHERE id=?`)
+    .run(name ?? row.name, company ?? row.company, phone ?? row.phone, email ?? row.email, notes ?? row.notes, row.id);
+  res.json(db.prepare(`SELECT * FROM contacts WHERE id=?`).get(row.id));
+});
+
+app.delete('/api/contacts/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM contacts WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such contact');
+  db.prepare(`DELETE FROM contacts WHERE id=?`).run(row.id);
+  // photo left for the orphan sweep, same policy as receipts/chips
+  res.json({ ok: true });
+});
+
+/* plans — architectural drawings, floor plans, sketches. Just stored and
+   listed; no AI reading, unlike the other drop zones. */
+app.get('/api/plans', (req, res) => {
+  const rows = db.prepare(`SELECT * FROM plans ORDER BY created_at, id`).all();
+  res.json(rows.map(r => ({ ...r, url: '/uploads/' + r.filename })));
+});
+
+app.post('/api/plans', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).send('no file');
+  try { await normalizeHeic(req.file); } catch { /* not heic */ }
+  const ext = path.extname(req.file.filename).toLowerCase();
+  if (!MEDIA[ext] && ext !== '.pdf') {
+    fs.unlinkSync(req.file.path);
+    return res.status(400).send('plans must be an image or a PDF');
+  }
+  const title = ((req.body.title || '').trim() || (req.file.originalname || req.file.filename).replace(/\.[^.]*$/, '')).slice(0, 200);
+  const info = db.prepare(
+    `INSERT INTO plans (title, filename, original_name) VALUES (?,?,?)`
+  ).run(title, req.file.filename, req.file.originalname || null);
+  const row = db.prepare(`SELECT * FROM plans WHERE id=?`).get(info.lastInsertRowid);
+  res.json({ ...row, url: '/uploads/' + row.filename });
+});
+
+app.patch('/api/plans/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM plans WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such plan');
+  const title = (req.body?.title || '').trim();
+  if (!title) return res.status(400).send('title is required');
+  db.prepare(`UPDATE plans SET title=? WHERE id=?`).run(title.slice(0, 200), row.id);
+  res.json({ ...db.prepare(`SELECT * FROM plans WHERE id=?`).get(row.id), url: '/uploads/' + row.filename });
+});
+
+app.delete('/api/plans/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM plans WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such plan');
+  db.prepare(`DELETE FROM plans WHERE id=?`).run(row.id);
+  res.json({ ok: true });
+});
+
 /* photos */
 app.get('/api/photos', (req, res) => {
   const rows = db.prepare(`SELECT * FROM photos ORDER BY created_at, id`).all();
@@ -766,6 +895,8 @@ function sweepOrphanUploads() {
       ...db.prepare(`SELECT scan_file f FROM utility_bills WHERE scan_file IS NOT NULL`).all(),
       ...db.prepare(`SELECT filename f FROM photos`).all(),
       ...db.prepare(`SELECT photo f FROM paint_chips WHERE photo IS NOT NULL`).all(),
+      ...db.prepare(`SELECT filename f FROM plans`).all(),
+      ...db.prepare(`SELECT photo f FROM contacts WHERE photo IS NOT NULL`).all(),
     ].map(r => r.f));
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     let removed = 0;
