@@ -17,6 +17,8 @@
  *   GET  /api/contacts            POST /api/contacts          (manual add, JSON)
  *   POST /api/contacts/scan       (multipart business-card/contact photo → Claude reads it)
  *   PATCH /api/contacts/:id       DELETE /api/contacts/:id
+ *   GET  /api/todo-status         POST /api/todo-status        (status override for a record-book
+ *                                                                todo item, keyed by room+task)
  *
  * Storage: SQLite + uploaded files under DATA_DIR (Railway volume → mount at /app/data).
  * Env: ANTHROPIC_API_KEY (receipt/bill reading), SMTP_URL + MAIL_FROM (optional, reminders).
@@ -80,6 +82,9 @@ CREATE TABLE IF NOT EXISTS contacts (
   category TEXT NOT NULL, name TEXT, company TEXT, phone TEXT, email TEXT, notes TEXT,
   photo TEXT, original_name TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS todo_status (
+  key TEXT PRIMARY KEY, status TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
 `);
@@ -839,6 +844,24 @@ app.patch('/api/maintenance/:id', (req, res) => {
   }
 
   res.json({ task: db.prepare(`SELECT * FROM maintenance WHERE id=?`).get(task.id), expense, next });
+});
+
+/* todo status — the Projects (room by room) page's tasks come from the
+   static record-book seed (js/data.js), which has no stable id, so overrides
+   are keyed by room+task text instead of a row id. */
+const TODO_STATUSES = ['In progress', 'Open', 'Blocked', 'Completed'];
+
+app.get('/api/todo-status', (req, res) => {
+  res.json(db.prepare(`SELECT key, status FROM todo_status`).all());
+});
+
+app.post('/api/todo-status', (req, res) => {
+  const { key, status } = req.body || {};
+  if (!key || !TODO_STATUSES.includes(status)) return res.status(400).send('key and a valid status are required');
+  db.prepare(
+    `INSERT INTO todo_status (key, status) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET status=excluded.status, updated_at=datetime('now')`
+  ).run(key, status);
+  res.json({ key, status });
 });
 
 /* ---------- email reminders (optional — needs SMTP_URL) ---------- */
