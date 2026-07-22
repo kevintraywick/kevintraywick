@@ -70,6 +70,7 @@
       </div>
       <div class="section-gap"></div>
       <p class="note"><strong>Annual costs:</strong> property tax is estimated at <span class="num">~$1,646/yr</span> ($200,000 appraisal × 25% TN residential assessment × $3.293/$100 combined Martin + Weakley 2025 rate) and insurance at <span class="num">$1,100/yr</span> from the record book — shown here at the full annual figure (est. until an actual statement is scanned in), amortized per month on the chart above.</p>
+      <p class="note"><strong>Similar homes:</strong> the dashed gray line is WCMES's published average residential electric bill, <span class="num">$179.68/mo</span> (EIA Form 861 data, via findenergy.com) — a county-wide average across all home sizes, not adjusted for square footage.</p>
     </section>
   </div>
 </main>
@@ -98,6 +99,11 @@
      - insurance: record book note "12 mo @ 1100/year" */
   const ANNUAL_EST = { tax: 1646, insurance: W.INSURANCE_YR };
   const BILL_LABELS = { electricity: 'Electricity', water: 'Water / sewer / garbage', internet: 'WK&T internet', other: 'Utility' };
+
+  // WCMES's published average residential bill (EIA Form 861, via findenergy.com,
+  // 2026-07) — a county-wide average across all home sizes, not size-adjusted
+  const WCMES_AVG_BILL = 179.68;
+  const BENCH_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--ink-3').trim();
 
   let bills = [];
   const hasApi = await WAPI.health();
@@ -222,6 +228,8 @@
           color: SERIES_COLORS.tax, values: c.annual.tax.values, dash: !c.annual.tax.hasActuals },
         { name: 'Insurance /mo' + (c.annual.insurance.hasActuals ? '' : ' (est.)'),
           color: SERIES_COLORS.insurance, values: c.annual.insurance.values, dash: !c.annual.insurance.hasActuals },
+        { name: 'Similar homes (WCMES avg.)', color: BENCH_COLOR,
+          values: c.labels.map(() => WCMES_AVG_BILL), dash: true },
       ],
     });
 
