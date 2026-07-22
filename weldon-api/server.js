@@ -849,7 +849,7 @@ app.patch('/api/maintenance/:id', (req, res) => {
 /* todo status — the Projects (room by room) page's tasks come from the
    static record-book seed (js/data.js), which has no stable id, so overrides
    are keyed by room+task text instead of a row id. */
-const TODO_STATUSES = ['In progress', 'Open', 'Blocked', 'Completed'];
+const TODO_STATUSES = ['In progress', 'Open', 'Blocked', 'Completed', 'Remove'];
 
 app.get('/api/todo-status', (req, res) => {
   res.json(db.prepare(`SELECT key, status FROM todo_status`).all());
