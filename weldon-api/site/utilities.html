@@ -58,21 +58,18 @@
       <div id="chart-utilities"></div>
     </section>
 
-    <section class="card span-7">
-      <div class="card-head"><div><h2>The numbers</h2><p class="card-sub">exactly as recorded</p></div></div>
+    <section class="card span-12">
+      <div class="card-head">
+        <div><h2>All bills</h2><p class="card-sub" id="bills-sub"></p></div>
+      </div>
       <div class="tablewrap">
-        <table class="data" id="util-table">
-          <thead><tr><th>Month</th><th class="r">Electricity</th><th class="r">Water/S/G</th><th class="r">Internet</th><th class="r">Month total</th></tr></thead>
+        <table class="data" id="util-ledger">
+          <thead><tr><th>When</th><th>Utility</th><th class="r">Amount</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-    </section>
-
-    <section class="card span-5">
-      <div class="card-head"><div><h2>Scanned bills</h2><p class="card-sub">what the drop zone has read so far</p></div></div>
-      <ul class="tasklist" id="scan-list"><li class="card-sub">Nothing scanned yet.</li></ul>
       <div class="section-gap"></div>
-      <p class="note"><strong>Annual costs on the chart:</strong> property tax is estimated at <span class="num">~$1,646/yr</span> ($200,000 appraisal × 25% TN residential assessment × $3.293/$100 combined Martin + Weakley 2025 rate) and insurance at <span class="num">$1,100/yr</span> from the record book. Both are shown amortized per month, dashed until an actual statement is dropped in above.</p>
+      <p class="note"><strong>Annual costs:</strong> property tax is estimated at <span class="num">~$1,646/yr</span> ($200,000 appraisal × 25% TN residential assessment × $3.293/$100 combined Martin + Weakley 2025 rate) and insurance at <span class="num">$1,100/yr</span> from the record book — shown here at the full annual figure (est. until an actual statement is scanned in), amortized per month on the chart above.</p>
     </section>
   </div>
 </main>
@@ -100,6 +97,7 @@
        (City of Martin $1.7478 + Weakley County $1.5452, 2025 rates)
      - insurance: record book note "12 mo @ 1100/year" */
   const ANNUAL_EST = { tax: 1646, insurance: W.INSURANCE_YR };
+  const BILL_LABELS = { electricity: 'Electricity', water: 'Water / sewer / garbage', internet: 'WK&T internet', other: 'Utility' };
 
   let bills = [];
   const hasApi = await WAPI.health();
@@ -227,43 +225,88 @@
       ],
     });
 
-    let html = '';
-    c.keys.forEach((ym, i) => {
-      const row = c.map[ym];
-      if (!row) return;
-      const e = row.electricity, w = row.water, n = row.internet;
-      const tot = (e || 0) + (w || 0) + (n || 0);
-      html += '<tr><td class="num">' + c.labels[i] + '</td><td class="r num">' + usd(e, 2) + '</td><td class="r num">' +
-        usd(w, 2) + '</td><td class="r num">' + usd(n, 2) + '</td><td class="r num">' + usd(tot, 2) + '</td></tr>';
-    });
-    document.querySelector('#util-table tbody').innerHTML = html;
+    renderLedger();
+  }
 
-    const listEl = document.getElementById('scan-list');
-    if (!bills.length) {
-      listEl.innerHTML = '<li class="card-sub">Nothing scanned yet.</li>';
-    } else {
-      listEl.innerHTML = bills.slice().reverse().map(b => {
-        if (b.id === editingBillId) {
-          return '<li><input type="month" id="sb-month" value="' + b.month + '" style="font:inherit;font-size:13px"> ' +
-            '<select id="sb-util" style="font:inherit;font-size:13px">' +
-            ['electricity', 'water', 'internet', 'tax', 'insurance', 'other'].map(u =>
-              '<option value="' + u + '"' + (u === b.utility ? ' selected' : '') + '>' + u + '</option>').join('') +
-            '</select> <input type="number" id="sb-amount" step="0.01" min="0" value="' + b.amount + '" style="font:inherit;font-size:13px;width:90px"> ' +
-            '<span class="where"><button class="rowbtn" data-bsave="' + b.id + '" title="Save">✓</button>' +
-            '<button class="rowbtn" data-bcancel="1" title="Cancel">✕</button></span></li>';
-        }
-        const isAnnual = b.utility === 'tax' || b.utility === 'insurance';
-        const when = isAnnual ? b.month.slice(0, 4) + ' annual' : b.month;
-        return '<li><span class="prio">' + when + '</span>' + b.utility +
-          '<span class="where num">' + usd(b.amount, 2) +
-          ' <button class="rowbtn" data-bedit="' + b.id + '" title="Edit bill" aria-label="Edit bill">✎</button>' +
-          '<button class="rowbtn danger" data-bdel="' + b.id + '" title="Delete bill" aria-label="Delete bill">✕</button></span></li>';
-      }).join('');
+  /* one row per scanned/recorded bill: monthly for electricity/water/internet,
+     annual for tax/insurance (they're entered and edited as a whole year's
+     figure, same as the amount posted from a scanned statement) */
+  function prettyMonth(ym) {
+    const [y, m] = ym.split('-');
+    return MONTHS[+m - 1] + ' ’' + y.slice(2);
+  }
+
+  function billRows() {
+    const monthly = {}; // ym -> { utilityKey: {v, id} }
+    ['electricity', 'water', 'internet'].forEach(key => {
+      D.utilities[key].forEach((v, i) => {
+        if (v == null) return;
+        const ym = (i < 12 ? 2024 : 2025) + '-' + String((i % 12) + 1).padStart(2, '0');
+        (monthly[ym] = monthly[ym] || {})[key] = { v };
+      });
+    });
+    bills.forEach(b => {
+      if (b.utility === 'tax' || b.utility === 'insurance') return;
+      (monthly[b.month] = monthly[b.month] || {})[b.utility] = { v: b.amount, id: b.id };
+    });
+
+    const rows = [];
+    Object.keys(monthly).forEach(ym => {
+      Object.keys(monthly[ym]).forEach(key => {
+        const cell = monthly[ym][key];
+        rows.push({ sortKey: ym, when: prettyMonth(ym), utility: BILL_LABELS[key] || key, amount: cell.v, bid: cell.id || null });
+      });
+    });
+
+    const years = Object.keys(monthly).map(ym => +ym.slice(0, 4));
+    let endYear = years.length ? Math.max(...years) : 2025;
+    if (endYear < 2025) endYear = 2025;
+    const byYear = { tax: {}, insurance: {} };
+    bills.forEach(b => { if (byYear[b.utility]) byYear[b.utility][b.month.slice(0, 4)] = b; });
+    for (let y = 2024; y <= endYear; y++) {
+      ['tax', 'insurance'].forEach(k => {
+        const actual = byYear[k][String(y)];
+        rows.push({
+          sortKey: y + '-13', when: y + ' annual', utility: k === 'tax' ? 'Property tax' : 'Insurance',
+          amount: actual ? actual.amount : ANNUAL_EST[k], bid: actual ? actual.id : null, est: !actual,
+        });
+      });
     }
+    return rows.sort((a, b) => a.sortKey < b.sortKey ? 1 : -1);
+  }
+
+  function renderLedger() {
+    const rows = billRows();
+    const tbody = document.querySelector('#util-ledger tbody');
+    tbody.innerHTML = rows.map(r => {
+      if (r.bid && r.bid === editingBillId) {
+        const b = bills.find(x => x.id === r.bid);
+        return '<tr><td><input type="month" id="sb-month" value="' + b.month + '" style="font:inherit;font-family:var(--font-mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)"></td>' +
+          '<td><select id="sb-util" style="font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">' +
+          ['electricity', 'water', 'internet', 'tax', 'insurance', 'other'].map(u =>
+            '<option value="' + u + '"' + (u === b.utility ? ' selected' : '') + '>' + u + '</option>').join('') +
+          '</select></td>' +
+          '<td class="r"><input type="number" id="sb-amount" step="0.01" min="0" value="' + b.amount + '" style="width:90px;text-align:right;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)"></td>' +
+          '<td class="act"><button class="rowbtn" data-bsave="' + b.id + '" title="Save">✓</button>' +
+          '<button class="rowbtn" data-bcancel="1" title="Cancel">✕</button></td></tr>';
+      }
+      const actions = r.bid
+        ? '<button class="rowbtn" data-bedit="' + r.bid + '" title="Edit bill" aria-label="Edit bill">✎</button>' +
+          '<button class="rowbtn danger" data-bdel="' + r.bid + '" title="Delete bill" aria-label="Delete bill">✕</button>'
+        : '';
+      return '<tr><td class="num">' + r.when + '</td><td>' + r.utility +
+        (r.est ? ' <span class="chip-est">est.</span>' : '') + '</td>' +
+        '<td class="r num">' + usd(r.amount, 2) + '</td><td class="act">' + actions + '</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="card-sub">Nothing recorded yet.</td></tr>';
+
+    const total = rows.reduce((a, r) => a + r.amount, 0);
+    const scanned = rows.filter(r => r.bid).length;
+    document.getElementById('bills-sub').textContent =
+      rows.length + ' entries · ' + usd(total, 2) + ' total' + (scanned ? ' · ' + scanned + ' from scanned statements' : '');
   }
 
   let editingBillId = null;
-  document.getElementById('scan-list').addEventListener('click', async ev => {
+  document.getElementById('util-ledger').addEventListener('click', async ev => {
     const btn = ev.target.closest('button[data-bedit], button[data-bdel], button[data-bsave], button[data-bcancel]');
     if (!btn) return;
     if (btn.dataset.bedit) { editingBillId = +btn.dataset.bedit; render(); return; }
