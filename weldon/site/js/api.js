@@ -55,10 +55,17 @@
   }
 
   /* Wire a drop zone: element with class .dz containing an <input type=file>.
-     onFiles(files) is called for drops and picker selections. */
+     onFiles(files) is called for drops and picker selections. The file input
+     itself is display:none (can't be tabbed to), so the wrapper needs its own
+     keyboard path — role=button + tabindex + Enter/Space open the same picker. */
   function wireDropZone(el, onFiles) {
     const input = el.querySelector('input[type="file"]');
+    if (!el.hasAttribute('tabindex')) el.tabIndex = 0;
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
     el.addEventListener('click', () => input && input.click());
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input && input.click(); }
+    });
     el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag'); });
     el.addEventListener('dragleave', () => el.classList.remove('drag'));
     el.addEventListener('drop', e => {

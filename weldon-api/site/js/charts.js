@@ -74,7 +74,7 @@
     const hidden = opts.hidden || new Set();
     const W = 720, H = opts.height || 260;
     const P = { t: 14, r: 14, b: 26, l: 50 };
-    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.ariaLabel || 'line chart' }, null);
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.ariaLabel || 'line chart', tabindex: '0' }, null);
     container.appendChild(svg);
 
     const n = opts.labels.length;
@@ -169,6 +169,18 @@
     svg.addEventListener('mousemove', e => show(nearest(e.clientX)));
     svg.addEventListener('mouseleave', hide);
     svg.addEventListener('touchstart', e => { if (e.touches[0]) show(nearest(e.touches[0].clientX)); }, { passive: true });
+
+    // keyboard: arrow keys step month-by-month, Home/End jump to the ends —
+    // the only way a keyboard user can reach the tooltip data at all
+    let focusIndex = Math.min(n - 1, Math.round((n - 1) / 2));
+    svg.addEventListener('focus', () => show(focusIndex));
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { focusIndex = Math.min(n - 1, focusIndex + 1); show(focusIndex); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { focusIndex = Math.max(0, focusIndex - 1); show(focusIndex); e.preventDefault(); }
+      else if (e.key === 'Home') { focusIndex = 0; show(focusIndex); e.preventDefault(); }
+      else if (e.key === 'End') { focusIndex = n - 1; show(focusIndex); e.preventDefault(); }
+    });
 
     if (opts.series.length > 1) legend(container, opts.series, { hidden, onToggle: opts.onLegendToggle });
   }
