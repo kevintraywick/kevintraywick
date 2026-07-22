@@ -19,6 +19,12 @@
     --pad: 20px;
     --radius: 20px;
     --shadow: 0 2px 0 rgba(0,0,0,.06), 0 10px 24px -12px rgba(0,0,0,.28);
+    --accent: #7C5CFC;            /* cheerful selection color for radios/checkboxes/selects */
+  }
+  /* Cheerful (not green / not black) selection color across all form controls */
+  jelly-checkbox, jelly-radio-group, jelly-radio, jelly-select, jelly-slider, jelly-switch {
+    --jelly-accent: var(--accent);
+    --jelly-fill: var(--accent);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -33,57 +39,47 @@
   }
   jelly-theme[mode] { display: block; }
 
-  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 160px; }
+  /* ~25% denser overall to reduce scrolling */
+  .wrap { max-width: 920px; margin: 0 auto; padding: 14px 20px 150px; zoom: 0.8; }
 
   header.hero {
-    text-align: center;
-    padding: 28px 20px 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 6px 4px 10px;
   }
   header.hero .eyebrow {
     font: 700 13px/1 "Nunito", sans-serif;
     letter-spacing: .14em; text-transform: uppercase;
-    color: #2ABC74;
+    color: var(--accent);
   }
-  header.hero h1 {
-    font-family: "Fraunces", serif;
-    font-weight: 700;
-    font-size: clamp(30px, 6vw, 48px);
-    margin: 10px 0 8px;
-    letter-spacing: -.01em;
-  }
-  header.hero p.sub {
-    max-width: 560px; margin: 0 auto; color: #55606c; font-size: 16px;
-  }
+  .darktoggle { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #55606c; cursor: pointer; }
 
   .card {
     background: #fffdf8;
     border: 2px solid #12203015;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    padding: 22px var(--pad);
-    margin: 18px 0;
+    padding: 14px 16px;
+    margin: 10px 0;
   }
-  .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+  .section-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
   .section-num {
-    font-family: "Fraunces", serif; font-weight: 700; font-size: 20px;
-    color: #2ABC74; min-width: 1.6em;
+    font-family: "Fraunces", serif; font-weight: 700; font-size: 18px;
+    color: var(--accent); min-width: 1.5em;
   }
   .section-head h2 {
-    font-family: "Fraunces", serif; font-weight: 600; font-size: 22px; margin: 0;
+    font-family: "Fraunces", serif; font-weight: 600; font-size: 20px; margin: 0;
   }
-  .blurb { color: #5b6672; font-size: 14.5px; margin: 4px 0 16px; }
 
-  .field { margin: 16px 0; }
+  .field { margin: 10px 0; }
   .field > label.flabel,
   .field > .flabel {
     display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #26313d;
   }
   .hint { color: #77818d; font-weight: 500; font-size: 12.5px; margin-left: 6px; }
 
-  .checks { display: flex; flex-wrap: wrap; gap: 10px 18px; }
-  .checks jelly-checkbox { --jelly-fill: #2ABC74; }
+  .checks { display: flex; flex-wrap: wrap; gap: 7px 16px; }
 
-  jelly-radio-group { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+  jelly-radio-group { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 
@@ -136,6 +132,23 @@
   .principle .num { font-family: "Fraunces", serif; font-weight: 700; color: #2ABC74; font-size: 18px; margin-top: 6px; }
 
   small.ex { display: block; color: #8a939e; font-size: 12px; margin-top: 6px; }
+
+  /* Dark mode (toggled by the Dark switch) */
+  body.dark { color: #e7ebf0; background:
+      radial-gradient(1200px 600px at 15% -10%, #1d2130 0%, transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, #16221c 0%, transparent 55%),
+      #12151b; }
+  body.dark .card { background: #1b1f27; border-color: #ffffff14; box-shadow: 0 2px 0 rgba(0,0,0,.3), 0 12px 26px -14px rgba(0,0,0,.7); }
+  body.dark .section-head h2 { color: #f1f3f6; }
+  body.dark .swatch { background: #1b1f27; border-color: #ffffff16; }
+  body.dark textarea.raw, body.dark input.raw { background: #20242d; border-color: #ffffff22; color: #e7ebf0; }
+  body.dark textarea.raw::placeholder, body.dark input.raw::placeholder { color: #8b95a3; }
+  body.dark .darktoggle { color: #aeb6c2; }
+  body.dark .scalechip { background: #24303a; color: #8fe3bd; }
+  body.dark .swatch .hex { color: #9aa4b1; }
+  body.dark .footer-bar { background: #12151beb; border-color: #ffffff14; }
+  body.dark .footer-inner .saved { color: #8b95a3; }
+  body.dark .rangewrap output { color: #e7ebf0; }
 </style>
 </head>
 <body>
@@ -144,13 +157,7 @@
 
   <header class="hero">
     <div class="eyebrow">Design Language Builder</div>
-    <h1>Turn questions into a design language</h1>
-    <p class="sub">Answer the questionnaire, narrow the choices, then generate a printable design-language document for a new website. Built with <strong>Jelly UI</strong>.</p>
-    <div class="toplinks">
-      <jelly-badge variant="mint" size="large" outline>20 sections</jelly-badge>
-      <jelly-badge variant="amber" size="large" outline>+ design principles</jelly-badge>
-      <jelly-badge variant="azure" size="large" outline>autosaved</jelly-badge>
-    </div>
+    <label class="darktoggle"><jelly-switch id="darkToggle" size="small"></jelly-switch><span>Dark</span></label>
   </header>
 
   <form id="dlForm">
@@ -177,7 +184,7 @@
     <span class="saved" id="savedNote">Changes save automatically to this browser.</span>
     <div style="display:flex; gap:10px;">
       <jelly-button id="resetBtn" variant="platinum" size="large" shape="square" type="button">Reset</jelly-button>
-      <jelly-button id="genBtn" variant="mint" size="large" shape="square" type="button" style="--jelly-fill:#2ABC74;">Create design language document →</jelly-button>
+      <jelly-button id="genBtn" size="large" shape="square" type="button" style="--jelly-fill:#7C5CFC;">Create design language document →</jelly-button>
     </div>
   </div>
 </div>
@@ -190,7 +197,7 @@
  * ------------------------------------------------------------------ */
 
 const COLOR_PRESETS = {
-  "Jelly (default)": {
+  "Bright (default)": {
     Primary:"#2ABC74", Secondary:"#7C5CFC", Accent:"#F5A524", Background:"#F7F4EE",
     Surface:"#FFFDF8", Danger:"#E5484D", Success:"#30A46C", Info:"#3B82F6", Neutral:"#6B7480"
   },
@@ -220,7 +227,7 @@ const SECTIONS = [
     ] } ] },
 
   { id:"personality", title:"Personality", blurb:"The most important section. Use emotional words, not visual ones — they drive hundreds of decisions.",
-    fields:[ { type:"multi", name:"personality", options:["welcoming","adventurous","optimistic","handcrafted","imaginative","premium (not corporate)","magical (not gothic)","fun but organized","calm","bold","playful","trustworthy"], defaults:["welcoming","adventurous","imaginative","fun but organized"] },
+    fields:[ { type:"multi", name:"personality", options:["welcoming","adventurous","optimistic","handcrafted","imaginative","premium (not corporate)","magical (not gothic)","fun but organized","calm","bold","playful","trustworthy","professional","elegant","sophisticated","minimal","energetic","luxurious","approachable","quirky","modern","refined","cozy","confident"] },
              { type:"text", name:"personality_other", placeholder:"Other traits (comma separated)" } ] },
 
   { id:"audience", title:"Audience", blurb:"Who is visiting? This drives navigation and density.",
@@ -250,9 +257,9 @@ const SECTIONS = [
           {value:"sharp", label:"Sharp (buttons 4px, cards 6px)"} ], default:"pill" }
     ] },
 
-  { id:"shadows", title:"Shadows & elevation", blurb:"Jelly leans on layered, tactile shadows.",
+  { id:"shadows", title:"Shadows & elevation",
     fields:[ { type:"radio", name:"shadow_style", options:[
-        {value:"layered", label:"Layered / tactile (a solid offset + a soft blur — the Jelly look)"},
+        {value:"layered", label:"Layered / tactile (a solid offset plus a soft blur)"},
         {value:"soft", label:"Soft & subtle"},
         {value:"flat", label:"Flat, borders only"} ], default:"layered" },
       { type:"radio", name:"outline", options:[
@@ -296,7 +303,7 @@ const SECTIONS = [
     fields:[
       { type:"range", name:"motion_speed", label:"Base transition speed", min:120, max:400, step:20, default:220, unit:"ms" },
       { type:"radio", name:"easing", options:[
-        {value:"spring", label:"Springy (bouncy — the Jelly feel)"},
+        {value:"spring", label:"Springy / bouncy"},
         {value:"ease-out", label:"Smooth ease-out"},
         {value:"linear", label:"Minimal / linear"} ], default:"spring" },
       { type:"multi", name:"motion_uses", options:["hover effects","page transitions","button press bounce","scroll reveals","honor reduced-motion"], defaults:["hover effects","button press bounce","honor reduced-motion"] } ] },
@@ -351,7 +358,6 @@ SECTIONS.forEach(sec => {
   card.className = "card";
   card.id = "sec-" + sec.id;
   let html = `<div class="section-head"><span class="section-num">${sectionCount}</span><h2>${esc(sec.title)}</h2></div>`;
-  if (sec.blurb) html += `<p class="blurb">${esc(sec.blurb)}</p>`;
   sec.fields.forEach(f => { html += renderField(f); });
   card.innerHTML = html;
   root.appendChild(card);
@@ -363,18 +369,17 @@ function renderField(f){
       f.options.map(o => {
         const val = typeof o === "string" ? o : o.value;
         const lab = typeof o === "string" ? o : o.label;
-        const on = (f.defaults||[]).includes(val) ? " checked" : "";
-        return `<jelly-checkbox name="${esc(f.name)}" value="${esc(val)}"${on}>${esc(lab)}</jelly-checkbox>`;
+        return `<jelly-checkbox size="small" name="${esc(f.name)}" value="${esc(val)}">${esc(lab)}</jelly-checkbox>`;
       }).join("") + `</div></div>`;
   }
   if (f.type === "radio") {
-    return `<div class="field"><jelly-radio-group name="${esc(f.name)}" value="${esc(f.default||"")}">` +
-      f.options.map(o => `<jelly-radio value="${esc(o.value)}">${esc(o.label)}</jelly-radio>`).join("") +
+    return `<div class="field"><jelly-radio-group size="small" name="${esc(f.name)}" value="${esc(f.default||"")}">` +
+      f.options.map(o => `<jelly-radio size="small" value="${esc(o.value)}">${esc(o.label)}</jelly-radio>`).join("") +
       `</jelly-radio-group></div>`;
   }
   if (f.type === "select") {
     return `<div class="field grid-item"><span class="flabel">${esc(f.label||f.name)}</span>` +
-      `<jelly-select name="${esc(f.name)}" value="${esc(f.default||"")}">` +
+      `<jelly-select size="small" name="${esc(f.name)}" value="${esc(f.default||"")}">` +
       f.options.map(o => `<jelly-option value="${esc(o)}"${o===f.default?" selected":""}>${esc(o)}</jelly-option>`).join("") +
       `</jelly-select></div>`;
   }
@@ -389,7 +394,7 @@ function renderField(f){
   if (f.type === "colorset") {
     return `<div class="field">
       <div class="presetbar"><span class="flabel">Start from a palette</span>
-        <jelly-radio-group id="palettePreset" name="palette_preset" value="Jelly (default)">` +
+        <jelly-radio-group size="small" id="palettePreset" name="palette_preset" value="Bright (default)">` +
         Object.keys(COLOR_PRESETS).map(p => `<jelly-radio value="${esc(p)}">${esc(p)}</jelly-radio>`).join("") +
       `</jelly-radio-group></div>
       <div class="swatches" id="swatches"></div>
@@ -416,7 +421,7 @@ function renderField(f){
 
 /* ---- Color swatches + picker ---- */
 const swatchWrap = document.getElementById("swatches");
-let colorState = { ...COLOR_PRESETS["Jelly (default)"] };
+let colorState = { ...COLOR_PRESETS["Bright (default)"] };
 
 function paintSwatches(){
   swatchWrap.innerHTML = COLOR_ROLES.map(role => `
@@ -559,6 +564,57 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   localStorage.removeItem(KEY);
   location.reload();
 });
+
+/* ------------------------------------------------------------------ *
+ *  Dark mode toggle (switches the Jelly theme + page chrome)
+ * ------------------------------------------------------------------ */
+const DARK_KEY = "design_language_dark_v1";
+const themeEl = document.querySelector("jelly-theme");
+const darkToggle = document.getElementById("darkToggle");
+function applyDark(on){
+  if (themeEl) themeEl.setAttribute("mode", on ? "dark" : "light");
+  document.body.classList.toggle("dark", on);
+  document.documentElement.style.colorScheme = on ? "dark" : "light";
+}
+function lsGet(k){ try { return localStorage.getItem(k); } catch(_){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(_){} }
+(function initDark(){
+  const on = lsGet(DARK_KEY) === "1";
+  applyDark(on);
+  function wire(){
+    if (!darkToggle) return;
+    if (on){ darkToggle.setAttribute("checked",""); darkToggle.checked = true; }
+    darkToggle.addEventListener("change", () => {
+      const isOn = darkToggle.checked;
+      applyDark(isOn);
+      lsSet(DARK_KEY, isOn ? "1" : "0");
+    });
+  }
+  customElements.whenDefined("jelly-switch").then(() => setTimeout(wire, 40)).catch(wire);
+  setTimeout(wire, 700); // fallback if jelly never loads
+})();
+
+/* ------------------------------------------------------------------ *
+ *  Click a selected radio again to deselect it (all radio groups)
+ * ------------------------------------------------------------------ */
+document.addEventListener("click", (e) => {
+  const radio = e.target.closest && e.target.closest("jelly-radio");
+  if (!radio) return;
+  const group = radio.closest("jelly-radio-group");
+  if (!group) return;
+  const rv = radio.getAttribute("value");
+  const cur = (group.value != null && group.value !== "") ? group.value : group.getAttribute("value");
+  if (cur === rv) {
+    // already selected -> clear after Jelly finishes handling the click
+    setTimeout(() => {
+      try { group.value = ""; } catch(_){}
+      group.setAttribute("value", "");
+      group.querySelectorAll("jelly-radio").forEach(r => { try { r.checked = false; } catch(_){} r.removeAttribute("checked"); r.removeAttribute("aria-checked"); });
+      group.dispatchEvent(new Event("change", { bubbles: true }));
+      save();
+    }, 0);
+  }
+}, true);
 
 /* ------------------------------------------------------------------ *
  *  Generate printable design-language document
