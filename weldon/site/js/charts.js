@@ -36,20 +36,33 @@
     return t;
   }
 
-  function legend(container, series) {
+  /* opts.onToggle turns each legend entry into a checkbox (checked unless its
+     name is in opts.hidden) — lets a caller isolate one or more series. Plain
+     legend (no checkboxes) when onToggle isn't passed. */
+  function legend(container, series, opts) {
+    opts = opts || {};
     const lg = document.createElement('div');
     lg.className = 'legend';
     const seen = {};
     series.forEach(s => {
       if (seen[s.name]) return; // history + projection pairs share a name — one legend entry
       seen[s.name] = true;
-      const item = document.createElement('span');
-      item.className = 'lg';
       const swatch = s.dash
         ? 'background:repeating-linear-gradient(90deg,' + s.color + ' 0 5px,transparent 5px 8px)'
         : 'background:' + s.color;
-      item.innerHTML = '<i style="' + swatch + '"></i>' + s.name;
-      lg.appendChild(item);
+      if (opts.onToggle) {
+        const item = document.createElement('label');
+        item.className = 'lg lg-toggle';
+        const checked = !(opts.hidden && opts.hidden.has(s.name));
+        item.innerHTML = '<input type="checkbox"' + (checked ? ' checked' : '') + '><i style="' + swatch + '"></i>' + s.name;
+        item.querySelector('input').addEventListener('change', e => opts.onToggle(s.name, e.target.checked));
+        lg.appendChild(item);
+      } else {
+        const item = document.createElement('span');
+        item.className = 'lg';
+        item.innerHTML = '<i style="' + swatch + '"></i>' + s.name;
+        lg.appendChild(item);
+      }
     });
     container.appendChild(lg);
   }
@@ -58,13 +71,15 @@
      opts: { labels:[], series:[{name,color,values:[num|null]}], height } */
   function lineChart(container, opts) {
     container.classList.add('chart');
+    const hidden = opts.hidden || new Set();
     const W = 720, H = opts.height || 260;
     const P = { t: 14, r: 14, b: 26, l: 50 };
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.ariaLabel || 'line chart' }, null);
     container.appendChild(svg);
 
     const n = opts.labels.length;
-    const all = opts.series.flatMap(s => s.values).filter(v => v != null);
+    // isolated-out series drop from the scale too, so the remaining lines fill the chart
+    const all = opts.series.filter(s => !hidden.has(s.name)).flatMap(s => s.values).filter(v => v != null);
     const max = niceMax(Math.max(...all, 1) * 1.08);
     const x = i => P.l + (n === 1 ? 0 : (i * (W - P.l - P.r) / (n - 1)));
     const y = v => H - P.b - (v / max) * (H - P.t - P.b);
@@ -90,6 +105,7 @@
 
     // lines (2px), gaps where data is null
     opts.series.forEach(s => {
+      if (hidden.has(s.name)) return; // isolated out via the legend checkbox
       let d = '', pen = false;
       s.values.forEach((v, i) => {
         if (v == null) { pen = false; return; }
@@ -126,6 +142,7 @@
       let rows = '';
       const seen = {};
       opts.series.forEach((s, si) => {
+        if (hidden.has(s.name)) { dots[si].setAttribute('opacity', 0); return; }
         const v = s.values[i];
         if (v == null) { dots[si].setAttribute('opacity', 0); }
         else { dots[si].setAttribute('cx', x(i)); dots[si].setAttribute('cy', y(v)); dots[si].setAttribute('opacity', 1); }
@@ -153,7 +170,7 @@
     svg.addEventListener('mouseleave', hide);
     svg.addEventListener('touchstart', e => { if (e.touches[0]) show(nearest(e.touches[0].clientX)); }, { passive: true });
 
-    if (opts.series.length > 1) legend(container, opts.series);
+    if (opts.series.length > 1) legend(container, opts.series, { hidden, onToggle: opts.onLegendToggle });
   }
 
   /* Vertical bars (single or stacked). Rounded 4px cap on the top segment,

@@ -223,11 +223,14 @@
   ];
   const PROJECT_COLORS = [SERIES_COLORS.water, SERIES_COLORS.internet, '#B0486E', '#5E8A72', '#7A6A9E', '#946A3D'];
   let settings = { util: utilSeed, upkeep: upkeepSeed, tax: taxSeed, ins: insSeed, rate: 7 };
+  // which legend series are unchecked — isolates the rest on the chart, persisted like everything else here
+  let hiddenSeries = new Set();
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY));
     if (saved) {
       settings = { ...settings, ...saved.settings };
       if (Array.isArray(saved.items) && saved.items.length) items = saved.items;
+      if (Array.isArray(saved.hidden)) hiddenSeries = new Set(saved.hidden);
     }
   } catch {}
 
@@ -359,6 +362,11 @@
       height: 320,
       hideNullRows: true,
       ariaLabel: 'Monthly house cost, recorded 2024 to today and projected seven years out',
+      hidden: hiddenSeries,
+      onLegendToggle: (name, on) => {
+        on ? hiddenSeries.delete(name) : hiddenSeries.add(name);
+        recalc();
+      },
     });
 
     /* tiles */
@@ -404,6 +412,7 @@
     localStorage.setItem(STORE_KEY, JSON.stringify({
       settings: { util: utilBase, upkeep: upkeepBase, tax: taxYr, ins: insYr, rate },
       items: items.map(({ id, name, cost, start, years: yrs, on }) => ({ id, name, cost, start, years: yrs, on })),
+      hidden: [...hiddenSeries],
     }));
   }
 

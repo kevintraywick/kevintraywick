@@ -197,6 +197,8 @@ main.wrap { padding-top: 26px; padding-bottom: 60px; }
 .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
 .legend .lg { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2); }
 .legend .lg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.legend .lg-toggle { cursor: pointer; user-select: none; }
+.legend .lg-toggle input { margin: 0; width: 13px; height: 13px; accent-color: var(--accent); cursor: pointer; }
 
 .tooltip {
   position: absolute; pointer-events: none; z-index: 5;
