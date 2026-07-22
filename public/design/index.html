@@ -39,8 +39,8 @@
   }
   jelly-theme[mode] { display: block; }
 
-  /* ~25% denser overall to reduce scrolling */
-  .wrap { max-width: 920px; margin: 0 auto; padding: 14px 20px 150px; zoom: 0.8; }
+  /* denser overall to reduce scrolling (eased back a touch for readability) */
+  .wrap { max-width: 920px; margin: 0 auto; padding: 14px 20px 150px; zoom: 0.85; }
 
   header.hero {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -63,19 +63,19 @@
   }
   .section-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
   .section-num {
-    font-family: "Fraunces", serif; font-weight: 700; font-size: 18px;
+    font-family: "Fraunces", serif; font-weight: 700; font-size: 20px;
     color: var(--accent); min-width: 1.5em;
   }
   .section-head h2 {
-    font-family: "Fraunces", serif; font-weight: 600; font-size: 20px; margin: 0;
+    font-family: "Fraunces", serif; font-weight: 600; font-size: 23px; margin: 0;
   }
 
   .field { margin: 10px 0; }
   .field > label.flabel,
   .field > .flabel {
-    display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #26313d;
+    display: block; font-weight: 700; font-size: 15px; margin-bottom: 8px; color: #26313d;
   }
-  .hint { color: #77818d; font-weight: 500; font-size: 12.5px; margin-left: 6px; }
+  .hint { color: #6a7480; font-weight: 500; font-size: 13px; margin-left: 6px; }
 
   .checks { display: flex; flex-wrap: wrap; gap: 7px 16px; }
 
@@ -111,6 +111,49 @@
   .rangewrap { display: flex; align-items: center; gap: 14px; }
   .rangewrap output { font-family: "JetBrains Mono", monospace; font-size: 13px; min-width: 64px; color: #26313d; font-weight: 600; }
 
+  /* Live example panes (radius, shadows, buttons, cards, motion, layout, illustration) */
+  .demo-row { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap; }
+  .demo-row .controls { flex: 1 1 300px; min-width: 250px; }
+  .demo-pane { flex: 0 0 180px; align-self: stretch; min-height: 118px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px;
+    background: #f2efe7; border: 1px solid #12203015; border-radius: 16px; padding: 14px; }
+  .demo-pane.wide { flex-basis: 236px; }
+  .demo-label { font-size: 10.5px; font-weight: 700; color: #8a939e; text-transform: uppercase; letter-spacing: .07em; }
+
+  .dbox { width: 82px; height: 82px; border-radius: 16px; background: #fff; border: 2px solid #12203020;
+    display: flex; align-items: center; justify-content: center; font-family: "Fraunces", serif; font-weight: 700; font-size: 22px; color: #26313d; }
+  .dcard { width: 118px; height: 74px; background: #fff; border: 2px solid #12203015; border-radius: 24px;
+    display: flex; align-items: flex-end; justify-content: center; padding: 9px; box-shadow: var(--shadow); }
+  .dbtn { background: var(--accent); color: #fff; font-weight: 700; font-size: 12px; padding: 5px 13px; border-radius: 999px; }
+  .dbtn2 { background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; padding: 10px 20px; border-radius: 999px;
+    cursor: pointer; border: 2px solid transparent; transition: transform .12s cubic-bezier(.34,1.56,.64,1); }
+  .dbtn2.outline { background: transparent; color: var(--accent); border-color: var(--accent); }
+  .dbtn2.bounce:active { transform: scale(.88); }
+  .dcard2 { width: 152px; background: #fff; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow); }
+  .dcard2 b { font-size: 13px; color: #26313d; } .dcard2 span { font-size: 11px; color: #77818d; }
+
+  .ballwrap { height: 92px; display: flex; align-items: flex-end; justify-content: center; }
+  .ball { width: 30px; height: 30px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 6px 10px -4px rgba(0,0,0,.4); animation: dl-bounce 620ms infinite ease-in-out; }
+  @keyframes dl-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-52px); } }
+  @media (prefers-reduced-motion: reduce) { .ball { animation: none; } }
+
+  .dgrid { display: grid; gap: 4px; width: 100%; }
+  .dgrid span { height: 46px; background: var(--accent); border-radius: 4px; opacity: .8; }
+
+  .illus-thumb { width: 100%; min-height: 148px; border-radius: 14px; overflow: hidden; position: relative;
+    display: flex; align-items: center; justify-content: center; background: #e9e6de; border: 1px dashed #12203033; }
+  .illus-thumb svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .genimg { position: relative; z-index: 2; background: var(--accent); color: #fff; font-weight: 700; font-size: 12.5px;
+    border: none; border-radius: 999px; padding: 8px 14px; cursor: pointer; box-shadow: 0 6px 14px -6px rgba(0,0,0,.55); }
+  .pane-note { font-size: 11px; color: #77818d; text-align: center; line-height: 1.35; }
+
+  /* Typography live specimen */
+  .typespec { margin-top: 12px; padding: 14px 16px; border-radius: 14px; background: #f6f4ee; border: 1px solid #12203012; }
+  .typespec .ts-h { font-weight: 700; font-size: 26px; line-height: 1.1; color: #1c2530; }
+  .typespec .ts-p { font-size: 15px; margin: 6px 0; color: #3a4552; max-width: 60ch; }
+  .typespec .ts-m { font-size: 13px; background: #eceae2; padding: 4px 8px; border-radius: 6px; display: inline-block; color: #3a4552; }
+
   .footer-bar {
     position: fixed; left: 0; right: 0; bottom: 0;
     background: #fffdf8ee; backdrop-filter: blur(8px);
@@ -131,7 +174,7 @@
   .principle { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; }
   .principle .num { font-family: "Fraunces", serif; font-weight: 700; color: #2ABC74; font-size: 18px; margin-top: 6px; }
 
-  small.ex { display: block; color: #8a939e; font-size: 12px; margin-top: 6px; }
+  small.ex { display: block; color: #6a7480; font-size: 13px; margin-top: 6px; }
 
   /* Dark mode (toggled by the Dark switch) */
   body.dark { color: #e7ebf0; background:
@@ -140,15 +183,31 @@
       #12151b; }
   body.dark .card { background: #1b1f27; border-color: #ffffff14; box-shadow: 0 2px 0 rgba(0,0,0,.3), 0 12px 26px -14px rgba(0,0,0,.7); }
   body.dark .section-head h2 { color: #f1f3f6; }
+  /* readable light text for all the small/muted copy in dark mode */
+  body.dark .field > .flabel, body.dark .field > label.flabel { color: #eef1f5; }
+  body.dark .hint { color: #b9c1cc; }
+  body.dark small.ex { color: #c3ccd6; }
+  body.dark .demo-label, body.dark .pane-note { color: #aeb6c2; }
   body.dark .swatch { background: #1b1f27; border-color: #ffffff16; }
+  body.dark .swatch .role { color: #e7ebf0; }
+  body.dark .swatch .hex { color: #aab3bf; }
   body.dark textarea.raw, body.dark input.raw { background: #20242d; border-color: #ffffff22; color: #e7ebf0; }
-  body.dark textarea.raw::placeholder, body.dark input.raw::placeholder { color: #8b95a3; }
-  body.dark .darktoggle { color: #aeb6c2; }
+  body.dark textarea.raw::placeholder, body.dark input.raw::placeholder { color: #97a1af; }
+  body.dark .darktoggle { color: #c3ccd6; }
   body.dark .scalechip { background: #24303a; color: #8fe3bd; }
-  body.dark .swatch .hex { color: #9aa4b1; }
   body.dark .footer-bar { background: #12151beb; border-color: #ffffff14; }
-  body.dark .footer-inner .saved { color: #8b95a3; }
+  body.dark .footer-inner .saved { color: #aab3bf; }
   body.dark .rangewrap output { color: #e7ebf0; }
+  /* dark styles for the live example panes */
+  body.dark .demo-pane { background: #20242d; border-color: #ffffff12; }
+  body.dark .dbox, body.dark .dcard, body.dark .dcard2 { background: #2a2f3a; color: #e7ebf0; }
+  body.dark .dbox { color: #e7ebf0; }
+  body.dark .dcard2 b { color: #e7ebf0; } body.dark .dcard2 span { color: #aeb6c2; }
+  body.dark .illus-thumb { background: #262b34; border-color: #ffffff22; }
+  body.dark .typespec { background: #20242d; border-color: #ffffff12; }
+  body.dark .typespec .ts-h { color: #f1f3f6; }
+  body.dark .typespec .ts-p { color: #cfd6e0; }
+  body.dark .typespec .ts-m { background: #2a2f3a; color: #cfd6e0; }
 </style>
 </head>
 <body>
@@ -212,6 +271,22 @@ const COLOR_PRESETS = {
   "Warm & playful": {
     Primary:"#F5643C", Secondary:"#FF3D9A", Accent:"#FFC24B", Background:"#FFF6F0",
     Surface:"#FFFFFF", Danger:"#E11D48", Success:"#22C55E", Info:"#0EA5E9", Neutral:"#7A6E68"
+  },
+  "Graphic novel": {
+    Primary:"#C2192D", Secondary:"#1A1A1A", Accent:"#F2C230", Background:"#F4F1E9",
+    Surface:"#FFFFFF", Danger:"#C2192D", Success:"#2E7D46", Info:"#2B6CB0", Neutral:"#4A4A4A"
+  },
+  "Pixar": {
+    Primary:"#2BA6E0", Secondary:"#FF7A59", Accent:"#FFD34E", Background:"#EAF6FF",
+    Surface:"#FFFFFF", Danger:"#E5484D", Success:"#3DBE6B", Info:"#4F8DF7", Neutral:"#6B7480"
+  },
+  "Pastel": {
+    Primary:"#A78BFA", Secondary:"#F9A8D4", Accent:"#FDE68A", Background:"#FBF7FF",
+    Surface:"#FFFFFF", Danger:"#FCA5A5", Success:"#86EFAC", Info:"#93C5FD", Neutral:"#9AA0AC"
+  },
+  "Monochrome + pop": {
+    Primary:"#111827", Secondary:"#374151", Accent:"#EF4444", Background:"#F3F4F6",
+    Surface:"#FFFFFF", Danger:"#EF4444", Success:"#10B981", Info:"#3B82F6", Neutral:"#6B7280"
   }
 };
 const COLOR_ROLES = ["Primary","Secondary","Accent","Background","Surface","Danger","Success","Info","Neutral"];
@@ -242,7 +317,8 @@ const SECTIONS = [
       { type:"select", name:"font_heading", label:"Heading font", options:["Fraunces","Playfair Display","Poppins","Baloo 2","Space Grotesk","Nunito","Inter"], default:"Fraunces" },
       { type:"select", name:"font_body", label:"Body font", options:["Nunito","Inter","Work Sans","Source Sans 3","Lato"], default:"Nunito" },
       { type:"select", name:"font_mono", label:"Monospace font", options:["JetBrains Mono","Fira Code","IBM Plex Mono","Menlo"], default:"JetBrains Mono" },
-      { type:"range", name:"line_width", label:"Max line width (characters)", min:50, max:90, step:1, default:70, unit:"ch" }
+      { type:"range", name:"line_width", label:"Max line width (characters)", min:50, max:90, step:1, default:70, unit:"ch" },
+      { type:"typespec" }
     ] },
 
   { id:"spacing", title:"Spacing system", blurb:"A spacing scale everything is built from. Set the base step; the scale derives from it.",
@@ -292,12 +368,12 @@ const SECTIONS = [
         {value:"cartoon", label:"Cartoon"}, {value:"hand-drawn", label:"Hand-drawn"},
         {value:"3d", label:"3D / soft"} ], default:"outline" } ] },
 
-  { id:"illustration", title:"Illustrations", blurb:"Huge for consistency. Describe the art direction.",
-    fields:[ { type:"multi", name:"illustration", options:["whimsical / fantasy","not realistic","slightly exaggerated","colorful","painterly textures","flat vector","line art","no AI-looking art"], defaults:["whimsical / fantasy","slightly exaggerated","colorful","no AI-looking art"] },
+  { id:"illustration", title:"Illustrations",
+    fields:[ { type:"multi", name:"illustration", options:["whimsical / fantasy","not realistic","slightly exaggerated","colorful","painterly textures","flat vector","line art","no AI-looking art","graphic novel","Pixar / 3D animated","watercolor","isometric","retro / vintage","storybook","pixel art","cel-shaded","hand-inked","claymation"] },
       { type:"text", name:"illustration_notes", placeholder:"Motifs: e.g. maps, dice, spellbooks, parchment, monsters…" } ] },
 
-  { id:"photography", title:"Photography", blurb:"If photos are used, define the look.",
-    fields:[ { type:"multi", name:"photography", options:["candid","event / documentary","studio shots","cosplay / costumed","product shots","no photography"], defaults:["candid","event / documentary"] } ] },
+  { id:"photography", title:"Photography",
+    fields:[ { type:"multi", name:"photography", options:["candid","event / documentary","studio shots","product shots"] } ] },
 
   { id:"motion", title:"Motion", blurb:"A big amateur-vs-professional divide.",
     fields:[
@@ -352,14 +428,30 @@ let sectionCount = 0;
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
 
+// Sections that get a live example pane on the right
+const DEMOS = {
+  radius:  `<span class="demo-label">Preview</span><div class="dcard" id="demoRadiusCard"><span class="dbtn" id="demoRadiusBtn">Button</span></div>`,
+  shadows: `<span class="demo-label">Preview</span><div class="dbox" id="demoShadowBox">Aa</div>`,
+  buttons: `<span class="demo-label">Preview</span><button type="button" class="dbtn2" id="demoButton">Get started</button>`,
+  cards:   `<span class="demo-label">Preview</span><div class="dcard2" id="demoCard"><b>Card title</b><span>Supporting text goes here.</span></div>`,
+  motion:  `<span class="demo-label">Preview</span><div class="ballwrap"><div class="ball" id="demoBall"></div></div>`,
+  layout:  `<span class="demo-label">Grid</span><div class="dgrid" id="demoGrid"></div>`,
+  illustration: `<span class="demo-label">Example</span><div class="illus-thumb" id="illusThumb"><button type="button" class="genimg" id="genImgBtn">Generate example image</button></div><span class="pane-note" id="illusNote">A palette-based concept preview.</span>`
+};
+
 SECTIONS.forEach(sec => {
   sectionCount++;
   const card = document.createElement("div");
   card.className = "card";
   card.id = "sec-" + sec.id;
-  let html = `<div class="section-head"><span class="section-num">${sectionCount}</span><h2>${esc(sec.title)}</h2></div>`;
-  sec.fields.forEach(f => { html += renderField(f); });
-  card.innerHTML = html;
+  let head = `<div class="section-head"><span class="section-num">${sectionCount}</span><h2>${esc(sec.title)}</h2></div>`;
+  let fieldsHtml = sec.fields.map(renderField).join("");
+  let body = fieldsHtml;
+  if (DEMOS[sec.id]) {
+    const paneClass = sec.id === "illustration" ? "demo-pane wide" : "demo-pane";
+    body = `<div class="demo-row"><div class="controls">${fieldsHtml}</div><div class="${paneClass}">${DEMOS[sec.id]}</div></div>`;
+  }
+  card.innerHTML = head + body;
   root.appendChild(card);
 });
 
@@ -373,13 +465,20 @@ function renderField(f){
       }).join("") + `</div></div>`;
   }
   if (f.type === "radio") {
-    return `<div class="field"><jelly-radio-group size="small" name="${esc(f.name)}" value="${esc(f.default||"")}">` +
-      f.options.map(o => `<jelly-radio size="small" value="${esc(o.value)}">${esc(o.label)}</jelly-radio>`).join("") +
+    return `<div class="field"><jelly-radio-group name="${esc(f.name)}" value="${esc(f.default||"")}">` +
+      f.options.map(o => `<jelly-radio value="${esc(o.value)}">${esc(o.label)}</jelly-radio>`).join("") +
       `</jelly-radio-group></div>`;
+  }
+  if (f.type === "typespec") {
+    return `<div class="typespec" id="typeSpecimen">
+      <div class="ts-h">The quick brown fox</div>
+      <p class="ts-p">Lorem ipsum dolor sit amet — body copy set at a comfortable measure so long passages stay readable and never tire the eye.</p>
+      <span class="ts-m">mono 0123 · code / labels</span>
+    </div>`;
   }
   if (f.type === "select") {
     return `<div class="field grid-item"><span class="flabel">${esc(f.label||f.name)}</span>` +
-      `<jelly-select size="small" name="${esc(f.name)}" value="${esc(f.default||"")}">` +
+      `<jelly-select name="${esc(f.name)}" value="${esc(f.default||"")}">` +
       f.options.map(o => `<jelly-option value="${esc(o)}"${o===f.default?" selected":""}>${esc(o)}</jelly-option>`).join("") +
       `</jelly-select></div>`;
   }
@@ -394,7 +493,7 @@ function renderField(f){
   if (f.type === "colorset") {
     return `<div class="field">
       <div class="presetbar"><span class="flabel">Start from a palette</span>
-        <jelly-radio-group size="small" id="palettePreset" name="palette_preset" value="Bright (default)">` +
+        <jelly-radio-group id="palettePreset" name="palette_preset" value="Bright (default)">` +
         Object.keys(COLOR_PRESETS).map(p => `<jelly-radio value="${esc(p)}">${esc(p)}</jelly-radio>`).join("") +
       `</jelly-radio-group></div>
       <div class="swatches" id="swatches"></div>
@@ -457,6 +556,116 @@ function renderScale(base){
 renderScale(8);
 
 /* ------------------------------------------------------------------ *
+ *  Live example panes
+ * ------------------------------------------------------------------ */
+function curVal(name, fallback){
+  const el = form.querySelector(`[name="${CSS.escape(name)}"]`);
+  if (!el) return fallback;
+  let v = (el.value != null && el.value !== "") ? el.value : el.getAttribute("value");
+  return (v == null || v === "") ? fallback : v;
+}
+function multiVals(name){
+  return Array.from(form.querySelectorAll(`[name="${CSS.escape(name)}"]`)).filter(el => el.checked).map(el => el.getAttribute("value"));
+}
+
+const RADII = { pill:{btn:"999px",card:"24px"}, rounded:{btn:"12px",card:"20px"}, soft:{btn:"8px",card:"12px"}, sharp:{btn:"4px",card:"6px"} };
+
+function updateRadiusDemo(){
+  const r = RADII[curVal("radius_style","pill")] || RADII.pill;
+  const card = document.getElementById("demoRadiusCard"), btn = document.getElementById("demoRadiusBtn");
+  if (card) card.style.borderRadius = r.card;
+  if (btn) btn.style.borderRadius = r.btn;
+}
+function updateShadowDemo(){
+  const box = document.getElementById("demoShadowBox"); if (!box) return;
+  const s = curVal("shadow_style","layered"), o = curVal("outline","thick");
+  box.style.boxShadow = s==="layered" ? "0 3px 0 rgba(0,0,0,.12), 0 14px 22px -10px rgba(0,0,0,.45)"
+    : s==="soft" ? "0 8px 20px -10px rgba(0,0,0,.35)" : "none";
+  box.style.borderWidth = o==="thick" ? "2px" : o==="thin" ? "1px" : "0";
+  box.style.borderStyle = "solid";
+}
+function updateButtonsDemo(){
+  const b = document.getElementById("demoButton"); if (!b) return;
+  const st = curVal("button_style","filled-bounce");
+  b.className = "dbtn2" + (st==="outline" ? " outline" : "") + (st==="filled-bounce" ? " bounce" : "");
+}
+function updateCardsDemo(){
+  const c = document.getElementById("demoCard"); if (!c) return;
+  const st = curVal("card_style","raised"), dark = document.body.classList.contains("dark");
+  c.style.boxShadow = st==="raised" ? "0 2px 0 rgba(0,0,0,.06), 0 12px 24px -12px rgba(0,0,0,.4)" : "none";
+  c.style.border = st==="bordered" ? "2px solid rgba(0,0,0,.16)" : "none";
+  c.style.background = st==="tinted" ? "rgba(124,92,252,.12)" : (dark ? "#2a2f3a" : "#fff");
+}
+function updateMotionDemo(){
+  const ball = document.getElementById("demoBall"); if (!ball) return;
+  const speed = Number(curVal("motion_speed",220)) || 220;
+  const easing = curVal("easing","spring");
+  ball.style.animationDuration = Math.max(360, speed*2) + "ms";
+  ball.style.animationTimingFunction = easing==="spring" ? "cubic-bezier(.34,1.56,.64,1)" : easing==="linear" ? "linear" : "ease-in-out";
+}
+function updateLayoutDemo(){
+  const g = document.getElementById("demoGrid"); if (!g) return;
+  const v = curVal("grid_cols","12"), n = v==="single" ? 1 : v==="8" ? 8 : 12;
+  g.style.gridTemplateColumns = `repeat(${n},1fr)`;
+  g.innerHTML = Array.from({length:n}, () => "<span></span>").join("");
+}
+
+// Typography live specimen
+const loadedFonts = new Set();
+function ensureFont(name){
+  if (!name || loadedFonts.has(name)) return;
+  loadedFonts.add(name);
+  const l = document.createElement("link");
+  l.rel = "stylesheet";
+  l.href = `https://fonts.googleapis.com/css2?family=${name.replace(/ /g,"+")}:wght@400;600;700&display=swap`;
+  document.head.appendChild(l);
+}
+function updateTypeSpecimen(){
+  const el = document.getElementById("typeSpecimen"); if (!el) return;
+  const h = curVal("font_heading","Fraunces"), b = curVal("font_body","Nunito"), m = curVal("font_mono","JetBrains Mono");
+  ensureFont(h); ensureFont(b); ensureFont(m);
+  const hEl = el.querySelector(".ts-h"), pEl = el.querySelector(".ts-p"), mEl = el.querySelector(".ts-m");
+  if (hEl) hEl.style.fontFamily = `'${h}', serif`;
+  if (pEl) pEl.style.fontFamily = `'${b}', sans-serif`;
+  if (mEl) mEl.style.fontFamily = `'${m}', monospace`;
+}
+
+function updateDemos(){
+  updateRadiusDemo(); updateShadowDemo(); updateButtonsDemo(); updateCardsDemo();
+  updateMotionDemo(); updateLayoutDemo(); updateTypeSpecimen();
+}
+
+// Illustration: build a concept preview from the current selections
+function composeIllusPrompt(){
+  const styles = multiVals("illustration");
+  const notes = curVal("illustration_notes","");
+  const persona = multiVals("personality").slice(0, 4);
+  const c = colorState;
+  let p = `A single illustration in a ${styles.length ? styles.join(", ") : "whimsical, colorful"} style`;
+  if (notes) p += `, featuring ${notes}`;
+  if (persona.length) p += `; mood: ${persona.join(", ")}`;
+  p += `; palette ${c.Primary}, ${c.Secondary}, ${c.Accent} on ${c.Background}; no text.`;
+  return p;
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest || !e.target.closest("#genImgBtn")) return;
+  const thumb = document.getElementById("illusThumb"), note = document.getElementById("illusNote");
+  const c = colorState, prompt = composeIllusPrompt();
+  if (thumb) thumb.innerHTML =
+    `<svg viewBox="0 0 240 160" preserveAspectRatio="xMidYMid slice">
+      <rect width="240" height="160" fill="${c.Background}"/>
+      <circle cx="78" cy="66" r="44" fill="${c.Primary}"/>
+      <rect x="118" y="58" width="96" height="74" rx="16" fill="${c.Secondary}"/>
+      <path d="M18 152 L70 88 L122 152 Z" fill="${c.Accent}"/>
+      <circle cx="196" cy="40" r="16" fill="${c.Accent}"/>
+     </svg><button type="button" class="genimg" id="genImgBtn">Regenerate</button>`;
+  if (note) note.textContent = "Palette concept — full image prompt copied to your clipboard.";
+  try { navigator.clipboard && navigator.clipboard.writeText(prompt); } catch(_){}
+});
+
+updateDemos(); // initial paint
+
+/* ------------------------------------------------------------------ *
  *  Wiring: presets, live outputs, autosave
  * ------------------------------------------------------------------ */
 document.addEventListener("input", handleChange);
@@ -481,6 +690,7 @@ function handleChange(e){
   // spacing base
   if (name === "spacing_base"){ renderScale(t.value); }
 
+  updateDemos();
   save();
 }
 
@@ -551,6 +761,7 @@ function restore(){
     const field = SECTIONS.flatMap(s=>s.fields).find(f=>f.name===sl.getAttribute("name"));
     if (out) out.textContent = (sl.getAttribute("value")||"") + (field?.unit||"");
   });
+  updateDemos();
 }
 // restore after components upgrade
 customElements.whenDefined("jelly-radio-group").then(() => setTimeout(restore, 60)).catch(()=>setTimeout(restore,300));
@@ -575,6 +786,7 @@ function applyDark(on){
   if (themeEl) themeEl.setAttribute("mode", on ? "dark" : "light");
   document.body.classList.toggle("dark", on);
   document.documentElement.style.colorScheme = on ? "dark" : "light";
+  try { updateCardsDemo(); } catch(_){}
 }
 function lsGet(k){ try { return localStorage.getItem(k); } catch(_){ return null; } }
 function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(_){} }
