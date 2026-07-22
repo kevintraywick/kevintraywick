@@ -118,6 +118,8 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px;
     background: #f2efe7; border: 1px solid #12203015; border-radius: 16px; padding: 14px; }
   .demo-pane.wide { flex-basis: 236px; }
+  .demo-pane.type { flex-basis: 320px; align-items: stretch; justify-content: flex-start; }
+  .demo-pane.type .typespec { margin: 0; width: 100%; background: transparent; border: none; padding: 4px 2px; }
   .demo-label { font-size: 10.5px; font-weight: 700; color: #8a939e; text-transform: uppercase; letter-spacing: .07em; }
 
   .dbox { width: 82px; height: 82px; border-radius: 16px; background: #fff; border: 2px solid #12203020;
@@ -317,8 +319,7 @@ const SECTIONS = [
       { type:"select", name:"font_heading", label:"Heading font", options:["Fraunces","Playfair Display","Poppins","Baloo 2","Space Grotesk","Nunito","Inter"], default:"Fraunces" },
       { type:"select", name:"font_body", label:"Body font", options:["Nunito","Inter","Work Sans","Source Sans 3","Lato"], default:"Nunito" },
       { type:"select", name:"font_mono", label:"Monospace font", options:["JetBrains Mono","Fira Code","IBM Plex Mono","Menlo"], default:"JetBrains Mono" },
-      { type:"range", name:"line_width", label:"Max line width (characters)", min:50, max:90, step:1, default:70, unit:"ch" },
-      { type:"typespec" }
+      { type:"range", name:"line_width", label:"Max line width (characters)", min:50, max:90, step:1, default:70, unit:"ch" }
     ] },
 
   { id:"spacing", title:"Spacing system", blurb:"A spacing scale everything is built from. Set the base step; the scale derives from it.",
@@ -430,6 +431,11 @@ function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").repl
 
 // Sections that get a live example pane on the right
 const DEMOS = {
+  type: `<span class="demo-label">Preview</span><div class="typespec" id="typeSpecimen">
+      <div class="ts-h">The quick brown fox</div>
+      <p class="ts-p">Lorem ipsum dolor sit amet — body copy set at a comfortable measure so long passages stay readable.</p>
+      <span class="ts-m">mono 0123 · code</span>
+    </div>`,
   radius:  `<span class="demo-label">Preview</span><div class="dcard" id="demoRadiusCard"><span class="dbtn" id="demoRadiusBtn">Button</span></div>`,
   shadows: `<span class="demo-label">Preview</span><div class="dbox" id="demoShadowBox">Aa</div>`,
   buttons: `<span class="demo-label">Preview</span><button type="button" class="dbtn2" id="demoButton">Get started</button>`,
@@ -448,7 +454,9 @@ SECTIONS.forEach(sec => {
   let fieldsHtml = sec.fields.map(renderField).join("");
   let body = fieldsHtml;
   if (DEMOS[sec.id]) {
-    const paneClass = sec.id === "illustration" ? "demo-pane wide" : "demo-pane";
+    let paneClass = "demo-pane";
+    if (sec.id === "illustration") paneClass = "demo-pane wide";
+    else if (sec.id === "type") paneClass = "demo-pane type";
     body = `<div class="demo-row"><div class="controls">${fieldsHtml}</div><div class="${paneClass}">${DEMOS[sec.id]}</div></div>`;
   }
   card.innerHTML = head + body;
@@ -558,13 +566,27 @@ renderScale(8);
 /* ------------------------------------------------------------------ *
  *  Live example panes
  * ------------------------------------------------------------------ */
+// Jelly radio/select "change" events are non-composed (trapped in shadow DOM),
+// so we track single-choice selections ourselves via clicks. selState is the
+// source of truth for radios; it wins over the (possibly stale) element value.
+const selState = {};
+SECTIONS.forEach(s => s.fields.forEach(f => {
+  if ((f.type === "radio" || f.type === "scale") && f.default != null) selState[f.name] = String(f.default);
+}));
+selState["palette_preset"] = "Bright (default)";
+
 function curVal(name, fallback){
+  if (selState[name] != null && selState[name] !== "") return selState[name];
   const el = form.querySelector(`[name="${CSS.escape(name)}"]`);
   if (!el) return fallback;
   let v = (el.value != null && el.value !== "") ? el.value : el.getAttribute("value");
   return (v == null || v === "") ? fallback : v;
 }
 function multiVals(name){
+  const d = harvest();
+  const v = d[name];
+  if (Array.isArray(v)) return v;
+  if (v != null && v !== "") return [v];
   return Array.from(form.querySelectorAll(`[name="${CSS.escape(name)}"]`)).filter(el => el.checked).map(el => el.getAttribute("value"));
 }
 
@@ -596,12 +618,20 @@ function updateCardsDemo(){
   c.style.border = st==="bordered" ? "2px solid rgba(0,0,0,.16)" : "none";
   c.style.background = st==="tinted" ? "rgba(124,92,252,.12)" : (dark ? "#2a2f3a" : "#fff");
 }
+let _lastMotionSig = null;
 function updateMotionDemo(){
   const ball = document.getElementById("demoBall"); if (!ball) return;
   const speed = Number(curVal("motion_speed",220)) || 220;
   const easing = curVal("easing","spring");
-  ball.style.animationDuration = Math.max(360, speed*2) + "ms";
-  ball.style.animationTimingFunction = easing==="spring" ? "cubic-bezier(.34,1.56,.64,1)" : easing==="linear" ? "linear" : "ease-in-out";
+  const dur = Math.max(360, speed*2);
+  const timing = easing==="spring" ? "cubic-bezier(.34,1.56,.64,1)" : easing==="linear" ? "linear" : "ease-in-out";
+  const sig = dur + "/" + timing;
+  if (sig === _lastMotionSig) return;          // only restart when motion choices change
+  _lastMotionSig = sig;
+  const count = Math.max(1, Math.round(6000 / dur));  // ~6 seconds of bouncing, then stop
+  ball.style.animation = "none";
+  void ball.offsetWidth;                        // reflow to restart the animation
+  ball.style.animation = `dl-bounce ${dur}ms ${timing} ${count}`;
 }
 function updateLayoutDemo(){
   const g = document.getElementById("demoGrid"); if (!g) return;
@@ -666,33 +696,34 @@ document.addEventListener("click", (e) => {
 updateDemos(); // initial paint
 
 /* ------------------------------------------------------------------ *
- *  Wiring: presets, live outputs, autosave
+ *  Wiring: one refresh() re-derives every live view + autosaves
  * ------------------------------------------------------------------ */
-document.addEventListener("input", handleChange);
-document.addEventListener("change", handleChange);
-
-function handleChange(e){
-  const t = e.target;
-  if (!t) return;
-  const name = t.getAttribute && t.getAttribute("name");
-
-  // range output
-  if (t.tagName && t.tagName.toLowerCase() === "jelly-slider" && name){
-    const out = document.querySelector(`output[data-out="${name}"]`);
-    const field = SECTIONS.flatMap(s=>s.fields).find(f=>f.name===name);
-    if (out) out.textContent = (t.value ?? "") + (field?.unit||"");
-  }
-  // palette preset
-  if (name === "palette_preset" && COLOR_PRESETS[t.value]){
-    colorState = { ...COLOR_PRESETS[t.value] };
+let _lastPreset = "Bright (default)";
+function refresh(){
+  // palette preset (radio -> selState)
+  const preset = curVal("palette_preset","");
+  if (preset && preset !== _lastPreset && COLOR_PRESETS[preset]){
+    _lastPreset = preset;
+    colorState = { ...COLOR_PRESETS[preset] };
     paintSwatches();
   }
-  // spacing base
-  if (name === "spacing_base"){ renderScale(t.value); }
-
+  // spacing scale
+  renderScale(curVal("spacing_base","8"));
+  // slider outputs
+  document.querySelectorAll("jelly-slider[name]").forEach(sl => {
+    const nm = sl.getAttribute("name");
+    const out = document.querySelector(`output[data-out="${nm}"]`);
+    const field = SECTIONS.flatMap(s=>s.fields).find(f=>f.name===nm);
+    const v = curVal(nm, sl.getAttribute("value"));
+    if (out) out.textContent = (v||"") + (field?.unit||"");
+  });
   updateDemos();
   save();
 }
+let _refreshT;
+function scheduleRefresh(delay){ clearTimeout(_refreshT); _refreshT = setTimeout(refresh, delay||0); }
+document.addEventListener("input", () => scheduleRefresh(0));
+document.addEventListener("change", () => scheduleRefresh(0));
 
 /* ------------------------------------------------------------------ *
  *  Persistence
@@ -753,15 +784,12 @@ function restore(){
         el.value = val;
       }
     });
+    // keep selState in sync for radio-driven single choices
+    if (selState.hasOwnProperty(name) && !Array.isArray(val)) selState[name] = String(val);
   });
-  // refresh derived views
-  if (data.spacing_base) renderScale(data.spacing_base);
-  document.querySelectorAll("jelly-slider[name]").forEach(sl => {
-    const out = document.querySelector(`output[data-out="${sl.getAttribute("name")}"]`);
-    const field = SECTIONS.flatMap(s=>s.fields).find(f=>f.name===sl.getAttribute("name"));
-    if (out) out.textContent = (sl.getAttribute("value")||"") + (field?.unit||"");
-  });
-  updateDemos();
+  // don't let refresh() re-apply a preset over the restored custom colors
+  if (data.palette_preset){ selState["palette_preset"] = data.palette_preset; _lastPreset = data.palette_preset; }
+  refresh();
 }
 // restore after components upgrade
 customElements.whenDefined("jelly-radio-group").then(() => setTimeout(restore, 60)).catch(()=>setTimeout(restore,300));
@@ -807,26 +835,50 @@ function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(_){} }
 })();
 
 /* ------------------------------------------------------------------ *
- *  Click a selected radio again to deselect it (all radio groups)
+ *  Track radio picks (selState) + deselect-on-reclick + refresh previews.
+ *  This is what actually drives the live previews, since Jelly's own
+ *  change events don't escape the shadow DOM.
  * ------------------------------------------------------------------ */
 document.addEventListener("click", (e) => {
-  const radio = e.target.closest && e.target.closest("jelly-radio");
-  if (!radio) return;
-  const group = radio.closest("jelly-radio-group");
-  if (!group) return;
-  const rv = radio.getAttribute("value");
-  const cur = (group.value != null && group.value !== "") ? group.value : group.getAttribute("value");
-  if (cur === rv) {
-    // already selected -> clear after Jelly finishes handling the click
-    setTimeout(() => {
-      try { group.value = ""; } catch(_){}
-      group.setAttribute("value", "");
-      group.querySelectorAll("jelly-radio").forEach(r => { try { r.checked = false; } catch(_){} r.removeAttribute("checked"); r.removeAttribute("aria-checked"); });
-      group.dispatchEvent(new Event("change", { bubbles: true }));
-      save();
-    }, 0);
+  if (!e.target.closest) return;
+  const radio = e.target.closest("jelly-radio");
+  if (radio) {
+    const group = radio.closest("jelly-radio-group");
+    if (group) {
+      const nm = group.getAttribute("name");
+      const rv = radio.getAttribute("value");
+      const wasSelected = selState[nm] === rv;
+      setTimeout(() => {
+        if (wasSelected) {
+          // clicked the already-selected option -> deselect
+          selState[nm] = "";
+          try { group.value = ""; } catch(_){}
+          group.setAttribute("value", "");
+          group.querySelectorAll("jelly-radio").forEach(r => { try { r.checked = false; } catch(_){} r.removeAttribute("checked"); r.removeAttribute("aria-checked"); });
+        } else {
+          selState[nm] = rv;
+        }
+        refresh();
+      }, 0);
+    }
+    return;
   }
-}, true);
+  // any other click inside the form (e.g. a jelly-select option) -> refresh shortly after
+  if (e.target.closest("#dlForm")) scheduleRefresh(60);
+});
+
+// Listen on the Jelly host elements directly (their change/input events don't
+// bubble to document across the shadow boundary). Belt-and-suspenders for
+// selects, sliders and checkboxes so previews + autosave stay in sync.
+function wireControls(){
+  form.querySelectorAll("jelly-select, jelly-radio-group, jelly-slider, jelly-checkbox").forEach(el => {
+    if (el._wired) return; el._wired = true;
+    el.addEventListener("change", () => scheduleRefresh(0));
+    el.addEventListener("input", () => scheduleRefresh(0));
+  });
+}
+customElements.whenDefined("jelly-select").then(() => setTimeout(wireControls, 50)).catch(()=>{});
+setTimeout(wireControls, 800); // fallback
 
 /* ------------------------------------------------------------------ *
  *  Generate printable design-language document
