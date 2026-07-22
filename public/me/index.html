@@ -227,6 +227,7 @@
 
   <script>
     const STORAGE_KEY = 'me_flipbook'
+    const API_URL = 'https://kt-feed-api-production.up.railway.app'
     let files = []
     let index = 0
     let undoStack = [] // { file, index, position }
@@ -527,32 +528,60 @@
       if (e.key === 'z' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); undoDelete() }
     })
 
-    // --- Init: merge server files with localStorage ---
-    fetch('files.json')
-      .then(r => r.json())
-      .then(serverFiles => {
-        const saved = loadState()
-        if (saved) {
-          // Merge: keep saved order/additions, add any new server files
-          const savedNames = new Set(saved.files.filter(f => !f.dataUrl).map(f => f.name))
-          const newServerFiles = serverFiles.filter(f => !savedNames.has(f.name))
-          files = [...saved.files, ...newServerFiles]
-          index = Math.min(saved.index, files.length - 1)
-        } else {
-          files = serverFiles
-        }
-        if (index < 0) index = 0
-        render()
-      })
-      .catch(() => {
-        // If files.json fails, try localStorage only
-        const saved = loadState()
-        if (saved) {
-          files = saved.files
-          index = Math.min(saved.index, files.length - 1)
-        }
-        render()
-      })
+    // --- Dropped notes (from Just Edit's "Drop" button) ---
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]))
+    }
+
+    function noteToFile(note) {
+      const html = `<!doctype html><html><head><meta charset="utf-8">` +
+        `<style>body{margin:0;background:#0f1115;color:#e9e9e9;` +
+        `font:20px/1.7 ui-serif,Georgia,"Times New Roman",Times,serif;` +
+        `padding:32px;white-space:pre-wrap;box-sizing:border-box;min-height:100vh}</style>` +
+        `</head><body>${escapeHtml(note.body)}</body></html>`
+      return { name: note.title, type: 'note', dataUrl: 'data:text/html,' + encodeURIComponent(html) }
+    }
+
+    function fetchNotes() {
+      return fetch(`${API_URL}/me-notes`)
+        .then(r => r.json())
+        .then(notes => notes.map(noteToFile))
+        .catch(() => [])
+    }
+
+    // --- Init: merge server files, dropped notes, and localStorage ---
+    Promise.all([
+      fetch('files.json').then(r => r.json()).catch(() => []),
+      fetchNotes(),
+    ]).then(([serverFiles, notes]) => {
+      const saved = loadState()
+      if (saved) {
+        // Merge: keep saved order/additions, add any new server files
+        const savedNames = new Set(saved.files.filter(f => !f.dataUrl).map(f => f.name))
+        const newServerFiles = serverFiles.filter(f => !savedNames.has(f.name))
+        // Notes are never persisted to localStorage on their own, but a manual
+        // thumbnail reorder does re-save the whole files array — skip re-adding
+        // any note that's already sitting in saved.files from that.
+        const allSavedNames = new Set(saved.files.map(f => f.name))
+        const newNotes = notes.filter(f => !allSavedNames.has(f.name))
+        files = [...saved.files, ...newServerFiles, ...newNotes]
+        index = Math.min(saved.index, files.length - 1)
+      } else {
+        files = [...serverFiles, ...notes]
+      }
+      if (index < 0) index = 0
+      render()
+    }).catch(() => {
+      // If files.json/me-notes both fail, fall back to localStorage only
+      const saved = loadState()
+      if (saved) {
+        files = saved.files
+        index = Math.min(saved.index, files.length - 1)
+      }
+      render()
+    })
   </script>
 </body>
 </html>

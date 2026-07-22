@@ -34,6 +34,17 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_POST_SECRET: ${{ secrets.VITE_POST_SECRET }}
 
+      - name: Inject POST secret into Just Edit's static page
+        env:
+          VITE_POST_SECRET: ${{ secrets.VITE_POST_SECRET }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = 'dist/justedit/justedit.html';
+            const s = fs.readFileSync(p, 'utf8').split('__VITE_POST_SECRET__').join(process.env.VITE_POST_SECRET);
+            fs.writeFileSync(p, s);
+          "
+
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

@@ -103,6 +103,7 @@
 	<div class="right">
 	  <div class="meta" id="meta">0 words • autosaved</div>
 	  <button id="btnDownload" title="Download as .md">Download</button>
+	  <button id="btnDrop" title="Send as a note to /me">Drop</button>
 	  <button id="btnClear" title="Clear text">Clear</button>
 	  <a href="https://kevintraywick.com" title="Home" style="text-decoration:none;font-size:18px;filter:grayscale(1);opacity:0.6;padding:0 4px">🏠</a>
 	</div>
@@ -124,9 +125,15 @@
 	  const btnDark = document.getElementById("btnDark");
 	  const btnClear = document.getElementById("btnClear");
 	  const btnDownload = document.getElementById("btnDownload");
+	  const btnDrop = document.getElementById("btnDrop");
 	  const btnFullscreen = document.getElementById("btnFullscreen");
 	  const btnFocus = document.getElementById("btnFocus");
 	  const topbar = document.querySelector(".topbar");
+
+	  // Replaced at deploy time (see .github/workflows/deploy.yml) with the real secret.
+	  // Left as-is in local dev — POST /me-notes will just 401.
+	  const POST_SECRET = "__VITE_POST_SECRET__";
+	  const API_URL = "https://kt-feed-api-production.up.railway.app";
 
 	  // Load saved text
 	  try {
@@ -144,6 +151,13 @@
 	  function updateMeta() {
 		const wc = wordCount(editor.value);
 		meta.textContent = `${wc} word${wc === 1 ? "" : "s"} • autosaved`;
+		btnDrop.disabled = wc === 0;
+	  }
+
+	  function noteTitle(text) {
+		const words = text.trim().split(/\s+/);
+		const firstSix = words.slice(0, 6).join(" ");
+		return words.length > 6 ? `${firstSix}…` : firstSix;
 	  }
 
 	  // Autosave (debounced)
@@ -195,6 +209,37 @@
 		try { localStorage.setItem(KEY, ""); } catch {}
 		updateMeta();
 		editor.focus();
+	  });
+
+	  function flashMeta(text, ms) {
+		meta.textContent = text;
+		clearTimeout(flashMeta._tmr);
+		flashMeta._tmr = setTimeout(updateMeta, ms || 2000);
+	  }
+
+	  btnDrop.addEventListener("click", async () => {
+		const body = editor.value;
+		if (!body.trim()) return;
+		btnDrop.disabled = true;
+		flashMeta("Sending to /me…", 10000);
+		try {
+		  const res = await fetch(`${API_URL}/me-notes`, {
+			method: "POST",
+			headers: {
+			  "Content-Type": "application/json",
+			  Authorization: `Bearer ${POST_SECRET}`,
+			},
+			body: JSON.stringify({ title: noteTitle(body), body }),
+		  });
+		  if (!res.ok) throw new Error(`${res.status}`);
+		  editor.value = "";
+		  try { localStorage.setItem(KEY, ""); } catch {}
+		  flashMeta("Sent to /me ✓");
+		  editor.focus();
+		} catch (err) {
+		  flashMeta("Send failed — try again");
+		  btnDrop.disabled = false;
+		}
 	  });
 
 	  function downloadText(filename, text) {
