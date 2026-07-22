@@ -200,11 +200,12 @@
   body.dark .footer-bar { background: #12151beb; border-color: #ffffff14; }
   body.dark .footer-inner .saved { color: #aab3bf; }
   body.dark .rangewrap output { color: #e7ebf0; }
-  /* dark styles for the live example panes */
-  body.dark .demo-pane { background: #20242d; border-color: #ffffff12; }
-  body.dark .dbox, body.dark .dcard, body.dark .dcard2 { background: #2a2f3a; color: #e7ebf0; }
-  body.dark .dbox { color: #e7ebf0; }
-  body.dark .dcard2 b { color: #e7ebf0; } body.dark .dcard2 span { color: #aeb6c2; }
+  /* dark styles for the live example panes — light shapes on a darker pane so
+     the previews actually read (was dark-on-darker) */
+  body.dark .demo-pane { background: #171a21; border-color: #ffffff10; }
+  body.dark .dbox, body.dark .dcard, body.dark .dcard2 { background: #e9edf3; color: #1c2530; border-color: rgba(0,0,0,.2); }
+  body.dark .dcard2 b { color: #1c2530; } body.dark .dcard2 span { color: #5b6672; }
+  body.dark .dgrid span { opacity: 1; }
   body.dark .illus-thumb { background: #262b34; border-color: #ffffff22; }
   body.dark .typespec { background: #20242d; border-color: #ffffff12; }
   body.dark .typespec .ts-h { color: #f1f3f6; }
@@ -616,7 +617,7 @@ function updateCardsDemo(){
   const st = curVal("card_style","raised"), dark = document.body.classList.contains("dark");
   c.style.boxShadow = st==="raised" ? "0 2px 0 rgba(0,0,0,.06), 0 12px 24px -12px rgba(0,0,0,.4)" : "none";
   c.style.border = st==="bordered" ? "2px solid rgba(0,0,0,.16)" : "none";
-  c.style.background = st==="tinted" ? "rgba(124,92,252,.12)" : (dark ? "#2a2f3a" : "#fff");
+  c.style.background = st==="tinted" ? "rgba(124,92,252,.18)" : (dark ? "#e9edf3" : "#fff");
 }
 let _lastMotionSig = null;
 function updateMotionDemo(){
@@ -699,7 +700,25 @@ updateDemos(); // initial paint
  *  Wiring: one refresh() re-derives every live view + autosaves
  * ------------------------------------------------------------------ */
 let _lastPreset = "Bright (default)";
+function syncRadios(){
+  // selState is the single source of truth. Re-assert exclusive selection on
+  // every group so only the chosen radio is checked (Jelly's own sibling
+  // coordination can desync and leave several checked at once).
+  document.querySelectorAll("jelly-radio-group[name]").forEach(g => {
+    const nm = g.getAttribute("name");
+    if (!(nm in selState)) return;
+    const sel = selState[nm];
+    try { g.value = sel; } catch(_){}
+    g.setAttribute("value", sel);
+    g.querySelectorAll("jelly-radio").forEach(r => {
+      r.toggleAttribute("checked", sel !== "" && r.getAttribute("value") === sel);
+      r.setAttribute("aria-checked", (sel !== "" && r.getAttribute("value") === sel) ? "true" : "false");
+    });
+  });
+}
+
 function refresh(){
+  syncRadios();
   // palette preset (radio -> selState)
   const preset = curVal("palette_preset","");
   if (preset && preset !== _lastPreset && COLOR_PRESETS[preset]){
@@ -849,15 +868,9 @@ document.addEventListener("click", (e) => {
       const rv = radio.getAttribute("value");
       const wasSelected = selState[nm] === rv;
       setTimeout(() => {
-        if (wasSelected) {
-          // clicked the already-selected option -> deselect
-          selState[nm] = "";
-          try { group.value = ""; } catch(_){}
-          group.setAttribute("value", "");
-          group.querySelectorAll("jelly-radio").forEach(r => { try { r.checked = false; } catch(_){} r.removeAttribute("checked"); r.removeAttribute("aria-checked"); });
-        } else {
-          selState[nm] = rv;
-        }
+        // clicking the already-selected option clears it; otherwise it becomes
+        // the sole selection. refresh() -> syncRadios() enforces exclusivity.
+        selState[nm] = wasSelected ? "" : rv;
         refresh();
       }, 0);
     }
@@ -891,6 +904,7 @@ function fmt(val, fallback){
   return String(val);
 }
 function labelFor(sectionId, fieldName, value){
+  if (value === undefined || value === null || value === "") return "—";
   const field = SECTIONS.find(s=>s.id===sectionId)?.fields.find(f=>f.name===fieldName);
   if (field && field.options && field.options[0] && typeof field.options[0] === "object"){
     const opt = field.options.find(o=>o.value===value); return opt?opt.label:value;
