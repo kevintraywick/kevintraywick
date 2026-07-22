@@ -86,6 +86,11 @@ CREATE TABLE IF NOT EXISTS contacts (
 CREATE TABLE IF NOT EXISTS todo_status (
   key TEXT PRIMARY KEY, status TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS todo_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  task TEXT NOT NULL, room TEXT, priority TEXT, status TEXT NOT NULL DEFAULT 'Open',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
 `);
 
@@ -862,6 +867,37 @@ app.post('/api/todo-status', (req, res) => {
     `INSERT INTO todo_status (key, status) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET status=excluded.status, updated_at=datetime('now')`
   ).run(key, status);
   res.json({ key, status });
+});
+
+/* todo items — tasks added by hand from the Projects page. Unlike the record-book
+   seed above, these have a real row id, so status lives directly on the row and
+   Remove is a real delete instead of a status override. */
+app.get('/api/todo-items', (req, res) => {
+  res.json(db.prepare(`SELECT * FROM todo_items ORDER BY created_at, id`).all());
+});
+
+app.post('/api/todo-items', (req, res) => {
+  const { task, room, priority } = req.body || {};
+  if (!(task || '').trim()) return res.status(400).send('task is required');
+  const info = db.prepare(`INSERT INTO todo_items (task, room, priority) VALUES (?,?,?)`)
+    .run(task.trim(), (room || '').trim() || null, priority || null);
+  res.json(db.prepare(`SELECT * FROM todo_items WHERE id=?`).get(info.lastInsertRowid));
+});
+
+app.patch('/api/todo-items/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM todo_items WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such task');
+  const { status } = req.body || {};
+  if (!TODO_STATUSES.includes(status)) return res.status(400).send('a valid status is required');
+  db.prepare(`UPDATE todo_items SET status=? WHERE id=?`).run(status, row.id);
+  res.json(db.prepare(`SELECT * FROM todo_items WHERE id=?`).get(row.id));
+});
+
+app.delete('/api/todo-items/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM todo_items WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such task');
+  db.prepare(`DELETE FROM todo_items WHERE id=?`).run(row.id);
+  res.json({ ok: true });
 });
 
 /* ---------- email reminders (optional — needs SMTP_URL) ---------- */

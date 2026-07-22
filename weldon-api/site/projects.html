@@ -38,6 +38,25 @@
 <main class="wrap">
   <div class="filters" id="filters" role="group" aria-label="Filter projects"></div>
   <div class="statusline" id="proj-status"></div>
+  <details id="proj-add-details">
+    <summary style="cursor:pointer;font-weight:600;font-size:14px;color:var(--accent-ink)">＋ Add a task</summary>
+    <form class="entryform" id="proj-add-form" style="grid-template-columns:1.8fr 1fr 1fr auto;margin-top:12px">
+      <div class="control"><label for="pa-task">Task</label><input type="text" id="pa-task" required placeholder="reseal grout"></div>
+      <div class="control"><label for="pa-room">Room</label><input type="text" id="pa-room" list="pa-rooms" placeholder="optional"></div>
+      <datalist id="pa-rooms"></datalist>
+      <div class="control"><label for="pa-priority">Priority</label>
+        <select id="pa-priority" style="font:inherit;font-size:14px;padding:9px 8px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)">
+          <option value="">Not set</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+          <option value="Nice to have">Nice to have</option>
+        </select>
+      </div>
+      <div class="control" style="align-self:end"><button class="btn" type="submit">Add</button></div>
+    </form>
+  </details>
+  <div class="section-gap"></div>
   <div class="grid" id="rooms"></div>
 </main>
 
@@ -75,9 +94,11 @@
   // status overrides persist server-side, keyed by room+task text since the
   // record-book seed has no stable row id
   let overrides = {};
+  let addedItems = [];
   const hasApi = await WAPI.health();
   if (hasApi) {
     try { (await WAPI.get('/todo-status')).forEach(o => { overrides[o.key] = o.status; }); } catch {}
+    try { addedItems = await WAPI.get('/todo-items'); } catch {}
   }
 
   function statusOf(t, key) {
@@ -94,15 +115,27 @@
   // "removed" tasks stay in the record-book seed (there's no real delete for
   // seed data) but are hidden everywhere once the override says so
   function buildTasks() {
-    return D.todo.map(t => {
+    const seedTasks = D.todo.map(t => {
       const key = keyFor(t);
-      return { ...t, key, st: statusOf(t, key), room: roomOf(t) };
-    }).filter(t => t.st !== 'removed');
+      return { ...t, key, source: 'seed' };
+    });
+    // tasks added by hand have a real row id — status lives on the row itself
+    // (see /api/todo-items), not in the overrides table
+    const manualTasks = addedItems.map(t => ({
+      task: t.task, where: t.room, priority: t.priority, status: t.status,
+      key: 'added:' + t.id, id: t.id, source: 'added',
+    }));
+    return seedTasks.concat(manualTasks)
+      .map(t => ({ ...t, st: statusOf(t, t.key), room: roomOf(t) }))
+      .filter(t => t.st !== 'removed');
   }
 
   const statusEl = document.getElementById('proj-status');
   function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
-  if (!hasApi) say('Backend offline — status changes won\'t be saved right now.');
+  if (!hasApi) {
+    say('Backend offline — status changes and new tasks won\'t be saved right now.');
+    document.querySelector('#proj-add-form button[type="submit"]').disabled = true;
+  }
 
   function updateSummary(tasks) {
     const open = tasks.filter(t => t.st !== 'done');
@@ -130,7 +163,8 @@
 
   function statusSelect(t) {
     const label = STATUS_LABEL[t.st];
-    return '<select class="statusselect ' + t.st + '" data-key="' + escAttr(t.key) + '" aria-label="Status">' +
+    return '<select class="statusselect ' + t.st + '" data-key="' + escAttr(t.key) + '" data-source="' + t.source +
+      '"' + (t.id ? ' data-id="' + t.id + '"' : '') + ' aria-label="Status">' +
       STATUS_OPTIONS.map(o => '<option value="' + o + '"' + (o === label ? ' selected' : '') + '>' + o + '</option>').join('') +
       '</select>';
   }
@@ -164,15 +198,30 @@
   }
   render();
 
+  document.getElementById('pa-rooms').innerHTML = [...new Set(
+    D.todo.map(t => (t.where || '').trim()).filter(w => w && w.toLowerCase() !== 'all')
+  )].sort().map(r => '<option value="' + escAttr(r) + '">').join('');
+
   document.getElementById('rooms').addEventListener('change', async ev => {
     const sel = ev.target.closest('select.statusselect');
     if (!sel) return;
-    const key = sel.dataset.key, status = sel.value;
+    const key = sel.dataset.key, status = sel.value, source = sel.dataset.source;
     if (status === 'Remove' && !confirm('Remove this task?')) { render(); return; }
     if (!hasApi) { say('Backend offline — can\'t save status changes right now.', 'err'); render(); return; }
     try {
-      await WAPI.post('/todo-status', { key, status });
-      overrides[key] = status;
+      if (source === 'added') {
+        const id = +sel.dataset.id;
+        if (status === 'Remove') {
+          await WAPI.del('/todo-items/' + id);
+          addedItems = addedItems.filter(t => t.id !== id);
+        } else {
+          const updated = await WAPI.patch('/todo-items/' + id, { status });
+          addedItems = addedItems.map(t => t.id === id ? updated : t);
+        }
+      } else {
+        await WAPI.post('/todo-status', { key, status });
+        overrides[key] = status;
+      }
       render();
       say(status === 'Remove' ? 'Task removed.' : 'Status saved: ' + status + '.', 'ok');
     } catch (e) {
@@ -180,6 +229,29 @@
       render();
     }
   });
+
+  const addForm = document.getElementById('proj-add-form');
+  addForm.onsubmit = async ev => {
+    ev.preventDefault();
+    if (!hasApi) { say('Backend offline — can\'t add tasks right now.', 'err'); return; }
+    const task = document.getElementById('pa-task').value.trim();
+    if (!task) return;
+    const body = {
+      task,
+      room: document.getElementById('pa-room').value.trim(),
+      priority: document.getElementById('pa-priority').value || null,
+    };
+    try {
+      const item = await WAPI.post('/todo-items', body);
+      addedItems.push(item);
+      render();
+      addForm.reset();
+      document.getElementById('proj-add-details').open = false;
+      say('Added "' + item.task + '".', 'ok');
+    } catch (e) {
+      say('Could not add: ' + e.message, 'err');
+    }
+  };
 })();
 </script>
 <script src="js/footer.js"></script>
