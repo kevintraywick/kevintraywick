@@ -193,6 +193,10 @@ main.wrap { padding-top: 26px; padding-bottom: 60px; }
 .tile-status .statlist li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 13.5px; }
 .tile-status .statlist .sk { color: var(--ink-3); }
 .tile-status .statlist .sv { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
+.tile-weather { display: flex; flex-direction: column; }
+.tile-weather .wx-icon { width: 62px; height: 62px; margin: 5px 0 3px; }
+.tile-weather .wx-icon svg { display: block; }
+.tile-weather .wx-icon:empty { height: 62px; }
 
 .tiles.overlap { position: relative; margin-top: -66px; z-index: 2; max-width: var(--maxw); }
 .tiles.overlap .tile { box-shadow: 0 10px 30px rgba(38,36,31,.10); }
