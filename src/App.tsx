@@ -70,6 +70,23 @@ function Homepage() {
         <a href="/fast-french/" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Fast French,\nmy French learning game')}>
           <img src={pastryImg} alt="Fast French" className="w-full h-full object-cover" />
         </a>
+        {/* relocated nav dots — bottom-left */}
+        <a
+          href="/blog"
+          aria-label="Go to blog"
+          className="absolute z-10 w-5 h-5 rounded-full flex items-center justify-center text-white leading-none"
+          style={{ background: '#999', opacity: 0.4, left: '8px', bottom: '8px', fontSize: '16px' }}
+        >
+          +
+        </a>
+        <a
+          href="/design"
+          aria-label="Design language builder"
+          className="absolute z-10 w-5 h-5 rounded-full flex items-center justify-center text-white leading-none"
+          style={{ background: '#999', opacity: 0.4, left: '34px', bottom: '8px', fontSize: '11px' }}
+        >
+          D
+        </a>
       </div>
       {/* Wind — position 9 (r3c3) */}
       <div className="relative overflow-hidden">

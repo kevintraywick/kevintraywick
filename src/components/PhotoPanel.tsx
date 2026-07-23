@@ -187,35 +187,7 @@ export function PhotoPanel() {
         className="absolute top-0 left-0 right-0 flex items-center justify-center"
         style={{ height: '22px', background: 'linear-gradient(rgba(0,0,0,0.35), transparent)' }}
       >
-        <button
-          onClick={() => navigate('/blog')}
-          aria-label="Go to blog"
-          disabled={uploadState === 'loading'}
-          className="absolute cursor-pointer"
-          style={{ left: '8px', marginTop: '5px' }}
-        >
-          <span
-            className="w-5 h-5 rounded-full flex items-center justify-center text-white leading-none"
-            style={{
-              background: uploadState === 'error' ? '#f87171' : '#999',
-              fontSize: uploadState === 'loading' ? '10px' : '16px',
-              opacity: uploadState !== 'idle' ? 0.8 : isFileDragOver ? 0.8 : 0.4,
-            }}
-          >
-            {uploadState === 'loading' ? '…' : uploadState === 'error' ? '✕' : '+'}
-          </span>
-        </button>
-        <a
-          href="/design"
-          aria-label="Design language builder"
-          className="absolute w-5 h-5 rounded-full flex items-center justify-center text-white leading-none cursor-pointer"
-          style={{ background: '#999', opacity: 0.4, marginTop: '5px', left: '34px', fontSize: '11px' }}
-        >
-          D
-        </a>
-        <a href="/cc" className="w-5 h-5 rounded-full block" style={{ background: '#999', opacity: 0.4, marginTop: '5px' }} />
-        <a href="/me" className="w-5 h-5 rounded-full block" style={{ background: '#5af', opacity: 0.4, marginTop: '5px', marginLeft: '8px' }} />
-        <a href="https://movealong-production.up.railway.app" target="_blank" rel="noopener noreferrer" className="block" style={{ opacity: 0.4, marginLeft: '8px', fontSize: '20px', color: '#999', lineHeight: '20px', marginTop: '5px' }}>→</a>
+        <a href="https://movealong-production.up.railway.app" target="_blank" rel="noopener noreferrer" className="block" style={{ opacity: 0.4, fontSize: '20px', color: '#999', lineHeight: '20px', marginTop: '5px' }}>→</a>
       </div>
 
       {/* Slideshow arrows — back in time on the left; forward appears once you've gone back */}
