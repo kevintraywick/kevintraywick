@@ -37,7 +37,7 @@ function Homepage() {
 
       {/* Blackmoor — position 4 (r2c1) */}
       <div className="relative overflow-hidden">
-        <a href="https://blackmoor.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('My D&D campaign:\nShadow of the Wolf')}>
+        <a href="https://blackmoor.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('D&D')}>
           <img src={blackmoorSplashImg} alt="Blackmoor — Season of the Witch" className="w-full h-full object-cover" style={{ objectPosition: 'center 22%' }} />
         </a>
       </div>
