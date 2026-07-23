@@ -87,6 +87,19 @@ function Homepage() {
         >
           D
         </a>
+        {/* /cc and /me dots — bottom-right of this pane */}
+        <a
+          href="/cc"
+          aria-label="cc"
+          className="absolute z-10 w-5 h-5 rounded-full block"
+          style={{ background: '#999', opacity: 0.4, right: '34px', bottom: '8px' }}
+        />
+        <a
+          href="/me"
+          aria-label="me"
+          className="absolute z-10 w-5 h-5 rounded-full block"
+          style={{ background: '#5af', opacity: 0.4, right: '8px', bottom: '8px' }}
+        />
       </div>
       {/* Wind — position 9 (r3c3) */}
       <div className="relative overflow-hidden">
