@@ -30,8 +30,7 @@
 </div>
 
 <div class="page-title">
-  <h1>What will the house cost?</h1>
-  <p>Everything recorded so far — utilities, taxes, insurance, and the expense ledger — flows in as history, then projects forward five years with the capital projects financed on your terms. Solid lines are recorded months; dashed lines are the projection.</p>
+  <h1>Past and future expenses</h1>
 </div>
 
 <main class="wrap">
@@ -137,20 +136,31 @@
   const INK = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#23262B';
   const STORE_KEY = 'weldon-forecast-v2';
 
-  /* ---------- timeline: Jan 2024 through now + 5 years, monthly ----------
-     Months are absolute indices (year*12 + month0) so arithmetic is trivial. */
+  /* ---------- timeline: the previous 3 years through the next 3 years, monthly ----------
+     Months are absolute indices (year*12 + month0) so arithmetic is trivial.
+     SEED0 anchors the 2024–25 utility seed regardless of where the window starts;
+     iData0 is the first month with any recorded history (Jan 2024). */
   const nowD = new Date();
   const NOW = nowD.getFullYear() * 12 + nowD.getMonth();
-  const START = 2024 * 12;
-  const END = NOW + 60;
+  const SEED0 = 2024 * 12;
+  const START = NOW - 36;
+  const END = NOW + 36;
   const N = END - START + 1;
   const iNow = NOW - START;
+  const iData0 = Math.max(0, SEED0 - START);
   const yearOf = i => Math.floor((START + i) / 12);
   const moOf = i => (START + i) % 12;
   const absOf = ym => +ym.slice(0, 4) * 12 + (+ym.slice(5, 7) - 1); // 'YYYY-MM' -> abs
   const ymOf = i => yearOf(i) + '-' + String(moOf(i) + 1).padStart(2, '0');
   const labels = Array.from({ length: N }, (_, i) => MONTHS[moOf(i)] + ' ’' + String(yearOf(i)).slice(2));
-  const labelIndices = Array.from({ length: N }, (_, i) => i).filter(i => moOf(i) === 0);
+  // tick marks every quarter; only Q1 (January) is labelled — with the 4-digit year,
+  // and the current year's label is flagged so the chart can green it
+  const curYear = Math.floor(NOW / 12);
+  const xTicks = [];
+  for (let i = 0; i < N; i++) {
+    if (moOf(i) % 3 !== 0) continue;
+    xTicks.push({ i, label: moOf(i) === 0 ? String(yearOf(i)) : '', now: moOf(i) === 0 && yearOf(i) === curYear });
+  }
 
   /* ---------- recorded history ---------- */
   let serverExpenses = [], bills = [];
@@ -165,7 +175,7 @@
   ['electricity', 'water', 'internet'].forEach(k => {
     D.utilities[k].forEach((v, i) => {
       if (v == null) return;
-      const abs = START + i; // seed slots are Jan 2024 … Dec 2025
+      const abs = SEED0 + i; // seed slots are Jan 2024 … Dec 2025
       (utilByAbs[abs] = utilByAbs[abs] || {})[k] = v;
     });
   });
@@ -196,7 +206,7 @@
     oneByAbs[abs] = (oneByAbs[abs] || 0) + e.amount;
   });
   const oneHist = Array.from({ length: N }, (_, i) =>
-    i > iNow ? null : Math.round((oneByAbs[START + i] || 0) * 100) / 100);
+    (i > iNow || i < iData0) ? null : Math.round((oneByAbs[START + i] || 0) * 100) / 100);
 
   /* ---------- baselines seeded from the data ---------- */
   const avg = a => { const v = a.filter(x => x != null); return v.length ? v.reduce((x, y) => x + y, 0) / v.length : 0; };
@@ -301,8 +311,8 @@
 
     const taxLine = Array.from({ length: N }, (_, i) => (taxByYear[yearOf(i)] ?? taxYr) / 12);
     const insLine = Array.from({ length: N }, (_, i) => (insByYear[yearOf(i)] ?? insYr) / 12);
-    const taxHist = taxLine.map((v, i) => i <= iNow ? v : null);
-    const insHist = insLine.map((v, i) => i <= iNow ? v : null);
+    const taxHist = taxLine.map((v, i) => (i >= iData0 && i <= iNow) ? v : null);
+    const insHist = insLine.map((v, i) => (i >= iData0 && i <= iNow) ? v : null);
     const taxProj = taxLine.map((v, i) => i >= iNow ? v : null);
     const insProj = insLine.map((v, i) => i >= iNow ? v : null);
     const utilProj = seam(utilHist, proj(utilBase));
@@ -334,32 +344,35 @@
         : utilBase + upkeepBase + taxLine[i] + insLine[i];
       return base + capAt(i);
     });
-    const totalHist = totalEff.map((v, i) => i <= iNow ? v : null);
+    const totalHist = totalEff.map((v, i) => (i >= iData0 && i <= iNow) ? v : null);
     const totalProj = totalEff.map((v, i) => i >= iNow ? v : null);
 
+    const D_OP = 0.5; // dashed projections read lighter than the recorded solids
     const series = [
-      { name: 'Total', color: INK, values: totalHist, width: 2.5 },
-      { name: 'Total', color: INK, values: totalProj, width: 2.5, dash: true },
-      { name: 'Utilities', color: SERIES_COLORS.electricity, values: utilHist },
-      { name: 'Utilities', color: SERIES_COLORS.electricity, values: utilProj, dash: true },
-      { name: 'One-time & upkeep', color: SERIES_COLORS.maintenance, values: oneHist },
-      { name: 'One-time & upkeep', color: SERIES_COLORS.maintenance, values: oneProj, dash: true },
-      { name: 'Property tax', color: SERIES_COLORS.tax, values: taxHist },
-      { name: 'Property tax', color: SERIES_COLORS.tax, values: taxProj, dash: true },
-      { name: 'Insurance', color: SERIES_COLORS.insurance, values: insHist },
-      { name: 'Insurance', color: SERIES_COLORS.insurance, values: insProj, dash: true },
+      { name: 'Total', color: INK, values: totalHist, width: 1.8 },
+      { name: 'Total', color: INK, values: totalProj, width: 1.8, dash: true, opacity: D_OP },
+      { name: 'Utilities', color: SERIES_COLORS.electricity, values: utilHist, width: 1.3 },
+      { name: 'Utilities', color: SERIES_COLORS.electricity, values: utilProj, width: 1.3, dash: true, opacity: D_OP },
+      { name: 'One-time & upkeep', color: SERIES_COLORS.maintenance, values: oneHist, width: 1.3 },
+      { name: 'One-time & upkeep', color: SERIES_COLORS.maintenance, values: oneProj, width: 1.3, dash: true, opacity: D_OP },
+      { name: 'Property tax', color: SERIES_COLORS.tax, values: taxHist, width: 1.3 },
+      { name: 'Property tax', color: SERIES_COLORS.tax, values: taxProj, width: 1.3, dash: true, opacity: D_OP },
+      { name: 'Insurance', color: SERIES_COLORS.insurance, values: insHist, width: 1.3 },
+      { name: 'Insurance', color: SERIES_COLORS.insurance, values: insProj, width: 1.3, dash: true, opacity: D_OP },
     ].concat(active.filter(c => c.monthly).map(c => ({
-      name: c.name, color: c.color, values: c.values, dash: true,
+      name: c.name, color: c.color, values: c.values, width: 1.3, dash: true, opacity: D_OP,
     })));
 
     chartEl.innerHTML = '';
     chartEl.className = '';
     WCharts.lineChart(chartEl, {
-      labels, labelIndices,
+      labels, xTicks,
       series,
       height: 320,
       hideNullRows: true,
-      ariaLabel: 'Monthly house cost, recorded 2024 to today and projected five years out',
+      logScale: true,
+      nowIndex: iNow,
+      ariaLabel: 'Monthly house cost, three years recorded and three years projected (log scale)',
       hidden: hiddenSeries,
       onLegendToggle: (name, on) => {
         on ? hiddenSeries.delete(name) : hiddenSeries.add(name);
@@ -375,7 +388,7 @@
     $('sum-peak').textContent = usd(totalEff[peakI], 0) + '/mo';
     $('sum-peak-note').textContent = 'in ' + MONTHS[moOf(peakI)] + ' ' + yearOf(peakI);
     // trailing recorded expenses over the past 3 years (36 months, clamped to available data)
-    const trailStart = Math.max(0, iNow - 35);
+    const trailStart = Math.max(iData0, iNow - 35);
     let trail3 = 0;
     for (let i = trailStart; i <= iNow; i++) trail3 += totalEff[i];
     $('sum-7yr').textContent = usd(trail3, 0);
@@ -383,7 +396,7 @@
 
     /* annual rollup table */
     const years = [];
-    for (let y = yearOf(0); y <= yearOf(N - 1); y++) years.push(y);
+    for (let y = yearOf(iData0); y <= yearOf(N - 1); y++) years.push(y);
     const sumYear = (arr, y) => {
       let s = 0;
       for (let i = 0; i < N; i++) if (yearOf(i) === y && arr[i] != null) s += arr[i];

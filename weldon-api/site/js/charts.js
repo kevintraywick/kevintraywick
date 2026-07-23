@@ -29,6 +29,27 @@
     return 10 * p;
   }
 
+  // log-scale helpers: nice 1/2/5×10^k bounds and gridline ticks between them
+  function niceLow(v) {
+    if (v <= 0) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(v)));
+    let b = p;
+    for (const m of [1, 2, 5, 10]) if (m * p <= v) b = m * p;
+    return b;
+  }
+  function niceHigh(v) {
+    if (v <= 0) return 10;
+    const p = Math.pow(10, Math.floor(Math.log10(v)));
+    for (const m of [1, 2, 5, 10]) if (m * p >= v) return m * p;
+    return 10 * p;
+  }
+  function logTicks(lo, hi) {
+    const t = [];
+    for (let p = Math.pow(10, Math.floor(Math.log10(lo))); p <= hi * 1.0001; p *= 10)
+      for (const m of [1, 2, 5]) { const v = m * p; if (v >= lo * 0.9999 && v <= hi * 1.0001) t.push(v); }
+    return t;
+  }
+
   function makeTooltip(container) {
     const t = document.createElement('div');
     t.className = 'tooltip';
@@ -80,19 +101,36 @@
     const n = opts.labels.length;
     // isolated-out series drop from the scale too, so the remaining lines fill the chart
     const all = opts.series.filter(s => !hidden.has(s.name)).flatMap(s => s.values).filter(v => v != null);
-    const max = niceMax(Math.max(...all, 1) * 1.08);
+    const plotH = H - P.t - P.b;
+    const log = !!opts.logScale;
+    let max, lo, hi, gridVals;
+    if (log) {
+      const pos = all.filter(v => v > 0);
+      lo = niceLow(pos.length ? Math.min(...pos) : 1);
+      hi = niceHigh(Math.max(...all, lo * 2) * 1.05);
+      gridVals = logTicks(lo, hi);
+    } else {
+      max = niceMax(Math.max(...all, 1) * 1.08);
+      gridVals = [0, 1, 2, 3].map(g => max * g / 3);
+    }
+    const logL = log ? Math.log(lo) : 0, logSpan = log ? (Math.log(hi) - logL) : 1;
     const x = i => P.l + (n === 1 ? 0 : (i * (W - P.l - P.r) / (n - 1)));
-    const y = v => H - P.b - (v / max) * (H - P.t - P.b);
+    const y = v => log
+      ? H - P.b - (Math.log(Math.max(v, lo)) - logL) / logSpan * plotH
+      : H - P.b - (v / max) * plotH;
 
     // grid + y labels (recessive)
-    for (let g = 0; g <= 3; g++) {
-      const gv = max * g / 3;
+    gridVals.forEach(gv => {
       el('line', { x1: P.l, x2: W - P.r, y1: y(gv), y2: y(gv), class: 'gridline' }, svg);
-      el('text', { x: P.l - 7, y: y(gv) + 4, 'text-anchor': 'end', class: 'axis-label' }, svg)
-        .textContent = axisFmt(gv);
-    }
-    // x labels — sparse by default, or exactly the indices the caller asks for
-    if (opts.labelIndices) {
+      el('text', { x: P.l - 7, y: y(gv) + 4, 'text-anchor': 'end', class: 'axis-label' }, svg).textContent = axisFmt(gv);
+    });
+    // x axis — explicit tick marks (opts.xTicks: [{i, label, now}]), or the older label paths
+    if (opts.xTicks) {
+      opts.xTicks.forEach(t => {
+        el('line', { x1: x(t.i), x2: x(t.i), y1: H - P.b, y2: H - P.b + (t.label ? 6 : 4), class: 'xtick' }, svg);
+        if (t.label) el('text', { x: x(t.i), y: H - 7, 'text-anchor': 'middle', class: 'axis-label' + (t.now ? ' now' : '') }, svg).textContent = t.label;
+      });
+    } else if (opts.labelIndices) {
       opts.labelIndices.forEach(i => {
         el('text', { x: x(i), y: H - 7, 'text-anchor': 'middle', class: 'axis-label' }, svg).textContent = opts.labels[i];
       });
@@ -101,6 +139,10 @@
       for (let i = 0; i < n; i += step) {
         el('text', { x: x(i), y: H - 7, 'text-anchor': 'middle', class: 'axis-label' }, svg).textContent = opts.labels[i];
       }
+    }
+    // "now" marker — the boundary between recorded and projected
+    if (opts.nowIndex != null && opts.nowIndex >= 0 && opts.nowIndex < n) {
+      el('line', { x1: x(opts.nowIndex), x2: x(opts.nowIndex), y1: P.t, y2: H - P.b, class: 'nowline' }, svg);
     }
 
     // lines (2px), gaps where data is null
@@ -115,6 +157,7 @@
       if (d) {
         const attrs = { d, fill: 'none', stroke: s.color, 'stroke-width': s.width || 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
         if (s.dash) attrs['stroke-dasharray'] = '7 6'; // dashed = estimate, not a recorded number
+        if (s.opacity != null) attrs['stroke-opacity'] = s.opacity;
         el('path', attrs, svg);
       }
       // lone points (no neighbors) still visible
