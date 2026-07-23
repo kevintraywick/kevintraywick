@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Projects — 160 Weldon</title>
+<title>To do — 160 Weldon</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,39 +23,30 @@
     <a class="navlink" href="plans.html">Plans</a>
     <a class="navlink" href="references.html">References</a>
     <a class="navlink" href="maintenance.html">Maintenance</a>
-    <a class="navlink" href="projects.html" aria-current="page">Projects</a>
+    <a class="navlink" href="projects.html" aria-current="page">To do</a>
     <a class="navlink" href="location.html">Location</a>
     <a class="navlink" href="photos.html">Photos</a>
   </nav>
 </div>
 
 <div class="page-title">
-  <h1>Projects, room by room</h1>
-  <p id="proj-summary"></p>
+  <h1>To do, room by room</h1>
 </div>
 
 <main class="wrap">
-  <div class="filters" id="filters" role="group" aria-label="Filter projects"></div>
+  <form class="entryform" id="proj-add-form" style="grid-template-columns:1.8fr 1fr auto auto;margin-top:0">
+    <div class="control"><input type="text" id="pa-task" required placeholder="Task"></div>
+    <div class="control"><input type="text" id="pa-room" list="pa-rooms" placeholder="Room"></div>
+    <datalist id="pa-rooms"></datalist>
+    <div class="control prio-group" id="pa-prio" role="group" aria-label="Priority">
+      <button type="button" class="pill" data-prio="High">High</button>
+      <button type="button" class="pill" data-prio="Medium">Medium</button>
+      <button type="button" class="pill" data-prio="Nice to have">Nice to have</button>
+    </div>
+    <div class="control"><button class="btn" type="submit">Add</button></div>
+  </form>
   <div class="statusline" id="proj-status"></div>
-  <details id="proj-add-details">
-    <summary style="cursor:pointer;font-weight:600;font-size:14px;color:var(--accent-ink)">＋ Add a task</summary>
-    <form class="entryform" id="proj-add-form" style="grid-template-columns:1.8fr 1fr 1fr auto;margin-top:12px">
-      <div class="control"><label for="pa-task">Task</label><input type="text" id="pa-task" required placeholder="reseal grout"></div>
-      <div class="control"><label for="pa-room">Room</label><input type="text" id="pa-room" list="pa-rooms" placeholder="optional"></div>
-      <datalist id="pa-rooms"></datalist>
-      <div class="control"><label for="pa-priority">Priority</label>
-        <select id="pa-priority" style="font:inherit;font-size:14px;padding:9px 8px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)">
-          <option value="">Not set</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-          <option value="Nice to have">Nice to have</option>
-        </select>
-      </div>
-      <div class="control" style="align-self:end"><button class="btn" type="submit">Add</button></div>
-    </form>
-  </details>
-  <div class="section-gap"></div>
+  <div class="filters" id="filters" role="group" aria-label="Filter to-do"></div>
   <div class="grid" id="rooms"></div>
 </main>
 
@@ -136,13 +127,6 @@
     document.querySelector('#proj-add-form button[type="submit"]').disabled = true;
   }
 
-  function updateSummary(tasks) {
-    const open = tasks.filter(t => t.st !== 'done');
-    const high = open.filter(t => (t.priority || '').toLowerCase() === 'high');
-    document.getElementById('proj-summary').textContent =
-      open.length + ' open, ' + high.length + ' high priority, ' + (tasks.length - open.length) + ' already done. Straight from the record book.';
-  }
-
   let mode = 'open';
   const fEl = document.getElementById('filters');
   [['open', 'Open'], ['high', 'High priority'], ['all', 'Everything incl. done']].forEach(([key, label]) => {
@@ -170,7 +154,6 @@
 
   function render() {
     const tasks = buildTasks();
-    updateSummary(tasks);
     const open = tasks.filter(t => t.st !== 'done');
     const high = open.filter(t => (t.priority || '').toLowerCase() === 'high');
 
@@ -229,6 +212,16 @@
     }
   });
 
+  // priority is a three-button toggle (High / Medium / Nice to have), single-select
+  let selectedPrio = null;
+  const prioGroup = document.getElementById('pa-prio');
+  prioGroup.addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-prio]');
+    if (!b) return;
+    selectedPrio = b.classList.contains('on') ? null : b.dataset.prio;
+    [...prioGroup.children].forEach(x => x.classList.toggle('on', x === b && selectedPrio !== null));
+  });
+
   const addForm = document.getElementById('proj-add-form');
   addForm.onsubmit = async ev => {
     ev.preventDefault();
@@ -238,14 +231,15 @@
     const body = {
       task,
       room: document.getElementById('pa-room').value.trim(),
-      priority: document.getElementById('pa-priority').value || null,
+      priority: selectedPrio,
     };
     try {
       const item = await WAPI.post('/todo-items', body);
       addedItems.push(item);
       render();
       addForm.reset();
-      document.getElementById('proj-add-details').open = false;
+      selectedPrio = null;
+      [...prioGroup.children].forEach(x => x.classList.remove('on'));
       say('Added "' + item.task + '".', 'ok');
     } catch (e) {
       say('Could not add: ' + e.message, 'err');

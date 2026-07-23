@@ -317,6 +317,8 @@ tr.bill td.num { color: var(--c-electricity); }
 }
 .pill:hover { border-color: var(--ink-3); color: var(--ink); }
 .pill.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.entryform .prio-group { display: flex; gap: 6px; align-items: end; }
+.entryform .prio-group .pill { padding: 8px 13px; white-space: nowrap; }
 
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
