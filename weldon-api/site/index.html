@@ -15,7 +15,6 @@
 
 <header class="hero">
   <nav class="site-nav" aria-label="Site">
-    <a class="wordmark" href="./">160 Weldon</a>
     <a class="navlink" href="./" aria-current="page">Dashboard</a>
     <a class="navlink" href="expenses.html">Expenses</a>
     <a class="navlink" href="utilities.html">Utilities</a>
@@ -32,10 +31,6 @@
   <div class="hero-inner">
     <p class="eyebrow">160 Weldon Dr · Martin, Tennessee · Dashboard</p>
     <h1>160Weldon</h1>
-    <p class="sub">Utilities, projects, and the five-year outlook — the whole record book at a glance.</p>
-    <div class="chiprail" title="The house's own paints" aria-hidden="true">
-      <i class="sw-swiss"></i><i class="sw-champagne"></i><i class="sw-cream"></i><i class="sw-apricot"></i><i class="sw-mint"></i>
-    </div>
   </div>
 </header>
 
@@ -52,14 +47,17 @@
       <div class="t-note">one-time purchases this year</div>
     </div>
     <div class="tile">
-      <div class="t-label">2024 project spend</div>
-      <div class="t-value" id="tile-2024">—</div>
-      <div class="t-note">incl. the new water heater</div>
-    </div>
-    <div class="tile">
       <div class="t-label">Open projects</div>
       <div class="t-value" id="tile-open">—</div>
       <div class="t-note" id="tile-open-note">—</div>
+    </div>
+    <div class="tile tile-status">
+      <div class="t-label">Status</div>
+      <ul class="statlist">
+        <li><span class="sk">Garage door</span><span class="sv" id="st-garage">Closed</span></li>
+        <li><span class="sk">Thermostat</span><span class="sv" id="st-thermostat">72°</span></li>
+        <li><span class="sk">Lights</span><span class="sv" id="st-lights">Vacation</span></li>
+      </ul>
     </div>
   </div>
 
@@ -80,35 +78,23 @@
     <section class="card span-5">
       <div class="card-head">
         <div>
-          <h2>Where project money went</h2>
-          <p class="card-sub">2024–2025 one-time purchases</p>
+          <h2>Current monthly expenditures</h2>
+          <p class="card-sub">non-utility spend, monthly totals</p>
         </div>
         <a class="more" href="expenses.html">Ledger →</a>
-      </div>
-      <div id="chart-categories"></div>
-    </section>
-
-    <section class="card span-7">
-      <div class="card-head">
-        <div>
-          <h2>One-time spend by month</h2>
-          <p class="card-sub">every receipt in the ledger, monthly totals</p>
-        </div>
       </div>
       <div id="chart-monthly-spend"></div>
     </section>
 
-    <section class="card span-5">
+    <section class="card span-12">
       <div class="card-head">
         <div>
-          <h2>What's coming</h2>
-          <p class="card-sub">the short list that matters</p>
+          <h2>Maintenance</h2>
+          <p class="card-sub">overdue &amp; high-priority — the short list that matters</p>
         </div>
-        <a class="more" href="forecast.html">Full forecast →</a>
+        <a class="more" href="maintenance.html">All maintenance →</a>
       </div>
       <ul class="tasklist" id="coming-list"></ul>
-      <div class="section-gap"></div>
-      <p class="note" id="forecast-teaser"></p>
     </section>
   </div>
 </main>
@@ -136,10 +122,11 @@
      recorded utility bills (record book + scans, scans win), property tax +
      insurance amortized 1/12 (scanned annual statements override estimates),
      and one-time purchases averaged over the last 12 months */
-  let sBills = [], sExp = [];
+  let sBills = [], sExp = [], mtTasks = null;
   if (await WAPI.health()) {
     try { sBills = await WAPI.get('/utility-bills'); } catch {}
     try { sExp = await WAPI.get('/expenses'); } catch {}
+    try { mtTasks = await WAPI.get('/maintenance'); } catch {}
   }
   const umap = {};
   ['electricity', 'water', 'internet'].forEach(k => D.utilities[k].forEach((v, i) => {
@@ -170,7 +157,6 @@
   document.getElementById('tile-runrate-note').textContent =
     usd(billsMo, 0) + ' bills + ' + usd(taxInsMo, 0) + ' tax/ins + ' + usd(upkeepMo, 0) + ' upkeep, trailing 12 mo';
   document.getElementById('tile-2025').textContent = usd(W.yearTotal(2025), 0);
-  document.getElementById('tile-2024').textContent = usd(W.yearTotal(2024), 0);
   const open = W.openTasks(), high = W.highPriority();
   document.getElementById('tile-open').textContent = open.length;
   document.getElementById('tile-open-note').textContent = high.length + ' marked high priority';
@@ -186,30 +172,34 @@
     ],
   });
 
-  // categories
-  WCharts.hBars(document.getElementById('chart-categories'), W.categoryTotals());
-
-  // monthly one-time spend bars
+  // current monthly expenditures: non-utility/tax/insurance spend, monthly totals
   WCharts.barChart(document.getElementById('chart-monthly-spend'), {
     labels: D.utilities.labels,
-    ariaLabel: 'One-time expenses by month',
-    series: [{ name: 'One-time spend', color: SERIES_COLORS.electricity, values: W.expenseMonthlyTotals() }],
+    ariaLabel: 'Monthly expenditures other than utilities, taxes and insurance',
+    series: [{ name: 'Spend', color: SERIES_COLORS.electricity, values: W.expenseMonthlyTotals() }],
     height: 220,
   });
 
-  // what's coming: high-priority tasks first, then mediums
-  const coming = high.concat(open.filter(t => (t.priority || '').toLowerCase() === 'medium')).slice(0, 5);
-  document.getElementById('coming-list').innerHTML = coming.map(t =>
-    '<li><span class="prio ' + ((t.priority || '').toLowerCase() === 'high' ? 'high' : '') + '">' + (t.priority || '—') + '</span> ' +
-    t.task + '<span class="where">' + (t.where || '') + '</span></li>'
-  ).join('');
-
-  // forecast teaser using default capital assumptions from the forecast page
-  const capital = 23500; // roof 12k + panel 2.5k + windows 9k, defaults — editable on Forecast
-  const monthly = W.pmt(capital, 7, 36);
-  document.getElementById('forecast-teaser').innerHTML =
-    'If the roof, electrical panel, and windows all happen: about <strong class="num">' + usd(monthly, 0) +
-    '/mo</strong> for three years on top of the run-rate, at the default estimates. Tune the numbers on the Forecast page.';
+  // maintenance short list: overdue first, then the nearest upcoming due dates
+  const OFFLINE_MT = [
+    { title: 'Replace fridge water filter (W10295370A)', due_date: '2026-01-15' },
+    { title: 'Flush hot water heater', due_date: '2026-06-15' },
+    { title: 'Insurance photo walk-through — every room + exterior', due_date: '2026-07-15' },
+  ];
+  const mt = (mtTasks && mtTasks.length ? mtTasks : OFFLINE_MT)
+    .filter(t => !t.done_at && t.due_date)
+    .sort((a, b) => a.due_date < b.due_date ? -1 : 1);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const overdue = mt.filter(t => t.due_date < todayIso);
+  const upcoming = mt.filter(t => t.due_date >= todayIso);
+  const shortlist = overdue.concat(upcoming).slice(0, 5);
+  document.getElementById('coming-list').innerHTML = shortlist.length
+    ? shortlist.map(t => {
+        const od = t.due_date < todayIso;
+        return '<li><span class="prio ' + (od ? 'high' : '') + '">' + (od ? 'overdue' : 'due') + '</span> ' +
+          t.title + '<span class="where">' + t.due_date + '</span></li>';
+      }).join('')
+    : '<li>Nothing overdue — you\'re all caught up.</li>';
 })();
 </script>
 <script src="js/footer.js"></script>

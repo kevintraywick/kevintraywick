@@ -189,6 +189,10 @@ main.wrap { padding-top: 26px; padding-bottom: 60px; }
 .tile .t-label { font-size: 12.5px; font-weight: 600; letter-spacing: .02em; color: var(--ink-2); }
 .tile .t-value { font-family: var(--font-mono); font-size: 27px; font-weight: 500; letter-spacing: -0.02em; margin-top: 3px; }
 .tile .t-note { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
+.tile-status .statlist { list-style: none; margin: 7px 0 0; display: grid; gap: 5px; }
+.tile-status .statlist li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 13.5px; }
+.tile-status .statlist .sk { color: var(--ink-3); }
+.tile-status .statlist .sv { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
 
 .tiles.overlap { position: relative; margin-top: -66px; z-index: 2; max-width: var(--maxw); }
 .tiles.overlap .tile { box-shadow: 0 10px 30px rgba(38,36,31,.10); }
