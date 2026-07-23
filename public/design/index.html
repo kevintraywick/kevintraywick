@@ -174,7 +174,15 @@
   textarea.raw:focus, input.raw:focus { outline: none; border-color: #2ABC74; }
 
   .principle { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; }
-  .principle .num { font-family: "Fraunces", serif; font-weight: 700; color: #2ABC74; font-size: 18px; margin-top: 6px; }
+  .principle .num { font-family: "Fraunces", serif; font-weight: 700; color: var(--accent); font-size: 18px; margin-top: 6px; min-width: 1em; }
+  .principle .del { flex: none; margin-top: 4px; width: 28px; height: 28px; border-radius: 8px;
+    border: 1.5px solid #12203020; background: #fff; color: #b23a2e; font-weight: 700; font-size: 13px; line-height: 1; cursor: pointer; }
+  .principle .del:hover { background: #fdeaea; border-color: #e5484d; color: #e5484d; }
+  .addbtn { margin-top: 8px; background: transparent; border: 1.5px dashed var(--accent); color: var(--accent);
+    font-weight: 700; font-size: 13px; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .addbtn:hover { background: rgba(124,92,252,.08); }
+  body.dark .principle .del { background: #20242d; border-color: #ffffff22; color: #ff8a8a; }
+  body.dark .principle .del:hover { background: #3a2226; border-color: #e5484d; color: #ff8a8a; }
 
   small.ex { display: block; color: #6a7480; font-size: 13px; margin-top: 6px; }
 
@@ -426,6 +434,7 @@ const SECTIONS = [
 const root = document.getElementById("sections");
 const form = document.getElementById("dlForm");
 let sectionCount = 0;
+let principlesState = [];   // dynamic list of design-principle strings
 
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
@@ -520,9 +529,8 @@ function renderField(f){
     </div>`;
   }
   if (f.type === "principles") {
-    return `<div class="field" id="principles-field">` +
-      f.defaults.map((p,i) => `<div class="principle"><span class="num">${i+1}</span><textarea class="raw" rows="2" name="principle_${i}">${esc(p)}</textarea></div>`).join("") +
-      `</div>`;
+    principlesState = [...f.defaults];   // dynamic list; rendered by renderPrinciples()
+    return `<div class="field" id="principles-field"></div>`;
   }
   return "";
 }
@@ -551,6 +559,29 @@ function paintSwatches(){
   });
 }
 paintSwatches();
+
+/* ---- Design principles (dynamic list: delete a box, or add one) ---- */
+function renderPrinciples(){
+  const wrap = document.getElementById("principles-field"); if (!wrap) return;
+  wrap.innerHTML = principlesState.map((p,i) =>
+    `<div class="principle"><span class="num">${i+1}</span><textarea class="raw" rows="2" data-pi="${i}" placeholder="Principle ${i+1}">${esc(p)}</textarea><button type="button" class="del" data-del="${i}" aria-label="Delete this principle" title="Delete this principle">✕</button></div>`
+  ).join("") + `<button type="button" id="addPrinciple" class="addbtn">+ Add principle</button>`;
+}
+renderPrinciples();
+(function wirePrinciples(){
+  const wrap = document.getElementById("principles-field"); if (!wrap) return;
+  wrap.addEventListener("click", (e) => {
+    const del = e.target.closest && e.target.closest("[data-del]");
+    if (del){ principlesState.splice(+del.getAttribute("data-del"), 1); renderPrinciples(); save(); return; }
+    if (e.target.id === "addPrinciple"){
+      principlesState.push("");
+      renderPrinciples();
+      const tas = wrap.querySelectorAll("textarea[data-pi]");
+      if (tas.length) tas[tas.length-1].focus();
+      save();
+    }
+  });
+})();
 
 /* ---- Spacing scale live preview ---- */
 function renderScale(base){
@@ -767,6 +798,10 @@ function harvest(){
       if (v!=null && v!=="") data[n]=v;
     }
   });
+  // design principles: read the current (dynamic) textareas into the array
+  const pf = document.getElementById("principles-field");
+  if (pf){ const tas = pf.querySelectorAll("textarea[data-pi]"); principlesState = [...tas].map(t => t.value); }
+  data.principles = [...principlesState];
   // color roles from state (authoritative)
   data._colors = { ...colorState };
   return data;
@@ -786,6 +821,12 @@ function restore(){
   if (!data) return;
   // colors
   if (data._colors){ colorState = { ...colorState, ...data._colors }; paintSwatches(); }
+  // design principles (dynamic list) + migrate old principle_N keys
+  if (Array.isArray(data.principles)){ principlesState = data.principles.slice(); renderPrinciples(); }
+  else {
+    const ks = Object.keys(data).filter(k => /^principle_\d+$/.test(k)).sort((a,b) => (+a.slice(10)) - (+b.slice(10)));
+    if (ks.length){ principlesState = ks.map(k => data[k]); renderPrinciples(); }
+  }
   // set simple named controls
   Object.keys(data).forEach(name => {
     if (name.startsWith("_")) return;
@@ -926,8 +967,7 @@ function generateDoc(){
     sharp:{Buttons:"4px",Cards:"6px",Inputs:"4px",Images:"4px"}
   }[d.radius_style || "pill"];
 
-  const principles = [];
-  Object.keys(d).filter(k=>k.startsWith("principle_")).sort().forEach(k=>{ if(d[k]&&d[k].trim()) principles.push(d[k].trim()); });
+  const principles = (Array.isArray(d.principles) ? d.principles : []).map(s => String(s).trim()).filter(Boolean);
 
   const fontH = fmt(d.font_heading,"Fraunces"), fontB = fmt(d.font_body,"Nunito"), fontM = fmt(d.font_mono,"JetBrains Mono");
   const gf = enc => enc.replace(/ /g,"+");
