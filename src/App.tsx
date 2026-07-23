@@ -30,7 +30,7 @@ function Homepage() {
       </a>
       {/* Back Workout PDF — position 3 (r1c3) */}
       <div className="relative overflow-hidden">
-        <a href="/workout/back-workout.pdf" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('20-minute back workout')}>
+        <a href="/workout/back-workout.pdf" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('do it!')}>
           <img src={backWorkoutImg} alt="A 20-Minute Workout to Keep Your Body Limber" className="w-full h-full object-cover" />
         </a>
       </div>
