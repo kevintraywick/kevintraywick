@@ -31,7 +31,7 @@
 
 <div class="page-title">
   <h1>What will the house cost?</h1>
-  <p>Everything recorded so far — utilities, taxes, insurance, and the expense ledger — flows in as history, then projects forward seven years with the capital projects financed on your terms. Solid lines are recorded months; dashed lines are the projection.</p>
+  <p>Everything recorded so far — utilities, taxes, insurance, and the expense ledger — flows in as history, then projects forward five years with the capital projects financed on your terms. Solid lines are recorded months; dashed lines are the projection.</p>
 </div>
 
 <main class="wrap">
@@ -44,7 +44,7 @@
       <div class="section-gap"></div>
       <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
         <div class="tile">
-          <div class="t-label">Baseline today</div>
+          <div class="t-label">Baseline</div>
           <div class="t-value" id="sum-base">—</div>
           <div class="t-note">utilities + tax + insurance + upkeep</div>
         </div>
@@ -54,9 +54,9 @@
           <div class="t-note" id="sum-peak-note">with capital projects running</div>
         </div>
         <div class="tile">
-          <div class="t-label">7-year total</div>
+          <div class="t-label">3-year trailing</div>
           <div class="t-value" id="sum-7yr">—</div>
-          <div class="t-note" id="sum-7yr-note">everything in</div>
+          <div class="t-note" id="sum-7yr-note">recorded expenses</div>
         </div>
       </div>
       <div class="tablewrap">
@@ -137,12 +137,12 @@
   const INK = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#23262B';
   const STORE_KEY = 'weldon-forecast-v2';
 
-  /* ---------- timeline: Jan 2024 through now + 7 years, monthly ----------
+  /* ---------- timeline: Jan 2024 through now + 5 years, monthly ----------
      Months are absolute indices (year*12 + month0) so arithmetic is trivial. */
   const nowD = new Date();
   const NOW = nowD.getFullYear() * 12 + nowD.getMonth();
   const START = 2024 * 12;
-  const END = NOW + 84;
+  const END = NOW + 60;
   const N = END - START + 1;
   const iNow = NOW - START;
   const yearOf = i => Math.floor((START + i) / 12);
@@ -359,7 +359,7 @@
       series,
       height: 320,
       hideNullRows: true,
-      ariaLabel: 'Monthly house cost, recorded 2024 to today and projected seven years out',
+      ariaLabel: 'Monthly house cost, recorded 2024 to today and projected five years out',
       hidden: hiddenSeries,
       onLegendToggle: (name, on) => {
         on ? hiddenSeries.delete(name) : hiddenSeries.add(name);
@@ -374,9 +374,12 @@
     for (let i = iNow + 1; i < N; i++) if (totalEff[i] > totalEff[peakI]) peakI = i;
     $('sum-peak').textContent = usd(totalEff[peakI], 0) + '/mo';
     $('sum-peak-note').textContent = 'in ' + MONTHS[moOf(peakI)] + ' ' + yearOf(peakI);
-    const total7 = totalEff.slice(iNow + 1).reduce((a, b) => a + b, 0);
-    $('sum-7yr').textContent = usd(total7, 0);
-    $('sum-7yr-note').textContent = ymOf(iNow + 1).slice(0, 4) + '–' + yearOf(N - 1) + ', everything in';
+    // trailing recorded expenses over the past 3 years (36 months, clamped to available data)
+    const trailStart = Math.max(0, iNow - 35);
+    let trail3 = 0;
+    for (let i = trailStart; i <= iNow; i++) trail3 += totalEff[i];
+    $('sum-7yr').textContent = usd(trail3, 0);
+    $('sum-7yr-note').textContent = ymOf(trailStart).slice(0, 4) + '–' + yearOf(iNow) + ', recorded';
 
     /* annual rollup table */
     const years = [];
