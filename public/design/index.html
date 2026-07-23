@@ -985,13 +985,20 @@ function generateDoc(){
   function kv(rows){ return `<table class="kv">${rows.map(([k,v])=>`<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`; }
 
   const doc = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+  <meta name="color-scheme" content="light">
   <title>${esc(name)} — Design Language</title>
   <link href="${fontLink}" rel="stylesheet">
   <style>
-    :root{ --h:'${esc(fontH)}',serif; --b:'${esc(fontB)}',system-ui,sans-serif; --m:'${esc(fontM)}',monospace;
+    /* Always render light, regardless of the builder's or OS dark mode, so the
+       exported PDF is identical from either mode (dark auto-inversion was
+       turning the popup white-on-white -> blank print). */
+    :root{ color-scheme: light;
+      --h:'${esc(fontH)}',serif; --b:'${esc(fontB)}',system-ui,sans-serif; --m:'${esc(fontM)}',monospace;
       --primary:${colors.Primary}; --bg:${colors.Background}; --surface:${colors.Surface}; }
+    html{ color-scheme: light; background:#fff; }
     *{box-sizing:border-box;}
-    body{ font-family:var(--b); color:#1c2530; margin:0; background:#fff; line-height:1.55; }
+    body{ font-family:var(--b); color:#1c2530; margin:0; background:#fff; line-height:1.55;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .page{ max-width:820px; margin:0 auto; padding:56px 48px; }
     h1,h2,h3{ font-family:var(--h); }
     .cover{ min-height:70vh; display:flex; flex-direction:column; justify-content:center; padding:64px 48px;
