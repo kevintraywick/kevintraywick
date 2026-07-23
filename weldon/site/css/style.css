@@ -216,7 +216,7 @@ main.wrap { padding-top: 26px; padding-bottom: 60px; }
 .legend .lg { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2); }
 .legend .lg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .legend .lg-toggle { cursor: pointer; user-select: none; }
-.legend .lg-toggle input { margin: 0; width: 13px; height: 13px; accent-color: var(--accent); cursor: pointer; }
+.legend .lg-toggle input { order: 2; margin: 0 0 0 4px; width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; }
 
 .tooltip {
   position: absolute; pointer-events: none; z-index: 5;
@@ -364,7 +364,7 @@ tr.bill td.num { color: var(--c-electricity); }
 
 .capitem { border: 1px solid var(--line); border-radius: var(--radius); padding: 13px 15px; background: var(--card); }
 .capitem .ci-head { display: flex; align-items: center; gap: 9px; }
-.capitem .ci-head input[type="checkbox"] { width: 24px; height: 24px; accent-color: var(--accent); order: 2; margin-left: auto; }
+.capitem .ci-head input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); }
 .capitem .ci-head label { font-weight: 600; font-size: 14.5px; }
 .capitem .ci-fields { display: grid; grid-template-columns: 1fr 1.2fr .7fr; gap: 8px; margin-top: 10px; }
 .capitem .ci-fields input { min-width: 0; }
