@@ -68,7 +68,7 @@ function Homepage() {
       </div>
       {/* Fast French — position 8 (r3c2) */}
       <div className="relative overflow-hidden">
-        <a href="/fast-french/" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Fast French,\nmy French learning game')}>
+        <a href="/fast-french/" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('French.\nFast.')}>
           <img src={pastryImg} alt="Fast French" className="w-full h-full object-cover" />
         </a>
         {/* relocated nav dots — bottom-left */}
