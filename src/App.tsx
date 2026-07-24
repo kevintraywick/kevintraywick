@@ -12,7 +12,8 @@ import { PhotoPanel } from './components/PhotoPanel'
 import Blog from './pages/Blog'
 import BlogEntry from './pages/BlogEntry'
 
-const kFont = { fontFamily: '"Barlow Condensed", sans-serif', fontWeight: 900 } as const
+// Jelly UI's display font stack (ui-rounded -> SF Pro Rounded on Apple)
+const kFont = { fontFamily: "ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', sans-serif", fontWeight: 900 } as const
 
 function Homepage() {
   const [hoverText, setHoverText] = useState<string | null>(null)
