@@ -85,7 +85,7 @@
       <div id="chart-monthly-spend"></div>
     </section>
 
-    <section class="card span-12">
+    <section class="card span-7">
       <div class="card-head">
         <div>
           <h2>Maintenance</h2>
@@ -94,6 +94,17 @@
         <a class="more" href="maintenance.html">All maintenance →</a>
       </div>
       <ul class="tasklist" id="coming-list"></ul>
+    </section>
+
+    <section class="card span-5">
+      <div class="card-head">
+        <div>
+          <h2>To do</h2>
+          <p class="card-sub" id="urgent-sub">anything marked urgent</p>
+        </div>
+        <a class="more" href="projects.html">All to dos →</a>
+      </div>
+      <ul class="tasklist" id="urgent-list"></ul>
     </section>
 
     <section class="card span-7">
@@ -159,10 +170,15 @@
      insurance amortized 1/12 (scanned annual statements override estimates),
      and one-time purchases averaged over the last 12 months */
   let sBills = [], sExp = [], mtTasks = null;
+  const todoSrc = { status: {}, priority: {}, added: [] };
   if (await WAPI.health()) {
     try { sBills = await WAPI.get('/utility-bills'); } catch {}
     try { sExp = await WAPI.get('/expenses'); } catch {}
     try { mtTasks = await WAPI.get('/maintenance'); } catch {}
+    // the To do page's overrides, so an urgency set there shows up here
+    try { (await WAPI.get('/todo-status')).forEach(o => { todoSrc.status[o.key] = o.status; }); } catch {}
+    try { (await WAPI.get('/todo-priority')).forEach(o => { todoSrc.priority[o.key] = o.priority; }); } catch {}
+    try { todoSrc.added = await WAPI.get('/todo-items'); } catch {}
   }
   const umap = {};
   ['electricity', 'water', 'internet'].forEach(k => D.utilities[k].forEach((v, i) => {
@@ -233,6 +249,23 @@
           t.title + '<span class="where">' + t.due_date + '</span></li>';
       }).join('')
     : '<li>Nothing overdue — you\'re all caught up.</li>';
+
+  /* To do pane — only what's marked urgent (High). Read-only here; the picker
+     that sets urgency lives on the To do page, and W.urgentTodos is the same
+     merge that page renders from, so the two can't disagree. */
+  const urgent = W.urgentTodos(todoSrc);
+  const shown = urgent.slice(0, 6);
+  // hand-added task text is user input, so escape it before it goes in as HTML
+  const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  document.getElementById('urgent-list').innerHTML = shown.length
+    ? shown.map(t =>
+        '<li><span class="prio high">!!</span><span>' + esc(t.task) + '</span>' +
+        '<span class="where">' + (t.room === 'general' ? '' : esc(t.room)) + '</span></li>'
+      ).join('')
+    : '<li>Nothing urgent — nothing is marked High right now.</li>';
+  document.getElementById('urgent-sub').textContent = urgent.length
+    ? urgent.length + ' marked urgent' + (urgent.length > shown.length ? ' · showing ' + shown.length : '')
+    : 'anything marked urgent';
 })();
 </script>
 <script>

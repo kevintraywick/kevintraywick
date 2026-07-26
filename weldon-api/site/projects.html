@@ -74,15 +74,7 @@
   const PRIO_OPTIONS = ['High', 'Medium', 'Low', 'Nice to have', 'Not set'];
   const PRIO_LABEL = p => PRIO_OPTIONS.find(o => o.toLowerCase() === (p || '').toLowerCase()) || 'Not set';
 
-  function keyFor(t) { return (t.where || '').toLowerCase().trim() + '::' + t.task.toLowerCase().trim(); }
   function escAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
-
-  // "all" was its own room pane, redundant with the blank-room fallback —
-  // both mean "no specific room", so they merge into one General pane.
-  function roomOf(t) {
-    const w = (t.where || '').toLowerCase().trim();
-    return (!w || w === 'all') ? 'general' : t.where;
-  }
 
   // status overrides persist server-side, keyed by room+task text since the
   // record-book seed has no stable row id
@@ -96,43 +88,10 @@
     try { addedItems = await WAPI.get('/todo-items'); } catch {}
   }
 
-  function statusOf(t, key) {
-    const raw = overrides[key];
-    const s = (raw != null ? raw : (t.status || '')).toLowerCase();
-    if (s === 'remove') return 'removed';
-    if (s === 'completed') return 'done';
-    if (s === 'in progress') return 'progress';
-    if (s === 'blocked') return 'blocked';
-    if (raw == null && (t.priority || '').toLowerCase() === 'done') return 'done'; // legacy seed rows marked done via priority
-    return 'open';
-  }
-
-  /* An override wins over the seed's priority when one exists — including an
-     empty one, which is why this tests for undefined rather than falsiness.
-     Seed rows carrying the legacy priority 'done' are completed, not urgent;
-     their priority reads as unset so the control offers a real choice. */
-  function priorityOf(t, key) {
-    const raw = prioOverrides[key];
-    if (raw !== undefined) return raw;
-    return (t.priority || '').toLowerCase() === 'done' ? '' : (t.priority || '');
-  }
-
-  // "removed" tasks stay in the record-book seed (there's no real delete for
-  // seed data) but are hidden everywhere once the override says so
+  // the merge of seed + overrides + hand-added rows lives in js/common.js so
+  // the dashboard's urgent pane reads tasks exactly the same way
   function buildTasks() {
-    const seedTasks = D.todo.map(t => {
-      const key = keyFor(t);
-      return { ...t, key, source: 'seed' };
-    });
-    // tasks added by hand have a real row id — status lives on the row itself
-    // (see /api/todo-items), not in the overrides table
-    const manualTasks = addedItems.map(t => ({
-      task: t.task, where: t.room, priority: t.priority, status: t.status,
-      key: 'added:' + t.id, id: t.id, source: 'added',
-    }));
-    return seedTasks.concat(manualTasks)
-      .map(t => ({ ...t, st: statusOf(t, t.key), priority: priorityOf(t, t.key), room: roomOf(t) }))
-      .filter(t => t.st !== 'removed');
+    return W.buildTodos({ status: overrides, priority: prioOverrides, added: addedItems });
   }
 
   const statusEl = document.getElementById('proj-status');

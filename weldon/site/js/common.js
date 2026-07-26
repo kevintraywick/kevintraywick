@@ -71,16 +71,66 @@
     return u.total + INSURANCE_YR / 12;
   }
 
-  function openTasks() {
-    return D.todo.filter(t => {
-      const s = (t.status || '').toLowerCase();
-      const p = (t.priority || '').toLowerCase();
-      return s !== 'completed' && p !== 'done';
-    });
+  /* ---------- to do model ----------
+     The To do page and the dashboard's urgent pane have to agree on what "open"
+     and "urgent" mean, so the merge lives here instead of in each page. The
+     record book (D.todo) has no stable row id, so status and priority overrides
+     are keyed by `room::task`; hand-added tasks carry both fields on their own
+     row. Pass the API's data, or nothing to get the seed alone (offline). */
+  function todoKey(t) {
+    return (t.where || '').toLowerCase().trim() + '::' + (t.task || '').toLowerCase().trim();
   }
 
-  function highPriority() {
-    return openTasks().filter(t => (t.priority || '').toLowerCase() === 'high');
+  // "all" was its own room pane, redundant with the blank-room fallback —
+  // both mean "no specific room", so they merge into one General pane.
+  function todoRoom(t) {
+    const w = (t.where || '').toLowerCase().trim();
+    return (!w || w === 'all') ? 'general' : t.where;
+  }
+
+  function todoStatus(t, override) {
+    const s = (override != null ? override : (t.status || '')).toLowerCase();
+    if (s === 'remove') return 'removed';
+    if (s === 'completed') return 'done';
+    if (s === 'in progress') return 'progress';
+    if (s === 'blocked') return 'blocked';
+    if (override == null && (t.priority || '').toLowerCase() === 'done') return 'done'; // legacy seed rows marked done via priority
+    return 'open';
+  }
+
+  /* An override wins over the seed even when it's empty — that's "explicitly
+     Not set", which is why this tests undefined rather than falsiness. Seed rows
+     carrying the legacy priority 'done' are completed, not urgent. */
+  function todoPriority(t, override) {
+    if (override !== undefined) return override;
+    return (t.priority || '').toLowerCase() === 'done' ? '' : (t.priority || '');
+  }
+
+  /* "removed" tasks stay in the record-book seed (there's no real delete for
+     seed data) but are hidden everywhere once the override says so */
+  function buildTodos({ status = {}, priority = {}, added = [] } = {}) {
+    const seed = D.todo.map(t => ({ ...t, key: todoKey(t), source: 'seed' }));
+    const manual = added.map(t => ({
+      task: t.task, where: t.room, priority: t.priority, status: t.status,
+      key: 'added:' + t.id, id: t.id, source: 'added',
+    }));
+    return seed.concat(manual)
+      .map(t => ({
+        ...t,
+        st: todoStatus(t, status[t.key]),
+        priority: todoPriority(t, priority[t.key]),
+        room: todoRoom(t),
+      }))
+      .filter(t => t.st !== 'removed');
+  }
+
+  function openTodos(sources) {
+    return buildTodos(sources).filter(t => t.st !== 'done');
+  }
+
+  /* what the dashboard's To do pane shows */
+  function urgentTodos(sources) {
+    return openTodos(sources).filter(t => (t.priority || '').toLowerCase() === 'high');
   }
 
   /* amortized monthly payment: principal, annual rate %, months */
@@ -94,6 +144,7 @@
     D, usd, MONTHS,
     SERIES_COLORS, CAT_COLORS, INSURANCE_YR,
     expenseMonthlyTotals, yearTotal, categoryTotals,
-    utilityRunRate, runRate, openTasks, highPriority, pmt,
+    utilityRunRate, runRate, pmt,
+    buildTodos, openTodos, urgentTodos,
   };
 })();
