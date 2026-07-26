@@ -18,6 +18,8 @@
  *   GET  /api/contacts            POST /api/contacts          (manual add, JSON)
  *   POST /api/contacts/scan       (multipart business-card/contact photo → Claude reads it)
  *   PATCH /api/contacts/:id       DELETE /api/contacts/:id
+ *   GET  /api/records            POST /api/records/scan       (multipart deed/policy/warranty →
+ *   PATCH /api/records/:id       DELETE /api/records/:id       Claude reads title/note/date)
  *   GET  /api/estimates           POST /api/estimates         (manual add, JSON)
  *   POST /api/estimates/scan      (multipart quote/bid → Claude reads vendor/total/scope)
  *   PATCH /api/estimates/:id      DELETE /api/estimates/:id
@@ -88,6 +90,11 @@ CREATE TABLE IF NOT EXISTS contacts (
   category TEXT NOT NULL, name TEXT, company TEXT, phone TEXT, email TEXT, notes TEXT,
   photo TEXT, original_name TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS records (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL, note TEXT, date TEXT,
+  file TEXT, original_name TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS estimates (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -794,6 +801,79 @@ app.delete('/api/contacts/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+/* records — the documents behind the house: deed, survey, policy, warranty,
+   closing papers. Claude reads a title, a one-line note and the date off the
+   scan; the file itself is what matters, so every row links back to it. */
+const RECORD_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'note', 'date'],
+  properties: {
+    title: { type: ['string', 'null'], description: 'Short name for what this document IS, a few words — e.g. "Warranty deed", "Homeowner insurance policy", "Roof shingle warranty", "Property tax statement". Null if unreadable.' },
+    note: { type: ['string', 'null'], description: 'One short line of useful detail — who issued it, what it covers, a policy or parcel number. Null if there is nothing worth noting.' },
+    date: { type: ['string', 'null'], description: 'The main date on the document as YYYY-MM-DD (recorded, issued, or effective date), or null if none is printed' },
+  },
+};
+
+const RECORD_PROMPT =
+  'This is a document belonging to a residential house at 160 Weldon Dr, Martin, Tennessee — ' +
+  'a deed, survey, insurance policy, warranty, tax statement, closing document, or similar. ' +
+  'Name what the document is, add one short line of useful detail, and read the main date off it. ' +
+  'Use null for anything not legible.';
+
+function recordOut(r) {
+  return { ...r, url: r.file ? '/uploads/' + r.file : null };
+}
+
+app.get('/api/records', (req, res) => {
+  const rows = db.prepare(`SELECT * FROM records ORDER BY COALESCE(date, created_at) DESC, id DESC`).all();
+  res.json(rows.map(recordOut));
+});
+
+app.post('/api/records/scan', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).send('no file');
+  const ext = path.extname(req.file.filename).toLowerCase();
+  if (!MEDIA[ext] && ext !== '.pdf' && !/\.hei[cf]$/i.test(req.file.filename)) {
+    fs.unlinkSync(req.file.path);
+    return res.status(400).send('a record must be an image or a PDF');
+  }
+  try {
+    await normalizeHeic(req.file);
+    const r = await readScan(req.file.path, RECORD_PROMPT, RECORD_SCHEMA);
+    // the document is filed either way — a title you can edit beats a rejected
+    // upload, since the scan is the thing worth keeping
+    const title = (r.title || '').trim() || (req.file.originalname || 'Untitled record').replace(/\.[^.]*$/, '');
+    const info = db.prepare(`INSERT INTO records (title, note, date, file, original_name) VALUES (?,?,?,?,?)`)
+      .run(title.slice(0, 200), r.note || null, r.date || null, req.file.filename, req.file.originalname || null);
+    res.json(recordOut(db.prepare(`SELECT * FROM records WHERE id=?`).get(info.lastInsertRowid)));
+  } catch (e) {
+    console.error('record scan failed:', e.message);
+    res.status(422).send(e.message);
+  }
+});
+
+app.patch('/api/records/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM records WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such record');
+  const { title, note, date } = req.body || {};
+  if (title !== undefined && !(title || '').trim()) return res.status(400).send('title cannot be empty');
+  db.prepare(`UPDATE records SET title=?, note=?, date=? WHERE id=?`).run(
+    title === undefined ? row.title : title.trim().slice(0, 200),
+    note === undefined ? row.note : (note || null),
+    date === undefined ? row.date : (date || null),
+    row.id,
+  );
+  res.json(recordOut(db.prepare(`SELECT * FROM records WHERE id=?`).get(row.id)));
+});
+
+app.delete('/api/records/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM records WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such record');
+  db.prepare(`DELETE FROM records WHERE id=?`).run(row.id);
+  // scan left for the orphan sweep, same policy as receipts/chips/plans
+  res.json({ ok: true });
+});
+
 /* estimates — a tradesman's quote for work on the house. Claude reads the
    vendor, total and scope off the scan; every field stays editable because a
    quote's "total" is often one of several numbers on the page. Unlike a
@@ -1205,6 +1285,7 @@ function sweepOrphanUploads() {
       ...db.prepare(`SELECT source_file f FROM plans WHERE source_file IS NOT NULL`).all(),
       ...db.prepare(`SELECT photo f FROM contacts WHERE photo IS NOT NULL`).all(),
       ...db.prepare(`SELECT file f FROM estimates WHERE file IS NOT NULL`).all(),
+      ...db.prepare(`SELECT file f FROM records WHERE file IS NOT NULL`).all(),
     ].map(r => r.f));
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     let removed = 0;

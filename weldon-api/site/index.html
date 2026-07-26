@@ -123,8 +123,8 @@
     <section class="card span-5">
       <div class="card-head">
         <div>
-          <h2>The facts</h2>
-          <p class="card-sub">the standing details — address, owner, assessed value</p>
+          <h2>Records</h2>
+          <p class="card-sub">the standing details, and the documents behind them</p>
         </div>
         <a class="more" href="maintenance.html">Systems &amp; parts →</a>
       </div>
@@ -140,6 +140,9 @@
           </tbody>
         </table>
       </div>
+      <div class="tablewrap"><table class="data"><tbody id="rec-rows"></tbody></table></div>
+      <div class="dz mini" id="dz-record"><input type="file" accept="image/*,.pdf,.heic,.heif" multiple><span>📄 drop a deed, policy, survey, or warranty</span></div>
+      <div class="statusline" id="status-record"></div>
     </section>
   </div>
 </main>
@@ -384,6 +387,87 @@
   } catch (e) {
     noteEl.textContent = 'weather unavailable';
   }
+})();
+</script>
+<script>
+/* Records pane — drop a deed / policy / survey / warranty and Claude names it.
+   The row is the title with its note under it (same shape as a Tradesmen row on
+   the Local page), the date, a 🧾 link to the stored document, and a delete. */
+(async function () {
+  const dz = document.getElementById('dz-record');
+  const statusEl = document.getElementById('status-record');
+  const tbody = document.getElementById('rec-rows');
+  let records = [];
+  function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmtDate = d => d
+    ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+    : '';
+
+  if (!await WAPI.health()) {
+    say('Backend offline — records can\'t be loaded right now.');
+    dz.classList.add('busy');
+    return;
+  }
+  try { records = await WAPI.get('/records'); } catch {}
+
+  function render() {
+    tbody.innerHTML = records.length ? records.map(r =>
+      '<tr>' +
+      '<td>' + esc(r.title) +
+        (r.note ? '<br><span class="pc-meta" style="font-size:11.5px;color:var(--ink-3)">' + esc(r.note) + '</span>' : '') +
+      '</td>' +
+      '<td class="num">' + fmtDate(r.date) + '</td>' +
+      '<td class="act">' +
+        (r.url ? '<a href="' + r.url + '" target="_blank" rel="noopener" title="Open the original document" style="text-decoration:none;opacity:.65">🧾</a> ' : '') +
+        '<button class="rowbtn" data-recedit="' + r.id + '" title="Rename" aria-label="Rename">✎</button>' +
+        '<button class="rowbtn danger" data-recdel="' + r.id + '" title="Remove" aria-label="Remove">✕</button>' +
+      '</td></tr>'
+    ).join('') : '';
+  }
+  render();
+
+  WAPI.wireDropZone(dz, async files => {
+    dz.classList.add('busy');
+    for (const f of files) {
+      say('Reading ' + f.name + '…');
+      try {
+        const r = await WAPI.upload('/records/scan', f);
+        records.unshift(r);
+        render();
+        say('Filed "' + r.title + '".', 'ok');
+      } catch (e) { say(f.name + ': ' + e.message, 'err'); }
+    }
+    dz.classList.remove('busy');
+  });
+
+  tbody.addEventListener('click', async ev => {
+    const editBtn = ev.target.closest('button[data-recedit]');
+    if (editBtn) {
+      const id = +editBtn.dataset.recedit;
+      const r = records.find(x => x.id === id);
+      const title = prompt('What is this document?', r.title);
+      if (!title || !title.trim() || title.trim() === r.title) return;
+      try {
+        const updated = await WAPI.patch('/records/' + id, { title: title.trim() });
+        records = records.map(x => x.id === id ? updated : x);
+        render();
+        say('Renamed to "' + updated.title + '".', 'ok');
+      } catch (e) { say(e.message, 'err'); }
+      return;
+    }
+    const delBtn = ev.target.closest('button[data-recdel]');
+    if (!delBtn) return;
+    const id = +delBtn.dataset.recdel;
+    const r = records.find(x => x.id === id);
+    if (!r || !confirm('Remove "' + r.title + '" from the records list?')) return;
+    try {
+      await WAPI.del('/records/' + id);
+      records = records.filter(x => x.id !== id);
+      render();
+      say('Removed.', 'ok');
+    } catch (e) { say(e.message, 'err'); }
+  });
 })();
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
