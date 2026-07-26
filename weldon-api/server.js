@@ -13,7 +13,8 @@
  *                                 DELETE /api/paint-chips/:id  reads color/brand/code/hex)
  *   GET  /api/maintenance         POST /api/maintenance       PATCH /api/maintenance/:id
  *   GET  /api/plans               POST /api/plans             (multipart drawing/sketch,
- *   PATCH /api/plans/:id          DELETE /api/plans/:id        optional `title`)
+ *   PATCH /api/plans/:id          DELETE /api/plans/:id        optional `title`; a PDF is
+ *   POST /api/plans/:id/split                                  split into one row per page)
  *   GET  /api/contacts            POST /api/contacts          (manual add, JSON)
  *   POST /api/contacts/scan       (multipart business-card/contact photo → Claude reads it)
  *   PATCH /api/contacts/:id       DELETE /api/contacts/:id
@@ -34,6 +35,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
@@ -103,6 +106,13 @@ try { db.exec(`ALTER TABLE expenses ADD COLUMN work TEXT`); } catch { /* already
 // search) or 'photo' (estimated from the picture).
 try { db.exec(`ALTER TABLE paint_chips ADD COLUMN original_name TEXT`); } catch { /* already added */ }
 try { db.exec(`ALTER TABLE paint_chips ADD COLUMN hex_source TEXT`); } catch { /* already added */ }
+
+// migration: a plan row can be one page of a PDF — `filename` is that page's
+// rasterized image, `source_file` the PDF it came out of (shared by its
+// siblings, so it must be in the orphan sweep's keep-set).
+try { db.exec(`ALTER TABLE plans ADD COLUMN source_file TEXT`); } catch { /* already added */ }
+try { db.exec(`ALTER TABLE plans ADD COLUMN page INTEGER`); } catch { /* already added */ }
+try { db.exec(`ALTER TABLE plans ADD COLUMN page_count INTEGER`); } catch { /* already added */ }
 
 // one-time seed of the maintenance schedule from the record book
 if (!db.prepare(`SELECT v FROM meta WHERE k='seeded'`).get()) {
@@ -340,6 +350,56 @@ async function normalizeHeic(file) {
   fs.unlinkSync(file.path);
   file.filename = newName;
   file.path = newPath;
+}
+
+/* A multi-page PDF (a set of drawings, usually) is more useful as one
+ * thumbnail per page than as a single 📄 tile, so pdf.js rasterizes every page
+ * and sharp writes it beside the original as `<pdf name>-p<n>.webp`. The PDF
+ * itself is kept — the page rows link back to it for the vector original.
+ * Pages are scaled so the long edge lands near PDF_PAGE_PX; the 4x cap keeps a
+ * small page from ballooning and the 1x floor keeps an E-size sheet honest. */
+const PDFJS_DIR = path.dirname(createRequire(import.meta.url).resolve('pdfjs-dist/package.json'));
+const PDF_PAGE_PX = 2200;
+const PDF_PAGE_LIMIT = 80;
+
+async function rasterizePdfPages(pdfPath) {
+  const doc = await pdfjs.getDocument({
+    data: new Uint8Array(fs.readFileSync(pdfPath)),
+    // fonts/cmaps ship inside pdfjs-dist; without these, text on pages using
+    // non-embedded or CJK fonts renders blank
+    standardFontDataUrl: path.join(PDFJS_DIR, 'standard_fonts') + path.sep,
+    cMapUrl: path.join(PDFJS_DIR, 'cmaps') + path.sep,
+    cMapPacked: true,
+    isEvalSupported: false,
+  }).promise;
+  const base = path.basename(pdfPath).replace(/\.[^.]*$/, '');
+  const pages = [];
+  try {
+    const count = Math.min(doc.numPages, PDF_PAGE_LIMIT);
+    for (let n = 1; n <= count; n++) {
+      const page = await doc.getPage(n);
+      const unit = page.getViewport({ scale: 1 });
+      const scale = Math.min(4, Math.max(1, PDF_PAGE_PX / Math.max(unit.width, unit.height)));
+      const viewport = page.getViewport({ scale });
+      const { canvas } = doc.canvasFactory.create(viewport.width, viewport.height);
+      await page.render({ canvas, viewport }).promise;
+      const filename = base + '-p' + n + '.webp';
+      await sharp(canvas.toBuffer('image/png'))
+        .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(path.join(UPLOADS, filename));
+      page.cleanup();
+      pages.push({ page: n, filename });
+    }
+    if (doc.numPages > count) console.warn(`pdf ${base}: only rendered the first ${count} of ${doc.numPages} pages`);
+  } catch (e) {
+    for (const p of pages) { try { fs.unlinkSync(path.join(UPLOADS, p.filename)); } catch {} }
+    throw e;
+  } finally {
+    await doc.destroy();
+  }
+  if (!pages.length) throw new Error('the PDF has no pages');
+  return pages;
 }
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
@@ -719,10 +779,32 @@ app.delete('/api/contacts/:id', (req, res) => {
 });
 
 /* plans — architectural drawings, floor plans, sketches. Just stored and
-   listed; no AI reading, unlike the other drop zones. */
+   listed; no AI reading, unlike the other drop zones. A PDF is filed as one
+   row per rasterized page (see rasterizePdfPages) so the gallery shows every
+   sheet, not one 📄 tile you have to open to see inside. */
+function planOut(r) {
+  return { ...r, url: '/uploads/' + r.filename, source_url: r.source_file ? '/uploads/' + r.source_file : null };
+}
+
+/* one row per page, all sharing the PDF's title, original name and timestamp —
+   `at` carries the original row's created_at when an already-filed PDF is split
+   so the pages keep its place in the gallery */
+function insertPlanPages(title, pdfFile, originalName, pages, at) {
+  const ins = db.prepare(
+    `INSERT INTO plans (title, filename, original_name, source_file, page, page_count, created_at)
+     VALUES (?,?,?,?,?,?, COALESCE(?, datetime('now')))`
+  );
+  const run = db.transaction(() => pages.map(p => {
+    const pageTitle = pages.length > 1 ? `${title} — p${p.page}` : title;
+    const info = ins.run(pageTitle.slice(0, 200), p.filename, originalName, pdfFile, p.page, pages.length, at || null);
+    return db.prepare(`SELECT * FROM plans WHERE id=?`).get(info.lastInsertRowid);
+  }));
+  return run().map(planOut);
+}
+
 app.get('/api/plans', (req, res) => {
   const rows = db.prepare(`SELECT * FROM plans ORDER BY created_at, id`).all();
-  res.json(rows.map(r => ({ ...r, url: '/uploads/' + r.filename })));
+  res.json(rows.map(planOut));
 });
 
 app.post('/api/plans', upload.single('file'), async (req, res) => {
@@ -734,11 +816,47 @@ app.post('/api/plans', upload.single('file'), async (req, res) => {
     return res.status(400).send('plans must be an image or a PDF');
   }
   const title = ((req.body.title || '').trim() || (req.file.originalname || req.file.filename).replace(/\.[^.]*$/, '')).slice(0, 200);
+  const originalName = req.file.originalname || null;
+
+  if (ext === '.pdf') {
+    try {
+      const pages = await rasterizePdfPages(req.file.path);
+      return res.json({ added: insertPlanPages(title, req.file.filename, originalName, pages) });
+    } catch (e) {
+      // an unreadable/encrypted PDF still gets filed whole, as it was before
+      console.error('plan pdf split failed:', e.message);
+      const info = db.prepare(`INSERT INTO plans (title, filename, original_name, page_count) VALUES (?,?,?,1)`)
+        .run(title, req.file.filename, originalName);
+      const row = db.prepare(`SELECT * FROM plans WHERE id=?`).get(info.lastInsertRowid);
+      return res.json({ added: [planOut(row)], note: "couldn't read this PDF's pages — filed it whole" });
+    }
+  }
+
   const info = db.prepare(
-    `INSERT INTO plans (title, filename, original_name) VALUES (?,?,?)`
-  ).run(title, req.file.filename, req.file.originalname || null);
+    `INSERT INTO plans (title, filename, original_name, page_count) VALUES (?,?,?,1)`
+  ).run(title, req.file.filename, originalName);
   const row = db.prepare(`SELECT * FROM plans WHERE id=?`).get(info.lastInsertRowid);
-  res.json({ ...row, url: '/uploads/' + row.filename });
+  res.json({ added: [planOut(row)] });
+});
+
+/* split a PDF filed before this existed (or one the upload couldn't read at
+   the time) into page rows — the whole-PDF row is replaced by its pages */
+app.post('/api/plans/:id/split', async (req, res) => {
+  const row = db.prepare(`SELECT * FROM plans WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such plan');
+  if (path.extname(row.filename).toLowerCase() !== '.pdf') return res.status(400).send('only a PDF plan can be split into pages');
+  const pdfPath = path.join(UPLOADS, row.filename);
+  if (!fs.existsSync(pdfPath)) return res.status(404).send('the PDF file is missing');
+  let pages;
+  try {
+    pages = await rasterizePdfPages(pdfPath);
+  } catch (e) {
+    console.error('plan pdf split failed:', e.message);
+    return res.status(422).send("couldn't read this PDF's pages");
+  }
+  const added = insertPlanPages(row.title, row.filename, row.original_name, pages, row.created_at);
+  db.prepare(`DELETE FROM plans WHERE id=?`).run(row.id);
+  res.json({ added, replaced: row.id });
 });
 
 app.patch('/api/plans/:id', (req, res) => {
@@ -747,13 +865,15 @@ app.patch('/api/plans/:id', (req, res) => {
   const title = (req.body?.title || '').trim();
   if (!title) return res.status(400).send('title is required');
   db.prepare(`UPDATE plans SET title=? WHERE id=?`).run(title.slice(0, 200), row.id);
-  res.json({ ...db.prepare(`SELECT * FROM plans WHERE id=?`).get(row.id), url: '/uploads/' + row.filename });
+  res.json(planOut(db.prepare(`SELECT * FROM plans WHERE id=?`).get(row.id)));
 });
 
 app.delete('/api/plans/:id', (req, res) => {
   const row = db.prepare(`SELECT * FROM plans WHERE id=?`).get(req.params.id);
   if (!row) return res.status(404).send('no such plan');
   db.prepare(`DELETE FROM plans WHERE id=?`).run(row.id);
+  // files (page image + shared source PDF) left for the orphan sweep, which
+  // won't touch the PDF while any sibling page row still points at it
   res.json({ ok: true });
 });
 
@@ -955,6 +1075,9 @@ function sweepOrphanUploads() {
       ...db.prepare(`SELECT filename f FROM photos`).all(),
       ...db.prepare(`SELECT photo f FROM paint_chips WHERE photo IS NOT NULL`).all(),
       ...db.prepare(`SELECT filename f FROM plans`).all(),
+      // the PDF a set of plan page images was rendered from — shared by every
+      // page row, so it survives until the last of them is deleted
+      ...db.prepare(`SELECT source_file f FROM plans WHERE source_file IS NOT NULL`).all(),
       ...db.prepare(`SELECT photo f FROM contacts WHERE photo IS NOT NULL`).all(),
     ].map(r => r.f));
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;

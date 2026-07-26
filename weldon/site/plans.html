@@ -40,7 +40,7 @@
       <div class="dz" id="dz-plans">
         <input type="file" accept="image/*,.pdf,.heic,.heif" multiple>
         <div class="dz-big">Drop a drawing, floor plan, or sketch here</div>
-        <div class="dz-small">images and PDFs both work — no reading or classification, just filed and shown below</div>
+        <div class="dz-small">images and PDFs both work — a multi-page PDF becomes one thumbnail per page. No reading or classification, just filed and shown below.</div>
       </div>
       <div class="statusline" id="dz-status"></div>
       <div class="section-gap"></div>
@@ -72,6 +72,7 @@
   try { plans = await WAPI.get('/plans'); } catch {}
 
   function isImage(p) { return /\.(jpe?g|png|webp|gif)$/i.test(p.filename); }
+  function isPdf(p) { return /\.pdf$/i.test(p.filename); }
 
   function planCard(p) {
     const card = document.createElement('div');
@@ -81,39 +82,69 @@
       ? '<img src="' + p.url + '" alt="' + p.title + '">'
       : '<span class="pc-doc">📄</span>';
     card.innerHTML =
-      '<div class="pc-thumb">' + thumb + '</div>' +
+      '<div class="pc-thumb' + (p.page ? ' pages' : '') + '">' + thumb + '</div>' +
       '<div class="pc-body"><div class="pc-title">' + p.title + '</div>' +
       '<div class="pc-meta">' + new Date(p.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+      // page rows keep a link to the PDF they were rendered from
+      (p.source_url
+        ? ' <a href="' + p.source_url + '#page=' + p.page + '" target="_blank" rel="noopener" title="Open the original PDF" style="text-decoration:none;opacity:.65">📄</a>'
+        : '') +
+      (p.page_count > 1 ? ' <span class="pc-page">p' + p.page + '/' + p.page_count + '</span>' : '') +
+      // a PDF filed whole (before pages were split out, or one that wouldn't render)
+      (isPdf(p) ? ' <button class="rowbtn" data-plansplit="' + p.id + '" title="Split into one thumbnail per page" aria-label="Split into pages">⊞</button>' : '') +
       ' <button class="rowbtn" data-planrename="' + p.id + '" title="Rename" aria-label="Rename">✎</button>' +
       '<button class="rowbtn danger" data-plandel="' + p.id + '" title="Delete" aria-label="Delete">✕</button></div></div>';
     card.querySelector('.pc-thumb').addEventListener('click', () => window.open(p.url, '_blank', 'noopener'));
     return card;
   }
 
+  /* newest drop first, but pages within one PDF in reading order — rows from
+     the same drop share a created_at, and their ids ascend with the page */
+  function ordered() {
+    return plans.slice().sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '') || a.id - b.id);
+  }
+
   function render() {
     grid.innerHTML = '';
-    plans.slice().reverse().forEach(p => grid.appendChild(planCard(p)));
+    ordered().forEach(p => grid.appendChild(planCard(p)));
     if (!plans.length) grid.innerHTML = '<p class="card-sub">No plans yet — drop one above.</p>';
   }
   render();
 
   WAPI.wireDropZone(dzEl, async files => {
     dzEl.classList.add('busy');
-    let added = 0;
+    let added = 0, note = '';
     for (const f of files) {
-      say('Uploading ' + f.name + '…');
+      say(/\.pdf$/i.test(f.name) ? 'Uploading ' + f.name + ' and rendering its pages…' : 'Uploading ' + f.name + '…');
       try {
-        const p = await WAPI.upload('/plans', f);
-        plans.push(p);
-        added++;
+        const r = await WAPI.upload('/plans', f);
+        plans.push(...r.added);
+        added += r.added.length;
+        if (r.note) note = f.name + ': ' + r.note;
       } catch (e) { say(f.name + ': ' + e.message, 'err'); }
     }
     dzEl.classList.remove('busy');
     render();
-    if (added) say(added + ' plan' + (added > 1 ? 's' : '') + ' added.', 'ok');
+    if (note) say(note, 'err');
+    else if (added) say(added + ' plan' + (added > 1 ? 's' : '') + ' added.', 'ok');
   });
 
   grid.addEventListener('click', async ev => {
+    const splitBtn = ev.target.closest('button[data-plansplit]');
+    if (splitBtn) {
+      const id = +splitBtn.dataset.plansplit;
+      const p = plans.find(x => x.id === id);
+      if (!p || !confirm('Split "' + p.title + '" into one thumbnail per page?')) return;
+      splitBtn.disabled = true;
+      say('Rendering the pages of ' + p.title + '…');
+      try {
+        const r = await WAPI.post('/plans/' + id + '/split');
+        plans = plans.filter(x => x.id !== id).concat(r.added);
+        render();
+        say(r.added.length + ' page' + (r.added.length > 1 ? 's' : '') + ' from ' + p.title + '.', 'ok');
+      } catch (e) { splitBtn.disabled = false; say(e.message, 'err'); }
+      return;
+    }
     const renameBtn = ev.target.closest('button[data-planrename]');
     if (renameBtn) {
       const id = +renameBtn.dataset.planrename;
