@@ -72,7 +72,7 @@
       transition: border-color 0.15s, color 0.15s;
       background: none;
     }
-    #dropzone:hover, #dropzone.drag-hover, #urlbtn:hover { border-color: #5af; color: #5af; }
+    #dropzone:hover, #dropzone.drag-hover, #urlbtn:hover, #urlbtn.drag-hover { border-color: #5af; color: #5af; }
 
     /* URL input bar */
     #url-bar {
@@ -173,6 +173,46 @@
       background: #fff;
     }
 
+    /* URL pane — the iframe plus an escape hatch, since most sites
+       (github, nytimes, google…) send X-Frame-Options and render blank */
+    .urlpane {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .urlbar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      background: #1a1a1a;
+      font-size: 12px;
+      color: #666;
+    }
+    .urlbar .u { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .urlbar a { color: #5af; text-decoration: none; flex-shrink: 0; margin-left: auto; }
+    .urlbar a:hover { text-decoration: underline; }
+
+    /* Full-page drop overlay — the whole window is the target, so a
+       dragged link can't miss the way a 48px circle could */
+    #dropoverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(17,17,17,0.85);
+      border: 3px dashed #5af;
+      color: #5af;
+      font-size: 22px;
+      letter-spacing: 0.02em;
+      pointer-events: none; /* keep dragenter/leave targeting the real elements */
+    }
+    #dropoverlay.visible { display: flex; }
+
     /* Undo toast */
     #toast {
       position: fixed;
@@ -220,6 +260,8 @@
 
   <div id="viewer"></div>
 
+  <div id="dropoverlay">Drop a link or file to add a page</div>
+
   <div id="toast">
     <span id="toast-msg"></span>
     <button onclick="undoDelete()">Undo</button>
@@ -236,9 +278,88 @@
     // A "server file" lives in files.json (no embedded data, no external url)
     function isServerFile(f) { return !f.dataUrl && !f.url }
 
-    // --- Prevent browser default drop behavior (navigating/downloading) ---
-    document.addEventListener('dragover', e => e.preventDefault())
-    document.addEventListener('drop', e => e.preventDefault())
+    // --- Pull a usable http(s) URL out of a drop ---
+    //     text/uri-list is RFC 2483: CRLF-separated, and '#' lines are comments.
+    //     Some sources (Finder, Mail, Notes) also attach a .webloc/.url file
+    //     alongside the URL, so never gate URL handling on files.length.
+    function extractDroppedUrl(dt) {
+      if (!dt) return null
+      const blobs = [dt.getData('text/uri-list'), dt.getData('text/plain'), dt.getData('URL')]
+      for (const blob of blobs) {
+        if (!blob) continue
+        for (const raw of blob.split(/[\r\n]+/)) {
+          const line = raw.trim()
+          if (!line || line.startsWith('#')) continue
+          try {
+            const u = new URL(line)
+            if (u.protocol === 'http:' || u.protocol === 'https:') return u.href
+          } catch { /* not a URL — try the next line */ }
+        }
+      }
+      return null
+    }
+
+    function hostLabel(url) {
+      try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
+    }
+
+    function addUrlPage(url) {
+      const name = hostLabel(url)
+      files.push({ name, type: 'url', url })
+      index = files.length - 1
+      saveState()
+      render()
+      showToast(`Added ${name}`, false)
+    }
+
+    // --- Page-wide drop handling ---
+    //     The whole window is the drop target. Anything that isn't handled must
+    //     still preventDefault, or the browser navigates away from the flipbook.
+    function handleDrop(e) {
+      e.preventDefault()
+      hideDropOverlay()
+      dropzone.classList.remove('drag-hover')
+      if (dragIndex !== null) return // internal thumbnail reorder, not an add
+
+      const url = extractDroppedUrl(e.dataTransfer)
+      if (url) { addUrlPage(url); return }
+
+      const droppedFiles = e.dataTransfer && e.dataTransfer.files
+      if (droppedFiles && droppedFiles.length) { handleFiles(droppedFiles); return }
+
+      showToast("Couldn't read that drop — try a link or an image/PDF/HTML file", false)
+    }
+
+    // Overlay visibility. dragenter/dragleave fire per element crossed, so
+    // count them rather than toggling on the first leave.
+    let dragDepth = 0
+
+    function showDropOverlay() {
+      document.getElementById('dropoverlay').classList.add('visible')
+    }
+    function hideDropOverlay() {
+      dragDepth = 0
+      document.getElementById('dropoverlay').classList.remove('visible')
+    }
+
+    document.addEventListener('dragenter', e => {
+      e.preventDefault()
+      dragDepth++
+      if (dragIndex === null) showDropOverlay()
+    })
+    document.addEventListener('dragover', e => {
+      e.preventDefault()
+      if (dragIndex === null && e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
+    })
+    document.addEventListener('dragleave', () => {
+      dragDepth--
+      if (dragDepth <= 0) hideDropOverlay()
+    })
+    document.addEventListener('drop', handleDrop)
+    // A drag that starts outside the browser and is cancelled (Esc, dropped on
+    // another app) can leave the counter unbalanced — never strand the overlay.
+    document.addEventListener('dragend', hideDropOverlay)
+    window.addEventListener('blur', hideDropOverlay)
 
     // --- Persistence (IndexedDB — localStorage's ~5MB quota silently drops
     //     large screenshot data URLs) ---
@@ -320,7 +441,9 @@
         el.draggable = true
         el.dataset.index = i
 
-        const label = f.label || f.name.replace(/\.[^.]+$/, '')
+        // URL tiles are named by hostname — stripping ".com" off it would
+        // leave "nytimes", so only strip extensions from real filenames
+        const label = f.label || (f.type === 'url' ? f.name : f.name.replace(/\.[^.]+$/, ''))
         el.textContent = label.length > 20 ? label.slice(0, 18) + '...' : label
         el.title = label + ' — double-click to rename'
 
@@ -379,6 +502,7 @@
 
     function onThumbDrop(e) {
       e.preventDefault()
+      e.stopPropagation() // reordering, not an add — keep handleDrop out of it
       this.classList.remove('drag-over')
       const from = dragIndex
       const to = +this.dataset.index
@@ -430,27 +554,10 @@
 
     dropzone.addEventListener('click', () => fileinput.click())
 
+    // Drops are handled page-wide by handleDrop — these only add hover feedback
+    // for the circle itself. A second 'drop' listener here would double-add.
     dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-hover') })
     dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-hover'))
-    dropzone.addEventListener('drop', e => {
-      e.preventDefault()
-      dropzone.classList.remove('drag-hover')
-
-      // Check for a dropped URL (dragged link or address bar)
-      const droppedUrl = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain')
-      if (droppedUrl && /^https?:\/\//.test(droppedUrl.trim()) && !e.dataTransfer.files.length) {
-        const url = droppedUrl.trim().split('\n')[0] // uri-list can have multiple lines
-        let name
-        try { name = new URL(url).hostname.replace(/^www\./, '') } catch { name = url }
-        files.push({ name, type: 'url', url })
-        index = files.length - 1
-        saveState()
-        render()
-        return
-      }
-
-      handleFiles(e.dataTransfer.files)
-    })
 
     fileinput.addEventListener('change', () => {
       handleFiles(fileinput.files)
@@ -467,6 +574,12 @@
       if (urlbar.classList.contains('visible')) urlinput.focus()
     })
 
+    // The 🔗 circle looks like a drop target (same dashed styling as +), so it
+    // has to behave like one. The drop itself is handled page-wide.
+    urlbtn.addEventListener('dragover', e => { e.preventDefault(); urlbtn.classList.add('drag-hover') })
+    urlbtn.addEventListener('dragleave', () => urlbtn.classList.remove('drag-hover'))
+    urlbtn.addEventListener('drop', () => urlbtn.classList.remove('drag-hover'))
+
     urlinput.addEventListener('keydown', e => {
       if (e.key === 'Enter') addUrl()
       if (e.key === 'Escape') urlbar.classList.remove('visible')
@@ -477,15 +590,9 @@
       if (!url) return
       if (!/^https?:\/\//.test(url)) url = 'https://' + url
 
-      let name
-      try { name = new URL(url).hostname.replace(/^www\./, '') } catch { name = url }
-
-      files.push({ name, type: 'url', url })
-      index = files.length - 1
       urlinput.value = ''
       urlbar.classList.remove('visible')
-      saveState()
-      render()
+      addUrlPage(url)
     }
 
     // --- Image compression: these are quick-reference pages, so readability
@@ -519,13 +626,26 @@
       })
     }
 
+    // Shortcut files carry a URL as text, not as content to display:
+    // .webloc is an XML plist, .url is an INI with a URL= line.
+    function addShortcutFile(file) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const match = String(reader.result).match(/https?:\/\/[^\s"'<>]+/)
+        if (match) addUrlPage(match[0])
+        else showToast(`Couldn't find a link in ${file.name}`, false)
+      }
+      reader.readAsText(file)
+    }
+
     function handleFiles(fileList) {
       Array.from(fileList).forEach(file => {
         const ext = file.name.split('.').pop().toLowerCase()
+        if (ext === 'url' || ext === 'webloc') { addShortcutFile(file); return }
+
         let type = 'html'
         if (['png','jpg','jpeg','gif','webp','svg','bmp'].includes(ext)) type = 'image'
         else if (ext === 'pdf') type = 'pdf'
-        else if (ext === 'url') type = 'url'
 
         const reader = new FileReader()
         reader.onload = async () => {
@@ -606,7 +726,31 @@
         const src = f.dataUrl || encodeURIComponent(f.name)
         viewer.innerHTML = `<img src="${src}" alt="${f.name}" />`
       } else if (f.type === 'url') {
-        viewer.innerHTML = `<iframe src="${f.url}" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" referrerpolicy="no-referrer"></iframe>`
+        // Most sites refuse framing (X-Frame-Options / frame-ancestors) and go
+        // blank, so always surface the URL and a way out to a real tab.
+        const pane = document.createElement('div')
+        pane.className = 'urlpane'
+
+        const bar = document.createElement('div')
+        bar.className = 'urlbar'
+        const label = document.createElement('span')
+        label.className = 'u'
+        label.textContent = f.url
+        const open = document.createElement('a')
+        open.href = f.url
+        open.target = '_blank'
+        open.rel = 'noreferrer noopener'
+        open.textContent = 'Open ↗'
+        bar.append(label, open)
+
+        const frame = document.createElement('iframe')
+        frame.src = f.url
+        frame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms'
+        frame.referrerPolicy = 'no-referrer'
+
+        pane.append(bar, frame)
+        viewer.innerHTML = ''
+        viewer.appendChild(pane)
       } else if (f.dataUrl) {
         // Decode the data URL to HTML and use srcdoc to avoid download behavior
         const iframe = document.createElement('iframe')
