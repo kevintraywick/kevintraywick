@@ -349,6 +349,10 @@ tr.bill td.num { color: var(--c-electricity); }
 
 .prio { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .prio.high { color: var(--st-block); font-weight: 600; }
+/* the To do page's priority picker sits next to the status pill and borrows its
+   shape, but stays grey — only High earns a color, matching the .prio marker */
+.prioselect { color: var(--ink-3); margin-right: 6px; }
+.prioselect.high { color: var(--st-block); }
 
 /* ---------- forecast controls ---------- */
 

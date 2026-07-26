@@ -22,7 +22,7 @@
  *   POST /api/estimates/scan      (multipart quote/bid → Claude reads vendor/total/scope)
  *   PATCH /api/estimates/:id      DELETE /api/estimates/:id
  *   GET  /api/todo-status         POST /api/todo-status        (status override for a record-book
- *                                                                todo item, keyed by room+task)
+ *   GET  /api/todo-priority      POST /api/todo-priority      todo item, keyed by room+task)
  *
  * Storage: SQLite + uploaded files under DATA_DIR (Railway volume → mount at /app/data).
  * Env: ANTHROPIC_API_KEY (receipt/bill reading), SMTP_URL + MAIL_FROM (optional, reminders).
@@ -96,6 +96,14 @@ CREATE TABLE IF NOT EXISTS estimates (
 );
 CREATE TABLE IF NOT EXISTS todo_status (
   key TEXT PRIMARY KEY, status TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- priority override for a record-book todo, same room::task key as todo_status.
+-- Its own table rather than a column on todo_status because that table's status
+-- is NOT NULL: changing only a task's priority must not invent a status for it.
+-- An empty priority is a real value here — "explicitly not set", which is
+-- different from having no row (fall back to the seed's priority).
+CREATE TABLE IF NOT EXISTS todo_priority (
+  key TEXT PRIMARY KEY, priority TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS todo_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1065,9 +1073,26 @@ app.patch('/api/maintenance/:id', (req, res) => {
    static record-book seed (js/data.js), which has no stable id, so overrides
    are keyed by room+task text instead of a row id. */
 const TODO_STATUSES = ['In progress', 'Open', 'Blocked', 'Completed', 'Remove'];
+// '' is deliberate: it's how a task is set back to no priority at all
+const TODO_PRIORITIES = ['High', 'Medium', 'Low', 'Nice to have', ''];
 
 app.get('/api/todo-status', (req, res) => {
   res.json(db.prepare(`SELECT key, status FROM todo_status`).all());
+});
+
+app.get('/api/todo-priority', (req, res) => {
+  res.json(db.prepare(`SELECT key, priority FROM todo_priority`).all());
+});
+
+app.post('/api/todo-priority', (req, res) => {
+  const { key, priority } = req.body || {};
+  if (!key || !TODO_PRIORITIES.includes(priority)) {
+    return res.status(400).send('key and a priority of ' + TODO_PRIORITIES.filter(Boolean).join(' / ') + ' (or empty) are required');
+  }
+  db.prepare(
+    `INSERT INTO todo_priority (key, priority) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET priority=excluded.priority, updated_at=datetime('now')`
+  ).run(key, priority);
+  res.json({ key, priority });
 });
 
 app.post('/api/todo-status', (req, res) => {
@@ -1094,12 +1119,22 @@ app.post('/api/todo-items', (req, res) => {
   res.json(db.prepare(`SELECT * FROM todo_items WHERE id=?`).get(info.lastInsertRowid));
 });
 
+/* status and priority are both editable, one at a time — the page sends
+   whichever the user just changed */
 app.patch('/api/todo-items/:id', (req, res) => {
   const row = db.prepare(`SELECT * FROM todo_items WHERE id=?`).get(req.params.id);
   if (!row) return res.status(404).send('no such task');
-  const { status } = req.body || {};
-  if (!TODO_STATUSES.includes(status)) return res.status(400).send('a valid status is required');
-  db.prepare(`UPDATE todo_items SET status=? WHERE id=?`).run(status, row.id);
+  const { status, priority } = req.body || {};
+  if (status === undefined && priority === undefined) return res.status(400).send('a status or a priority is required');
+  if (status !== undefined && !TODO_STATUSES.includes(status)) return res.status(400).send('a valid status is required');
+  if (priority !== undefined && !TODO_PRIORITIES.includes(priority)) {
+    return res.status(400).send('a priority of ' + TODO_PRIORITIES.filter(Boolean).join(' / ') + ' (or empty) is required');
+  }
+  db.prepare(`UPDATE todo_items SET status=?, priority=? WHERE id=?`).run(
+    status === undefined ? row.status : status,
+    priority === undefined ? row.priority : (priority || null),
+    row.id,
+  );
   res.json(db.prepare(`SELECT * FROM todo_items WHERE id=?`).get(row.id));
 });
 

@@ -69,6 +69,10 @@
   const STATUS_OPTIONS = ['In progress', 'Open', 'Blocked', 'Completed', 'Remove'];
   const PRIO_ORDER = { high: 0, medium: 1, low: 2, 'nice to have': 3, '': 4, done: 5 };
   const PRIO_SYMBOL = { high: '!!', medium: '@', low: '-', 'nice to have': '-' };
+  // "Not set" is a real choice, not a placeholder: a seed task whose priority
+  // you clear needs an override recorded, or it falls back to the seed value
+  const PRIO_OPTIONS = ['High', 'Medium', 'Low', 'Nice to have', 'Not set'];
+  const PRIO_LABEL = p => PRIO_OPTIONS.find(o => o.toLowerCase() === (p || '').toLowerCase()) || 'Not set';
 
   function keyFor(t) { return (t.where || '').toLowerCase().trim() + '::' + t.task.toLowerCase().trim(); }
   function escAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
@@ -83,10 +87,12 @@
   // status overrides persist server-side, keyed by room+task text since the
   // record-book seed has no stable row id
   let overrides = {};
+  let prioOverrides = {};
   let addedItems = [];
   const hasApi = await WAPI.health();
   if (hasApi) {
     try { (await WAPI.get('/todo-status')).forEach(o => { overrides[o.key] = o.status; }); } catch {}
+    try { (await WAPI.get('/todo-priority')).forEach(o => { prioOverrides[o.key] = o.priority; }); } catch {}
     try { addedItems = await WAPI.get('/todo-items'); } catch {}
   }
 
@@ -99,6 +105,16 @@
     if (s === 'blocked') return 'blocked';
     if (raw == null && (t.priority || '').toLowerCase() === 'done') return 'done'; // legacy seed rows marked done via priority
     return 'open';
+  }
+
+  /* An override wins over the seed's priority when one exists — including an
+     empty one, which is why this tests for undefined rather than falsiness.
+     Seed rows carrying the legacy priority 'done' are completed, not urgent;
+     their priority reads as unset so the control offers a real choice. */
+  function priorityOf(t, key) {
+    const raw = prioOverrides[key];
+    if (raw !== undefined) return raw;
+    return (t.priority || '').toLowerCase() === 'done' ? '' : (t.priority || '');
   }
 
   // "removed" tasks stay in the record-book seed (there's no real delete for
@@ -115,14 +131,14 @@
       key: 'added:' + t.id, id: t.id, source: 'added',
     }));
     return seedTasks.concat(manualTasks)
-      .map(t => ({ ...t, st: statusOf(t, t.key), room: roomOf(t) }))
+      .map(t => ({ ...t, st: statusOf(t, t.key), priority: priorityOf(t, t.key), room: roomOf(t) }))
       .filter(t => t.st !== 'removed');
   }
 
   const statusEl = document.getElementById('proj-status');
   function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
   if (!hasApi) {
-    say('Backend offline — status changes and new tasks won\'t be saved right now.');
+    say('Backend offline — status, priority, and new tasks won\'t be saved right now.');
     document.querySelector('#proj-add-form button[type="submit"]').disabled = true;
   }
 
@@ -151,6 +167,15 @@
       '</select>';
   }
 
+  function prioSelect(t) {
+    const label = PRIO_LABEL(t.priority);
+    const p = (t.priority || '').toLowerCase();
+    return '<select class="statusselect prioselect' + (p === 'high' ? ' high' : '') + '" data-key="' + escAttr(t.key) +
+      '" data-source="' + t.source + '"' + (t.id ? ' data-id="' + t.id + '"' : '') + ' aria-label="Priority">' +
+      PRIO_OPTIONS.map(o => '<option value="' + o + '"' + (o === label ? ' selected' : '') + '>' + o + '</option>').join('') +
+      '</select>';
+  }
+
   function render() {
     const tasks = buildTasks();
     const open = tasks.filter(t => t.st !== 'done');
@@ -173,7 +198,7 @@
           '<span class="card-sub">' + ts.length + '</span></div><ul class="tasklist">' +
           ts.map(t =>
             '<li>' + prioMarkup(t) + '<span' + (t.st === 'done' ? ' style="color:var(--ink-3);text-decoration:line-through"' : '') + '>' +
-              t.task + '</span><span class="where">' + statusSelect(t) + '</span></li>'
+              t.task + '</span><span class="where">' + prioSelect(t) + statusSelect(t) + '</span></li>'
           ).join('') + '</ul></section>';
       }).join('');
   }
@@ -184,7 +209,32 @@
   )].sort().map(r => '<option value="' + escAttr(r) + '">').join('');
 
   document.getElementById('rooms').addEventListener('change', async ev => {
-    const sel = ev.target.closest('select.statusselect');
+    const prioSel = ev.target.closest('select.prioselect');
+    if (prioSel) {
+      const key = prioSel.dataset.key, source = prioSel.dataset.source;
+      // "Not set" is stored as an empty priority, which is a real override
+      const priority = prioSel.value === 'Not set' ? '' : prioSel.value;
+      if (!hasApi) { say('Backend offline — can\'t save priority changes right now.', 'err'); render(); return; }
+      try {
+        if (source === 'added') {
+          const id = +prioSel.dataset.id;
+          const updated = await WAPI.patch('/todo-items/' + id, { priority });
+          addedItems = addedItems.map(t => t.id === id ? updated : t);
+        } else {
+          await WAPI.post('/todo-priority', { key, priority });
+          prioOverrides[key] = priority;
+        }
+        render();
+        say('Priority saved: ' + (priority || 'not set') + '.', 'ok');
+      } catch (e) {
+        say('Could not save: ' + e.message, 'err');
+        render();
+      }
+      return;
+    }
+
+    // :not(.prioselect) — the priority select borrows the same pill styling
+    const sel = ev.target.closest('select.statusselect:not(.prioselect)');
     if (!sel) return;
     const key = sel.dataset.key, status = sel.value, source = sel.dataset.source;
     if (status === 'Remove' && !confirm('Remove this task?')) { render(); return; }
