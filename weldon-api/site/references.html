@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>References — 160 Weldon</title>
+<title>Local — 160 Weldon</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
     <a class="navlink" href="house.html">House</a>
     <a class="navlink" href="landscaping.html">Landscaping</a>
     <a class="navlink" href="plans.html">Plans</a>
-    <a class="navlink" href="references.html" aria-current="page">References</a>
+    <a class="navlink" href="references.html" aria-current="page">Local</a>
     <a class="navlink" href="maintenance.html">Maintenance</a>
     <a class="navlink" href="projects.html">To do</a>
     <a class="navlink" href="location.html">Location</a>
@@ -30,13 +30,13 @@
 </div>
 
 <div class="page-title">
-  <h1>References</h1>
-  <p>Local tradesmen, neighbors, and other things worth remembering. Drop a photo of a business card or contact on a pane and it reads the name/phone/notes off it — or add one by hand.</p>
+  <h1>Local</h1>
+  <p>Tradesmen, neighbors, estimates, and other things worth remembering. Drop a photo of a business card or contact on a pane and it reads the name/phone/notes off it; drop a quote on Estimates and it reads the vendor, total, and scope — or add either by hand.</p>
 </div>
 
 <main class="wrap">
   <div class="grid">
-    <section class="card span-4 refpane" data-cat="tradesman">
+    <section class="card span-6 refpane" data-cat="tradesman">
       <h2>Tradesmen</h2>
       <p class="card-sub">people who've worked on the house, and other local suppliers</p>
       <div class="tablewrap"><table class="data"><tbody id="ref-tradesman"></tbody></table></div>
@@ -54,7 +54,7 @@
       </details>
     </section>
 
-    <section class="card span-4 refpane" data-cat="neighbor">
+    <section class="card span-6 refpane" data-cat="neighbor">
       <h2>Neighbors</h2>
       <p class="card-sub">contact info for the people next door</p>
       <div class="tablewrap"><table class="data"><tbody id="ref-neighbor"></tbody></table></div>
@@ -72,8 +72,8 @@
       </details>
     </section>
 
-    <section class="card span-4 refpane" data-cat="local">
-      <h2>Local</h2>
+    <section class="card span-6 refpane" data-cat="local">
+      <h2>Nearby</h2>
       <p class="card-sub">things of interest nearby — worth remembering, not always a contact</p>
       <div class="tablewrap"><table class="data"><tbody id="ref-local"></tbody></table></div>
       <div class="dz mini" id="dz-local"><input type="file" accept="image/*,.heic,.heif" multiple><span>📇 drop a photo</span></div>
@@ -85,6 +85,24 @@
           <div class="control"><label>Company</label><input type="text" name="company" placeholder="optional"></div>
           <div class="control"><label>Phone</label><input type="text" name="phone" placeholder="optional"></div>
           <div class="control"><label>Notes</label><input type="text" name="notes"></div>
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </details>
+    </section>
+
+    <section class="card span-6" id="estpane">
+      <h2>Estimates</h2>
+      <p class="card-sub">quotes and bids for work on the house — money not spent, so these stay out of the ledger</p>
+      <div class="tablewrap"><table class="data"><tbody id="est-rows"></tbody></table></div>
+      <div class="dz mini" id="dz-estimate"><input type="file" accept="image/*,.pdf,.heic,.heif" multiple><span>📄 drop an estimate, quote, or bid</span></div>
+      <div class="statusline" id="status-estimate"></div>
+      <details>
+        <summary>＋ add by hand</summary>
+        <form class="entryform" id="est-form">
+          <div class="control"><label>Vendor</label><input type="text" name="vendor"></div>
+          <div class="control"><label>Scope</label><input type="text" name="scope" placeholder="what the work is"></div>
+          <div class="control"><label>Amount</label><input type="number" name="amount" step="0.01" min="0" placeholder="optional"></div>
+          <div class="control"><label>Date</label><input type="date" name="date"></div>
           <button class="btn" type="submit">Add</button>
         </form>
       </details>
@@ -110,7 +128,12 @@
   const hasApi = await WAPI.health();
   let contacts = [];
   if (hasApi) { try { contacts = await WAPI.get('/contacts'); } catch {} }
-  else CATS.forEach(cat => { document.getElementById('status-' + cat).textContent = 'Backend offline — showing the record book only.'; });
+  else {
+    CATS.forEach(cat => { document.getElementById('status-' + cat).textContent = 'Backend offline — showing the record book only.'; });
+    document.getElementById('status-estimate').textContent = 'Backend offline — estimates can\'t be loaded right now.';
+    document.getElementById('est-rows').innerHTML = '<tr><td colspan="5" class="card-sub">Backend offline.</td></tr>';
+    document.getElementById('dz-estimate').classList.add('busy');
+  }
 
   // the old "Local resources" table from the House page seeds the Tradesmen
   // pin — read-only record-book entries, no id, can't be edited or deleted here
@@ -179,6 +202,118 @@
       } catch (err) { say(err.message, 'err'); }
     };
   });
+
+  /* ---------- estimates ---------- */
+  await (async function () {
+    const dz = document.getElementById('dz-estimate');
+    const statusEl = document.getElementById('status-estimate');
+    const tbody = document.getElementById('est-rows');
+    const form = document.getElementById('est-form');
+    let estimates = [];
+    let editingId = null;
+    function say(msg, cls) { statusEl.textContent = msg; statusEl.className = 'statusline ' + (cls || ''); }
+    // quotes are usually round numbers — show cents only when there are any,
+    // so an edited $12,995.75 doesn't read as $12,996
+    const usd = n => n == null ? '' : n.toLocaleString('en-US',
+      { style: 'currency', currency: 'USD', minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: n % 1 ? 2 : 0 });
+    const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const fmtDate = d => d
+      ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+      : '';
+
+    function row(e) {
+      // ✎ turns the row into inputs, ✓/✕ save or cancel — same affordance as
+      // an editable row in the expenses ledger
+      if (e.id === editingId) {
+        return '<tr><td><input class="cellinput" data-f="vendor" value="' + esc(e.vendor) + '" aria-label="Vendor"></td>' +
+          '<td><input class="cellinput" data-f="scope" value="' + esc(e.scope) + '" aria-label="Scope"></td>' +
+          '<td class="r"><input type="number" step="0.01" min="0" class="cellinput amount" data-f="amount" value="' + (e.amount ?? '') + '" aria-label="Amount"></td>' +
+          '<td><input type="date" class="cellinput mono" data-f="date" value="' + (e.date || '') + '" aria-label="Date"></td>' +
+          '<td class="act"><button class="rowbtn" data-estsave="' + e.id + '" title="Save" aria-label="Save">✓</button>' +
+          '<button class="rowbtn" data-estcancel="1" title="Cancel" aria-label="Cancel">✕</button></td></tr>';
+      }
+      return '<tr><td>' + (esc(e.vendor) || '—') +
+        (e.url ? ' <a href="' + e.url + '" target="_blank" rel="noopener" title="View the estimate" style="text-decoration:none;opacity:.65">🧾</a>' : '') + '</td>' +
+        '<td>' + esc(e.scope) + '</td>' +
+        // blank either because the scan couldn't find a total or because it was
+        // added by hand without one — "no total" covers both
+        '<td class="r num">' + (e.amount == null ? '<span class="chip-incomplete">no total</span>' : usd(e.amount)) + '</td>' +
+        '<td class="num">' + fmtDate(e.date) + '</td>' +
+        '<td class="act"><button class="rowbtn" data-estedit="' + e.id + '" title="Edit" aria-label="Edit">✎</button>' +
+        '<button class="rowbtn danger" data-estdel="' + e.id + '" title="Delete" aria-label="Delete">✕</button></td></tr>';
+    }
+
+    function render() {
+      tbody.innerHTML = estimates.length
+        ? estimates.map(row).join('')
+        : '<tr><td colspan="5" class="card-sub">No estimates yet — drop one below.</td></tr>';
+      const total = estimates.reduce((a, e) => a + (e.amount || 0), 0);
+      const sub = document.querySelector('#estpane .card-sub');
+      sub.textContent = estimates.length
+        ? estimates.length + ' estimate' + (estimates.length > 1 ? 's' : '') + ' · ' + usd(total) + ' quoted — money not spent, so these stay out of the ledger'
+        : 'quotes and bids for work on the house — money not spent, so these stay out of the ledger';
+    }
+
+    try { estimates = await WAPI.get('/estimates'); } catch {}
+    render();
+
+    WAPI.wireDropZone(dz, async files => {
+      dz.classList.add('busy');
+      for (const f of files) {
+        say('Reading ' + f.name + '…');
+        try {
+          const e = await WAPI.upload('/estimates/scan', f);
+          estimates.unshift(e);
+          render();
+          say('Added ' + (e.vendor || e.scope || 'estimate') + (e.amount != null ? ' — ' + usd(e.amount) : ' — no total read, edit to fix') + '.', e.amount != null ? 'ok' : 'err');
+        } catch (err) { say(f.name + ': ' + err.message, 'err'); }
+      }
+      dz.classList.remove('busy');
+    });
+
+    form.onsubmit = async ev => {
+      ev.preventDefault();
+      const body = {};
+      new FormData(form).forEach((v, k) => { body[k] = typeof v === 'string' ? v.trim() || null : v; });
+      if (!body.vendor && !body.scope) { say('A vendor or a scope is required.', 'err'); return; }
+      try {
+        estimates.unshift(await WAPI.post('/estimates', body));
+        render();
+        form.reset();
+        say('Added.', 'ok');
+      } catch (err) { say(err.message, 'err'); }
+    };
+
+    tbody.addEventListener('click', async ev => {
+      const btn = ev.target.closest('button[data-estedit], button[data-estcancel], button[data-estsave], button[data-estdel]');
+      if (!btn) return;
+      if (btn.dataset.estedit) { editingId = +btn.dataset.estedit; render(); return; }
+      if (btn.dataset.estcancel) { editingId = null; render(); return; }
+      if (btn.dataset.estsave) {
+        const id = +btn.dataset.estsave;
+        const tr = btn.closest('tr');
+        const body = {};
+        tr.querySelectorAll('.cellinput').forEach(i => { body[i.dataset.f] = i.value.trim() || null; });
+        try {
+          const updated = await WAPI.patch('/estimates/' + id, body);
+          estimates = estimates.map(e => e.id === id ? updated : e);
+          editingId = null;
+          render();
+          say('Saved.', 'ok');
+        } catch (err) { say(err.message, 'err'); }
+        return;
+      }
+      const id = +btn.dataset.estdel;
+      const e = estimates.find(x => x.id === id);
+      if (!confirm('Delete the estimate from ' + (e.vendor || e.scope || 'this vendor') + '?')) return;
+      try {
+        await WAPI.del('/estimates/' + id);
+        estimates = estimates.filter(x => x.id !== id);
+        render();
+        say('Deleted.', 'ok');
+      } catch (err) { say(err.message, 'err'); }
+    });
+  })();
 
   document.querySelectorAll('.refpane tbody').forEach(tbody => {
     tbody.addEventListener('click', async ev => {

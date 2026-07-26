@@ -18,6 +18,9 @@
  *   GET  /api/contacts            POST /api/contacts          (manual add, JSON)
  *   POST /api/contacts/scan       (multipart business-card/contact photo → Claude reads it)
  *   PATCH /api/contacts/:id       DELETE /api/contacts/:id
+ *   GET  /api/estimates           POST /api/estimates         (manual add, JSON)
+ *   POST /api/estimates/scan      (multipart quote/bid → Claude reads vendor/total/scope)
+ *   PATCH /api/estimates/:id      DELETE /api/estimates/:id
  *   GET  /api/todo-status         POST /api/todo-status        (status override for a record-book
  *                                                                todo item, keyed by room+task)
  *
@@ -85,6 +88,11 @@ CREATE TABLE IF NOT EXISTS contacts (
   category TEXT NOT NULL, name TEXT, company TEXT, phone TEXT, email TEXT, notes TEXT,
   photo TEXT, original_name TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS estimates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor TEXT, amount REAL, scope TEXT, date TEXT,
+  file TEXT, original_name TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS todo_status (
   key TEXT PRIMARY KEY, status TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -778,6 +786,88 @@ app.delete('/api/contacts/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+/* estimates — a tradesman's quote for work on the house. Claude reads the
+   vendor, total and scope off the scan; every field stays editable because a
+   quote's "total" is often one of several numbers on the page. Unlike a
+   receipt this is money NOT spent, so it never touches the expenses ledger. */
+const ESTIMATE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['vendor', 'amount', 'scope', 'date'],
+  properties: {
+    vendor: { type: ['string', 'null'], description: 'Company or person giving the estimate, or null if not legible' },
+    amount: { type: ['number', 'null'], description: 'The quoted total in dollars — the bottom-line price for the whole job, not a deposit, line item, hourly rate or optional add-on. Null if no total is legible.' },
+    scope: { type: ['string', 'null'], description: 'What the work is, in a few words (e.g. "replace roof + gutters", "remove 2 oaks at back fence")' },
+    date: { type: ['string', 'null'], description: 'Date on the estimate as YYYY-MM-DD, or null if none is printed' },
+  },
+};
+
+const ESTIMATE_PROMPT =
+  'This is an estimate, quote, or bid for work on a residential house in Martin, Tennessee. ' +
+  'Read off who gave it, the quoted total, what the work covers, and the date on it. ' +
+  'The total is the bottom-line price for the job — ignore deposits, hourly rates, and optional ' +
+  'add-ons priced separately. Use null for anything not legible.';
+
+function estimateOut(r) {
+  return { ...r, url: r.file ? '/uploads/' + r.file : null };
+}
+
+app.get('/api/estimates', (req, res) => {
+  const rows = db.prepare(`SELECT * FROM estimates ORDER BY COALESCE(date, created_at) DESC, id DESC`).all();
+  res.json(rows.map(estimateOut));
+});
+
+function insertEstimate({ vendor, amount, scope, date, file, original_name }) {
+  const info = db.prepare(
+    `INSERT INTO estimates (vendor, amount, scope, date, file, original_name) VALUES (?,?,?,?,?,?)`
+  ).run(vendor || null, amount ?? null, scope || null, date || null, file || null, original_name || null);
+  return estimateOut(db.prepare(`SELECT * FROM estimates WHERE id=?`).get(info.lastInsertRowid));
+}
+
+/* manual add — same shape, no scan */
+app.post('/api/estimates', (req, res) => {
+  const { vendor, amount, scope, date } = req.body || {};
+  if (!vendor && !scope) return res.status(400).send('an estimate needs at least a vendor or a scope');
+  const n = amount === '' || amount == null ? null : Number(amount);
+  if (n != null && !Number.isFinite(n)) return res.status(400).send('amount must be a number');
+  res.json(insertEstimate({ vendor, amount: n, scope, date }));
+});
+
+app.post('/api/estimates/scan', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).send('no file');
+  try {
+    await normalizeHeic(req.file);
+    const e = await readScan(req.file.path, ESTIMATE_PROMPT, ESTIMATE_SCHEMA);
+    if (!e.vendor && !e.scope && e.amount == null) return res.status(422).send('could not read a vendor, scope or total off this file');
+    res.json(insertEstimate({ ...e, file: req.file.filename, original_name: req.file.originalname || null }));
+  } catch (e) {
+    console.error('estimate scan failed:', e.message);
+    res.status(422).send(e.message);
+  }
+});
+
+app.patch('/api/estimates/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM estimates WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such estimate');
+  const { vendor, amount, scope, date } = req.body || {};
+  let n = row.amount;
+  if (amount !== undefined) {
+    n = amount === '' || amount === null ? null : Number(amount);
+    if (n != null && !Number.isFinite(n)) return res.status(400).send('amount must be a number');
+  }
+  db.prepare(`UPDATE estimates SET vendor=?, amount=?, scope=?, date=? WHERE id=?`)
+    .run(vendor ?? row.vendor, n, scope ?? row.scope, date ?? row.date, row.id);
+  res.json(estimateOut(db.prepare(`SELECT * FROM estimates WHERE id=?`).get(row.id)));
+});
+
+app.delete('/api/estimates/:id', (req, res) => {
+  const row = db.prepare(`SELECT * FROM estimates WHERE id=?`).get(req.params.id);
+  if (!row) return res.status(404).send('no such estimate');
+  db.prepare(`DELETE FROM estimates WHERE id=?`).run(row.id);
+  // scan left for the orphan sweep, same policy as receipts/chips/plans
+  res.json({ ok: true });
+});
+
 /* plans — architectural drawings, floor plans, sketches. Just stored and
    listed; no AI reading, unlike the other drop zones. A PDF is filed as one
    row per rasterized page (see rasterizePdfPages) so the gallery shows every
@@ -1079,6 +1169,7 @@ function sweepOrphanUploads() {
       // page row, so it survives until the last of them is deleted
       ...db.prepare(`SELECT source_file f FROM plans WHERE source_file IS NOT NULL`).all(),
       ...db.prepare(`SELECT photo f FROM contacts WHERE photo IS NOT NULL`).all(),
+      ...db.prepare(`SELECT file f FROM estimates WHERE file IS NOT NULL`).all(),
     ].map(r => r.f));
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     let removed = 0;
