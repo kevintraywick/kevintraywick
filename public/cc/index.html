@@ -173,28 +173,6 @@
       background: #fff;
     }
 
-    /* URL pane — the iframe plus an escape hatch, since most sites
-       (github, nytimes, google…) send X-Frame-Options and render blank */
-    .urlpane {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    .urlbar {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 12px;
-      background: #1a1a1a;
-      font-size: 12px;
-      color: #666;
-    }
-    .urlbar .u { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .urlbar a { color: #5af; text-decoration: none; flex-shrink: 0; margin-left: auto; }
-    .urlbar a:hover { text-decoration: underline; }
-
     /* Full-page drop overlay — the whole window is the target, so a
        dragged link can't miss the way a 48px circle could */
     #dropoverlay {
@@ -269,6 +247,7 @@
 
   <script>
     const STORAGE_KEY = 'cc_flipbook'
+    const API_URL = 'https://kt-feed-api-production.up.railway.app'
     let files = []
     let index = 0
     let deletedServerNames = [] // files.json entries the user has deleted
@@ -726,31 +705,20 @@
         const src = f.dataUrl || encodeURIComponent(f.name)
         viewer.innerHTML = `<img src="${src}" alt="${f.name}" />`
       } else if (f.type === 'url') {
-        // Most sites refuse framing (X-Frame-Options / frame-ancestors) and go
-        // blank, so always surface the URL and a way out to a real tab.
-        const pane = document.createElement('div')
-        pane.className = 'urlpane'
-
-        const bar = document.createElement('div')
-        bar.className = 'urlbar'
-        const label = document.createElement('span')
-        label.className = 'u'
-        label.textContent = f.url
-        const open = document.createElement('a')
-        open.href = f.url
-        open.target = '_blank'
-        open.rel = 'noreferrer noopener'
-        open.textContent = 'Open ↗'
-        bar.append(label, open)
-
+        // Go through our own API rather than framing the site directly: most
+        // sites send X-Frame-Options / CSP frame-ancestors and would render a
+        // blank pane. The proxy re-serves the page from our origin.
+        // No allow-same-origin — the page is served from the API's origin and
+        // must not get script access to it.
         const frame = document.createElement('iframe')
-        frame.src = f.url
-        frame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms'
-        frame.referrerPolicy = 'no-referrer'
-
-        pane.append(bar, frame)
+        // setAttribute, not .sandbox = — the property reflects a DOMTokenList,
+        // and where assignment doesn't forward, the attribute is left off
+        // entirely, which means no sandbox at all rather than a strict one.
+        frame.setAttribute('sandbox', 'allow-scripts allow-popups allow-forms')
+        frame.setAttribute('referrerpolicy', 'no-referrer')
+        frame.src = `${API_URL}/proxy?url=${encodeURIComponent(f.url)}`
         viewer.innerHTML = ''
-        viewer.appendChild(pane)
+        viewer.appendChild(frame)
       } else if (f.dataUrl) {
         // Decode the data URL to HTML and use srcdoc to avoid download behavior
         const iframe = document.createElement('iframe')
