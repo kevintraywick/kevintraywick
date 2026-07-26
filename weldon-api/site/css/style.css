@@ -562,6 +562,9 @@ footer.site-foot .gate-hint { font-size: 15px; letter-spacing: 3px; margin-left:
 /* ---------- map ---------- */
 
 #map { height: 520px; border-radius: var(--radius); border: 1px solid var(--line); z-index: 1; }
+/* the dashboard's card-sized copy — 260px matches the chart cards beside it,
+   so the map card and the facts card in the same row come out level */
+#map-mini { height: 260px; border-radius: var(--radius); border: 1px solid var(--line); z-index: 1; }
 .map-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
 
 @media (prefers-reduced-motion: reduce) {

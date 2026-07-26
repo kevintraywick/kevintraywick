@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -84,7 +85,7 @@
       <div id="chart-monthly-spend"></div>
     </section>
 
-    <section class="card span-7">
+    <section class="card span-12">
       <div class="card-head">
         <div>
           <h2>Maintenance</h2>
@@ -93,6 +94,21 @@
         <a class="more" href="maintenance.html">All maintenance →</a>
       </div>
       <ul class="tasklist" id="coming-list"></ul>
+    </section>
+
+    <section class="card span-7">
+      <div class="card-head">
+        <div>
+          <h2>Where it is</h2>
+          <p class="card-sub">160 Weldon Dr, Martin, TN 38237 · Weakley County</p>
+        </div>
+        <a class="more" href="location.html">Full map →</a>
+      </div>
+      <div class="map-toggle">
+        <button class="pill on" id="btn-map">Map</button>
+        <button class="pill" id="btn-sat">Satellite</button>
+      </div>
+      <div id="map-mini" aria-label="Map of 160 Weldon Dr"></div>
     </section>
 
     <section class="card span-5">
@@ -337,6 +353,37 @@
   } catch (e) {
     noteEl.textContent = 'weather unavailable';
   }
+})();
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+/* Same map as the Location page, card-sized. Wheel zoom is off here: this map
+   sits mid-page, and scrolling past it should scroll the dashboard, not zoom.
+   The +/− control and double-click still zoom. */
+(function () {
+  if (typeof L === 'undefined') return;            // CDN blocked/offline — leave the card empty
+  const HOUSE = [36.3658682, -88.8551280];         // geocoded from OpenStreetMap
+
+  const map = L.map('map-mini', { scrollWheelZoom: false }).setView(HOUSE, 16);
+  const street = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '© OpenStreetMap contributors',
+  });
+  const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
+  });
+  street.addTo(map);
+  L.marker(HOUSE).addTo(map).bindPopup('<strong>160 Weldon Dr</strong><br>Martin, TN 38237');
+
+  const btnMap = document.getElementById('btn-map');
+  const btnSat = document.getElementById('btn-sat');
+  function setLayer(which) {
+    if (which === 'sat') { map.removeLayer(street); satellite.addTo(map); }
+    else { map.removeLayer(satellite); street.addTo(map); }
+    btnMap.classList.toggle('on', which === 'map');
+    btnSat.classList.toggle('on', which === 'sat');
+  }
+  btnMap.onclick = () => setLayer('map');
+  btnSat.onclick = () => setLayer('sat');
 })();
 </script>
 <script src="js/footer.js"></script>
