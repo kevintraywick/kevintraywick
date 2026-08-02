@@ -12,6 +12,8 @@ import { PhotoPanel } from './components/PhotoPanel'
 import Blog from './pages/Blog'
 import BlogEntry from './pages/BlogEntry'
 
+const BLACKMOOR_URL = 'https://blackmoor.up.railway.app'
+
 // Jelly UI's display font stack (ui-rounded -> SF Pro Rounded on Apple)
 const kFont = { fontFamily: "ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', sans-serif", fontWeight: 900 } as const
 
@@ -38,8 +40,16 @@ function Homepage() {
 
       {/* Blackmoor — position 4 (r2c1) */}
       <div className="relative overflow-hidden">
-        <a href="https://blackmoor.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('D&D')}>
-          <img src={blackmoorSplashImg} alt="Blackmoor — Season of the Witch" className="w-full h-full object-cover" style={{ objectPosition: 'center 22%' }} />
+        <a href={BLACKMOOR_URL} target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('D&D')}>
+          {/* Live splash: Blackmoor redirects this to whatever art its home page
+              is currently showing, so a splash drop there updates this panel on
+              the next load — no cron, no rebuild. Falls back to the committed
+              image if Blackmoor is unreachable (e.g. mid-redeploy). */}
+          <img
+            src={`${BLACKMOOR_URL}/api/splash/current`}
+            onError={(e) => { if (!e.currentTarget.src.endsWith(blackmoorSplashImg)) e.currentTarget.src = blackmoorSplashImg }}
+            alt="Blackmoor" className="w-full h-full object-cover" style={{ objectPosition: 'center 22%' }}
+          />
         </a>
       </div>
       {/* K — position 5 (center) */}
