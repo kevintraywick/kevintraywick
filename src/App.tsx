@@ -7,7 +7,7 @@ import penImg from './assets/pen.png'
 import blackmoorSplashImg from './assets/blackmoor-splash.webp'
 import windImg from './assets/windstorm.png'
 import darkSkiesImg from './assets/darkskies-purple.jpg'
-import backWorkoutImg from './assets/back-workout-card.png'
+import stealThisImg from './assets/steal-this.png'
 import { PhotoPanel } from './components/PhotoPanel'
 import Blog from './pages/Blog'
 import BlogEntry from './pages/BlogEntry'
@@ -31,11 +31,9 @@ function Homepage() {
       <a href="sms:+12068608292" className="overflow-hidden" {...hover('Text me here')}>
         <img src={bubbleImg} alt="Text Me" className="w-full h-full object-cover" />
       </a>
-      {/* Back Workout PDF — position 3 (r1c3) */}
-      <div className="relative overflow-hidden">
-        <a href="/workout/back-workout.pdf" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('do it!')}>
-          <img src={backWorkoutImg} alt="A 20-Minute Workout to Keep Your Body Limber" className="w-full h-full object-cover" />
-        </a>
+      {/* Steal This — position 3 (r1c3) */}
+      <div className="relative overflow-hidden" {...hover('coming soon')}>
+        <img src={stealThisImg} alt="Steal This" className="w-full h-full object-cover" />
       </div>
 
       {/* Blackmoor — position 4 (r2c1) */}
