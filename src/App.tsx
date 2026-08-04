@@ -112,7 +112,7 @@ function Homepage() {
       </div>
       {/* Wind — position 9 (r3c3) */}
       <div className="relative overflow-hidden">
-        <a href="https://meticulous-eagerness-production-411f.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Windy,\nmy real time wind project')}>
+        <a href="https://meticulous-eagerness-production-411f.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Windy.')}>
           <img src={windImg} alt="Wind" className="w-full h-full object-cover" />
         </a>
       </div>
