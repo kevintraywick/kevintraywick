@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chattanooga</title>
+<meta name="description" content="Chattanooga." />
+<meta property="og:title" content="Chattanooga" />
+<meta property="og:type" content="video.other" />
+<meta property="og:url" content="https://kevintraywick.com/chattanooga/" />
+<meta property="og:image" content="https://kevintraywick.com/chattanooga/poster.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.svg" />
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: #0b0b0c;
+    color: #e8e6e3;
+    font: 400 15px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 24px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8a8781;
+  }
+  video {
+    display: block;
+    width: 100%;
+    max-width: min(1280px, 100%);
+    max-height: 78vh;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 4px;
+    outline: none;
+  }
+  @media (max-width: 640px) {
+    body { padding: 12px; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+  <h1>Chattanooga</h1>
+  <video
+    controls
+    playsinline
+    preload="metadata"
+    poster="poster.jpg"
+    width="1280"
+    height="720">
+    <source src="chattanooga.mp4" type="video/mp4" />
+    Your browser can&rsquo;t play this video.
+    <a href="chattanooga.mp4">Download it instead.</a>
+  </video>
+</body>
+</html>
