@@ -28,7 +28,9 @@
   h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .col jelly-radio { display: flex; width: 100%; padding: 7px 0; }
   .list jelly-radio { display: flex; width: 100%; padding: 8px 0; border-top: 1px solid var(--line); }
-  .list jelly-radio:first-child { border-top: 0; }
+  .list jelly-radio:first-child, .list .group + jelly-radio { border-top: 0; }
+  .group { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); font-weight: 600; margin: 12px 0 2px; }
+  .group:first-child { margin-top: 0; }
   .opt { display: block; width: 100%; }
   .opt .t { font-weight: 600; display: block; }
   .opt .d { color: var(--muted); font-size: 13px; display: block; }
@@ -138,7 +140,12 @@
     document.getElementById('flightBack').innerHTML = sel.back ? backs.map(function (f) { return radio('flightBack', f.id, flightRow(f), sel.flightBack === f.id); }).join('') : '<div class="empty">Pick a return day first.</div>';
 
     document.getElementById('nightsLabel').textContent = n ? '· ' + n + ' night' + (n === 1 ? '' : 's') : '';
-    document.getElementById('hotel').innerHTML = D.hotels.map(function (h) { return radio('hotel', h.id, hotelRow(h, n), sel.hotel === h.id); }).join('');
+    var lastGroup = null;
+    document.getElementById('hotel').innerHTML = D.hotels.map(function (h) {
+      var head = (h.group && h.group !== lastGroup) ? '<div class="group">' + esc(h.group) + '</div>' : '';
+      lastGroup = h.group || lastGroup;
+      return head + radio('hotel', h.id, hotelRow(h, n), sel.hotel === h.id);
+    }).join('');
 
     document.getElementById('ground').innerHTML = D.ground.map(function (g) {
       return '<li><strong>' + esc(g.name) + '</strong> — ' + esc(g.fare) + ', about ' + esc(g.minutes) + ' min' + (g.note ? '. ' + esc(g.note) : '') + '</li>';

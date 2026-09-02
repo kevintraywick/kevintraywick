@@ -47,14 +47,24 @@
     ],
     flights: flights,
     hotels: [
-      { id: 'martinique', name: 'Martinique New York on Broadway', neighborhood: 'Midtown / Herald Square · 49 W 32nd St', room: '2 queens (Curio by Hilton)', nightly: 275, fee: 46,
-        url: 'https://www.hilton.com/en/hotels/nyccuqq-martinique-new-york-on-broadway/', note: 'landmark 1897 building, 2 blocks from Penn Station · $46/night destination fee included in totals' },
-      { id: 'hampton',  name: 'Hampton Inn Manhattan-Chelsea', neighborhood: 'Chelsea · 108 W 24th St', room: '2 queens, free breakfast', nightly: 275,
+      { id: 'martinique', group: 'Chelsea & Midtown', name: 'Martinique New York on Broadway', neighborhood: 'Midtown / Herald Square · 49 W 32nd St', room: '2 queens (Curio by Hilton)', nightly: 275, fee: 46,
+        url: 'https://www.hilton.com/en/hotels/nyccuqq-martinique-new-york-on-broadway/', note: 'landmark 1897 building, 2 blocks from Penn Station' },
+      { id: 'hampton',  group: 'Chelsea & Midtown', name: 'Hampton Inn Manhattan-Chelsea', neighborhood: 'Chelsea · 108 W 24th St', room: '2 queens, free breakfast', nightly: 275,
         url: 'https://www.hilton.com/en/hotels/nyccshx-hampton-manhattan-chelsea/', note: 'best Chelsea fit for three' },
-      { id: 'cambria',  name: 'Cambria Hotel Chelsea', neighborhood: 'Chelsea · 123 W 28th St', room: '2 queens', nightly: 285,
+      { id: 'cambria',  group: 'Chelsea & Midtown', name: 'Cambria Hotel Chelsea', neighborhood: 'Chelsea · 123 W 28th St', room: '2 queens', nightly: 285,
         url: 'https://www.choicehotels.com/new-york/new-york/cambria-hotels/ny537', note: 'newer build, rooftop bar' },
-      { id: 'hgi',      name: 'Hilton Garden Inn Chelsea', neighborhood: 'Chelsea · 121 W 28th St', room: '2 queens', nightly: 290,
-        url: 'https://www.hilton.com/en/hotels/nycchgi-hilton-garden-inn-new-york-manhattan-chelsea/', note: '3 blocks from Penn Station' }
+      { id: 'hgi',      group: 'Chelsea & Midtown', name: 'Hilton Garden Inn Chelsea', neighborhood: 'Chelsea · 121 W 28th St', room: '2 queens', nightly: 290,
+        url: 'https://www.hilton.com/en/hotels/nycchgi-hilton-garden-inn-new-york-manhattan-chelsea/', note: '3 blocks from Penn Station' },
+
+      { id: 'plaza',     group: 'Splurge', name: 'The Plaza', neighborhood: 'Central Park South · 768 Fifth Ave', room: 'Deluxe Two Queens, 550 sq ft', nightly: 1250, fee: 65,
+        url: 'https://www.fairmont.com/en/hotels/new-york-city/the-plaza/rooms/q2a.room.html', note: 'the Plaza · fee includes a $50/day food credit · December is its priciest month' },
+      { id: 'peninsula', group: 'Splurge', name: 'The Peninsula New York', neighborhood: 'Fifth Ave at 55th St', room: 'Deluxe Room, two queens, ~480 sq ft', nightly: 1150,
+        url: 'https://www.peninsula.com/en/new-york/luxury-hotel-room-suite-types/deluxe-room', note: 'rooftop spa and pool, Fifth Ave holiday windows at the door · no destination fee found' },
+
+      { id: 'onehotel',  group: 'Brooklyn', name: '1 Hotel Brooklyn Bridge', neighborhood: 'Dumbo · 60 Furman St', room: 'Harbor 2 Beds (2 doubles, sleeps 4)', nightly: 700, fee: 45,
+        url: 'https://www.1hotels.com/brooklyn-bridge/sleep/dumbo-2-beds', note: 'skyline and bridge views, rooftop pool, Brooklyn Bridge Park at the door · beds are doubles, not queens' },
+      { id: 'acebk',     group: 'Brooklyn', name: 'Ace Hotel Brooklyn', neighborhood: 'Downtown Brooklyn · 252 Schermerhorn St', room: 'Double, two queens, ~360 sq ft', nightly: 400, fee: 40,
+        url: 'https://acehotel.com/brooklyn/rooms/double/', note: 'steps from the Atlantic Ave / Barclays subway hub, ~10 min to Manhattan' }
     ],
     ground: [
       { name: 'AirTrain + LIRR to Penn Station', fare: '$14 (AirTrain $8.75 + CityTicket $5.25, $7.25 peak)', minutes: 35,
