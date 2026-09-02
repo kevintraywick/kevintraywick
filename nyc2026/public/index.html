@@ -13,97 +13,74 @@
   }
   jelly-theme { display: block; min-height: 100vh; background: var(--bg); color: var(--ink); }
   jelly-radio, jelly-radio-group, jelly-button { --jelly-accent: var(--accent); --jelly-fill: var(--accent); }
-  body { margin: 0; font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 28px 18px 140px; }
-  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
-  .sub { color: var(--muted); margin: 0 0 22px; }
-  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin: 0 0 14px; }
-  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
-  .row { display: flex; flex-wrap: wrap; gap: 8px 22px; }
-  .list jelly-radio { display: flex; width: 100%; padding: 6px 0; border-top: 1px solid var(--line); }
+  body { margin: 0; font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  main { max-width: 1440px; margin: 0 auto; padding: 22px 20px 40px; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+  h1 { font-size: 26px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0; max-width: 620px; }
+  .totalbox { text-align: right; margin-left: auto; }
+  .totalbox .big { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .totalbox .big small { display: block; font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-top: 4px; }
+  .totalbox .lines { color: var(--muted); font-size: 13px; margin: 6px 0 8px; }
+  .totalbox .saved { color: var(--ok); font-size: 13px; margin-right: 10px; }
+  .cols { display: grid; grid-template-columns: 110px 130px 130px 1.3fr 1.3fr 1.5fr; gap: 10px; align-items: start; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; min-width: 0; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .col jelly-radio { display: flex; width: 100%; padding: 7px 0; }
+  .list jelly-radio { display: flex; width: 100%; padding: 8px 0; border-top: 1px solid var(--line); }
   .list jelly-radio:first-child { border-top: 0; }
-  .opt { display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; width: 100%; align-items: baseline; }
-  .opt .t { font-weight: 600; }
-  .opt .d { color: var(--muted); font-size: 14px; grid-column: 1; }
-  .opt .p { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
-  .opt .p small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  .opt { display: block; width: 100%; }
+  .opt .t { font-weight: 600; display: block; }
+  .opt .d { color: var(--muted); font-size: 13px; display: block; }
+  .opt .p { font-weight: 700; font-variant-numeric: tabular-nums; display: block; }
+  .opt .p small { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 6px; }
   .opt a { color: var(--accent); text-decoration: none; }
-  .empty { color: var(--muted); font-style: italic; }
-  .who { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .who .saved { color: var(--ok); font-size: 13px; }
-  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .empty { color: var(--muted); font-style: italic; font-size: 14px; }
+  .below { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
   td, th { padding: 6px 4px; text-align: left; border-top: 1px solid var(--line); vertical-align: top; }
-  th { border-top: 0; color: var(--muted); font-weight: 500; font-size: 13px; }
+  th { border-top: 0; color: var(--muted); font-weight: 500; font-size: 12px; }
   td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td.tot { font-weight: 700; }
-  .totalbar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0,0,0,.08); }
-  .totalbar .in { max-width: 760px; margin: 0 auto; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .totalbar .big { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  .totalbar .big small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 6px; }
-  .totalbar .lines { color: var(--muted); font-size: 13px; }
-  .rail li { margin: 4px 0; }
-  .rail ul { padding-left: 18px; margin: 0; }
+  .rail ul { padding-left: 18px; margin: 0; font-size: 14px; }
+  .rail li { margin: 5px 0; }
   .fine { color: var(--muted); font-size: 12px; margin-top: 8px; }
-  .fine a { color: inherit; }
+  @media (max-width: 1100px) { .cols { grid-template-columns: 1fr 1fr 1fr; } }
+  @media (max-width: 700px) { .cols, .below { grid-template-columns: 1fr; } .totalbox { text-align: left; margin-left: 0; } }
 </style>
 </head>
 <body>
 <jelly-theme mode="auto">
 <main>
-  <h1>New York, December 2026</h1>
-  <p class="sub">Nashville → JFK, nonstop. Pick your days, flights and hotel; the total updates as you go and everyone can see each other's picks.</p>
-
-  <section>
-    <h2>I am</h2>
-    <div class="who">
-      <jelly-radio-group id="who" name="who" class="row"></jelly-radio-group>
-      <span class="saved" id="savedNote"></span>
+  <header>
+    <div>
+      <h1>New York, December 2026</h1>
+      <p class="sub">Nashville → JFK, nonstop. Work left to right: who you are, your days, flights, hotel. The total updates as you go and everyone sees each other's picks.</p>
     </div>
-  </section>
+    <div class="totalbox">
+      <div class="big" id="total">—<small>per person</small></div>
+      <div class="lines" id="totalLines">Pick your days to start.</div>
+      <span class="saved" id="savedNote"></span><jelly-button id="copyBtn" size="small" shape="square" type="button">Copy my summary</jelly-button>
+    </div>
+  </header>
 
-  <section>
-    <h2>Leave Nashville</h2>
-    <jelly-radio-group id="out" name="out" class="row"></jelly-radio-group>
-  </section>
+  <div class="cols">
+    <section><h2>I am</h2><jelly-radio-group id="who" name="who" class="col"></jelly-radio-group></section>
+    <section><h2>Leave</h2><jelly-radio-group id="out" name="out" class="col"></jelly-radio-group></section>
+    <section><h2>Come home</h2><jelly-radio-group id="back" name="back" class="col"></jelly-radio-group></section>
+    <section><h2>Flight out <span id="outDayLabel"></span></h2><jelly-radio-group id="flightOut" name="flightOut" class="list"></jelly-radio-group></section>
+    <section><h2>Flight home <span id="backDayLabel"></span></h2><jelly-radio-group id="flightBack" name="flightBack" class="list"></jelly-radio-group></section>
+    <section><h2>Hotel <span id="nightsLabel"></span></h2><jelly-radio-group id="hotel" name="hotel" class="list"></jelly-radio-group>
+      <div class="fine">Rates are before NYC tax (14.75% plus $3.50 a night), which the totals include. All rooms have two beds.</div></section>
+  </div>
 
-  <section>
-    <h2>Come home</h2>
-    <jelly-radio-group id="back" name="back" class="row"></jelly-radio-group>
-  </section>
-
-  <section>
-    <h2>Flight out <span id="outDayLabel"></span></h2>
-    <jelly-radio-group id="flightOut" name="flightOut" class="list"></jelly-radio-group>
-  </section>
-
-  <section>
-    <h2>Flight home <span id="backDayLabel"></span></h2>
-    <jelly-radio-group id="flightBack" name="flightBack" class="list"></jelly-radio-group>
-  </section>
-
-  <section>
-    <h2>Hotel <span id="nightsLabel"></span></h2>
-    <jelly-radio-group id="hotel" name="hotel" class="list"></jelly-radio-group>
-    <div class="fine">Room rates are before NYC tax (about 14.75% plus $3.50 a night), which is included in the totals below. All rooms have two beds.</div>
-  </section>
-
-  <section>
-    <h2>Where everyone landed</h2>
-    <table id="everyone"></table>
-  </section>
-
-  <section class="rail">
-    <h2>Getting in from JFK</h2>
-    <ul id="ground"></ul>
-  </section>
+  <div class="below">
+    <section><h2>Where everyone landed</h2><table id="everyone"></table></section>
+    <section class="rail"><h2>Getting in from JFK</h2><ul id="ground"></ul></section>
+  </div>
 
   <p class="fine" id="asOf"></p>
 </main>
-
-<div class="totalbar"><div class="in">
-  <div><div class="big" id="total">—<small>per person</small></div><div class="lines" id="totalLines">Pick your days to start.</div></div>
-  <jelly-button id="copyBtn" size="small" shape="square" type="button">Copy my summary</jelly-button>
-</div></div>
 </jelly-theme>
 
 <script>
@@ -135,13 +112,12 @@
   }
   function flightRow(f) {
     return '<span class="opt"><span class="t">' + esc(f.airline) + ' · ' + esc(f.dep) + ' → ' + esc(f.arr) + '</span>' +
-      '<span class="p">' + money(f.roundTrip) + '<small>round trip' + (f.fareNote ? ' · ' + esc(f.fareNote) : '') + '</small></span>' +
-      '<span class="d">' + esc(f.from) + ' → ' + esc(f.to) + (f.note ? ' · ' + esc(f.note) : '') + '</span></span>';
+      '<span class="p">' + money(f.roundTrip) + '<small>round trip' + (f.fareNote ? ' · ' + esc(f.fareNote) : '') + (f.note ? ' · ' + esc(f.note) : '') + '</small></span></span>';
   }
   function hotelRow(h, n) {
     var tot = n ? hotelTotal(h, n) : 0;
     return '<span class="opt"><span class="t">' + esc(h.name) + '</span>' +
-      '<span class="p">' + money(h.nightly) + '<small>a night' + (n ? ' · ' + money(tot) + ' for ' + n + ' with tax · ' + money(tot / 3) + ' each' : '') + '</small></span>' +
+      '<span class="p">' + money(h.nightly) + '<small>a night' + (n ? ' · ' + money(tot / 3) + ' each for ' + n + ' nights, tax in' : '') + '</small></span>' +
       '<span class="d">' + esc(h.neighborhood) + ' · ' + esc(h.room) + (h.note ? ' · ' + esc(h.note) : '') +
       (h.url ? ' · <a href="' + esc(h.url) + '" target="_blank" rel="noopener">book ↗</a>' : '') + '</span></span>';
   }
