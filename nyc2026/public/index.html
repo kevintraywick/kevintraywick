@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NYC · December 2026</title>
+<script type="module" src="https://jelly-ui.com/package.js"></script>
+<script src="data.js"></script>
+<style>
+  :root { --accent: #2f6fed; --ink: #1c1c1e; --muted: #6b6b70; --line: #e6e6ea; --card: #fff; --bg: #f5f5f7; --ok: #1f8a4c; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #f2f2f4; --muted: #a0a0a8; --line: #2c2c31; --card: #1b1b1f; --bg: #111114; }
+  }
+  jelly-theme { display: block; min-height: 100vh; background: var(--bg); color: var(--ink); }
+  jelly-radio, jelly-radio-group, jelly-button { --jelly-accent: var(--accent); --jelly-fill: var(--accent); }
+  body { margin: 0; font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 18px 140px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 22px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin: 0 0 14px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  .list jelly-radio { display: flex; width: 100%; padding: 6px 0; border-top: 1px solid var(--line); }
+  .list jelly-radio:first-child { border-top: 0; }
+  .opt { display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; width: 100%; align-items: baseline; }
+  .opt .t { font-weight: 600; }
+  .opt .d { color: var(--muted); font-size: 14px; grid-column: 1; }
+  .opt .p { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .opt .p small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  .opt a { color: var(--accent); text-decoration: none; }
+  .empty { color: var(--muted); font-style: italic; }
+  .who { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .who .saved { color: var(--ok); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  td, th { padding: 6px 4px; text-align: left; border-top: 1px solid var(--line); vertical-align: top; }
+  th { border-top: 0; color: var(--muted); font-weight: 500; font-size: 13px; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.tot { font-weight: 700; }
+  .totalbar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0,0,0,.08); }
+  .totalbar .in { max-width: 760px; margin: 0 auto; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .totalbar .big { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .totalbar .big small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 6px; }
+  .totalbar .lines { color: var(--muted); font-size: 13px; }
+  .rail li { margin: 4px 0; }
+  .rail ul { padding-left: 18px; margin: 0; }
+  .fine { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .fine a { color: inherit; }
+</style>
+</head>
+<body>
+<jelly-theme mode="auto">
+<main>
+  <h1>New York, December 2026</h1>
+  <p class="sub">Nashville → JFK, nonstop. Pick your days, flights and hotel; the total updates as you go and everyone can see each other's picks.</p>
+
+  <section>
+    <h2>I am</h2>
+    <div class="who">
+      <jelly-radio-group id="who" name="who" class="row"></jelly-radio-group>
+      <span class="saved" id="savedNote"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Leave Nashville</h2>
+    <jelly-radio-group id="out" name="out" class="row"></jelly-radio-group>
+  </section>
+
+  <section>
+    <h2>Come home</h2>
+    <jelly-radio-group id="back" name="back" class="row"></jelly-radio-group>
+  </section>
+
+  <section>
+    <h2>Flight out <span id="outDayLabel"></span></h2>
+    <jelly-radio-group id="flightOut" name="flightOut" class="list"></jelly-radio-group>
+  </section>
+
+  <section>
+    <h2>Flight home <span id="backDayLabel"></span></h2>
+    <jelly-radio-group id="flightBack" name="flightBack" class="list"></jelly-radio-group>
+  </section>
+
+  <section>
+    <h2>Hotel <span id="nightsLabel"></span></h2>
+    <jelly-radio-group id="hotel" name="hotel" class="list"></jelly-radio-group>
+    <div class="fine">Room rates are before NYC tax (about 14.75% plus $3.50 a night), which is included in the totals below. All rooms have two beds.</div>
+  </section>
+
+  <section>
+    <h2>Where everyone landed</h2>
+    <table id="everyone"></table>
+  </section>
+
+  <section class="rail">
+    <h2>Getting in from JFK</h2>
+    <ul id="ground"></ul>
+  </section>
+
+  <p class="fine" id="asOf"></p>
+</main>
+
+<div class="totalbar"><div class="in">
+  <div><div class="big" id="total">—<small>per person</small></div><div class="lines" id="totalLines">Pick your days to start.</div></div>
+  <jelly-button id="copyBtn" size="small" shape="square" type="button">Copy my summary</jelly-button>
+</div></div>
+</jelly-theme>
+
+<script>
+(function () {
+  var D = window.TRIP;
+  var PEOPLE = ['Lisa', 'Amy', 'Kevin'];
+  var FIELDS = ['out', 'back', 'flightOut', 'flightBack', 'hotel'];
+  var sel = { who: '', out: '', back: '', flightOut: '', flightBack: '', hotel: '' };
+  var others = {};       // picks for all people from the server
+  var saveTimer = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+  function byId(list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
+  function dayLabel(date) { var d = byId(D.days, date); return d ? d.label : ''; }
+  function nights() {
+    if (!sel.out || !sel.back) return 0;
+    return Math.round((new Date(sel.back) - new Date(sel.out)) / 86400000);
+  }
+  function hotelTotal(h, n) { return h.nightly * n * (1 + D.hotelTaxRate) + D.hotelNightFee * n; }
+  function flightFare(fo, fb) {
+    if (!fo && !fb) return null;
+    if (fo && fb) return fo.airline === fb.airline ? fo.roundTrip : (fo.roundTrip + fb.roundTrip) / 2;
+    return (fo || fb).roundTrip;
+  }
+
+  function radio(name, value, inner, checked) {
+    return '<jelly-radio name="' + esc(name) + '" value="' + esc(value) + '"' + (checked ? ' checked' : '') + '>' + inner + '</jelly-radio>';
+  }
+  function flightRow(f) {
+    return '<span class="opt"><span class="t">' + esc(f.airline) + ' · ' + esc(f.dep) + ' → ' + esc(f.arr) + '</span>' +
+      '<span class="p">' + money(f.roundTrip) + '<small>round trip' + (f.fareNote ? ' · ' + esc(f.fareNote) : '') + '</small></span>' +
+      '<span class="d">' + esc(f.from) + ' → ' + esc(f.to) + (f.note ? ' · ' + esc(f.note) : '') + '</span></span>';
+  }
+  function hotelRow(h, n) {
+    var tot = n ? hotelTotal(h, n) : 0;
+    return '<span class="opt"><span class="t">' + esc(h.name) + '</span>' +
+      '<span class="p">' + money(h.nightly) + '<small>a night' + (n ? ' · ' + money(tot) + ' for ' + n + ' with tax · ' + money(tot / 3) + ' each' : '') + '</small></span>' +
+      '<span class="d">' + esc(h.neighborhood) + ' · ' + esc(h.room) + (h.note ? ' · ' + esc(h.note) : '') +
+      (h.url ? ' · <a href="' + esc(h.url) + '" target="_blank" rel="noopener">book ↗</a>' : '') + '</span></span>';
+  }
+
+  function render() {
+    var n = nights();
+    document.getElementById('who').innerHTML = PEOPLE.map(function (p) { return radio('who', p, esc(p), sel.who === p); }).join('');
+    document.getElementById('out').innerHTML = D.days.filter(function (d) { return d.dir === 'out'; }).map(function (d) { return radio('out', d.id, esc(d.label), sel.out === d.id); }).join('');
+    document.getElementById('back').innerHTML = D.days.filter(function (d) { return d.dir === 'back'; }).map(function (d) { return radio('back', d.id, esc(d.label), sel.back === d.id); }).join('');
+
+    var outs = D.flights.filter(function (f) { return f.dir === 'out' && f.date === sel.out; });
+    var backs = D.flights.filter(function (f) { return f.dir === 'back' && f.date === sel.back; });
+    if (sel.flightOut && !byId(outs, sel.flightOut)) sel.flightOut = '';
+    if (sel.flightBack && !byId(backs, sel.flightBack)) sel.flightBack = '';
+    document.getElementById('outDayLabel').textContent = sel.out ? '· ' + dayLabel(sel.out) : '';
+    document.getElementById('backDayLabel').textContent = sel.back ? '· ' + dayLabel(sel.back) : '';
+    document.getElementById('flightOut').innerHTML = sel.out ? outs.map(function (f) { return radio('flightOut', f.id, flightRow(f), sel.flightOut === f.id); }).join('') : '<div class="empty">Pick a departure day first.</div>';
+    document.getElementById('flightBack').innerHTML = sel.back ? backs.map(function (f) { return radio('flightBack', f.id, flightRow(f), sel.flightBack === f.id); }).join('') : '<div class="empty">Pick a return day first.</div>';
+
+    document.getElementById('nightsLabel').textContent = n ? '· ' + n + ' night' + (n === 1 ? '' : 's') : '';
+    document.getElementById('hotel').innerHTML = D.hotels.map(function (h) { return radio('hotel', h.id, hotelRow(h, n), sel.hotel === h.id); }).join('');
+
+    document.getElementById('ground').innerHTML = D.ground.map(function (g) {
+      return '<li><strong>' + esc(g.name) + '</strong> — ' + esc(g.fare) + ', about ' + esc(g.minutes) + ' min' + (g.note ? '. ' + esc(g.note) : '') + '</li>';
+    }).join('');
+    document.getElementById('asOf').innerHTML = 'Prices are a snapshot from ' + esc(D.asOf) + ' and will move. ' + esc(D.asOfNote || '');
+
+    renderTotal();
+    renderEveryone();
+  }
+
+  function summarize(p) {
+    var fo = byId(D.flights, p.flightOut), fb = byId(D.flights, p.flightBack), h = byId(D.hotels, p.hotel);
+    var n = (p.out && p.back) ? Math.round((new Date(p.back) - new Date(p.out)) / 86400000) : 0;
+    var fare = flightFare(fo, fb);
+    var hot = (h && n) ? hotelTotal(h, n) / 3 : null;
+    return { fo: fo, fb: fb, h: h, n: n, fare: fare, hotel: hot, total: (fare || 0) + (hot || 0), complete: !!(fo && fb && h && n) };
+  }
+
+  function renderTotal() {
+    var s = summarize(sel);
+    var lines = [];
+    if (s.n) lines.push(dayLabel(sel.out) + ' → ' + dayLabel(sel.back) + ' (' + s.n + ' nights)');
+    if (s.fare != null) lines.push('Flights ' + money(s.fare) + (s.fo && s.fb && s.fo.airline !== s.fb.airline ? ' (mixed airlines, averaged)' : ''));
+    if (s.hotel != null) lines.push('Hotel ' + money(s.hotel) + ' each (room ÷ 3, tax in)');
+    document.getElementById('total').innerHTML = (s.fare != null || s.hotel != null ? money(s.total) : '—') + '<small>per person' + (s.complete ? '' : ' so far') + '</small>';
+    document.getElementById('totalLines').textContent = lines.length ? lines.join(' · ') : 'Pick your days to start.';
+  }
+
+  function renderEveryone() {
+    var rows = PEOPLE.map(function (p) {
+      var pk = (p === sel.who) ? sel : (others[p] || {});
+      var s = summarize(pk);
+      if (!pk.out && !pk.back && !pk.flightOut && !pk.hotel) return '<tr><td>' + esc(p) + '</td><td colspan="4" class="empty">nothing yet</td></tr>';
+      return '<tr><td>' + esc(p) + (p === sel.who ? ' (you)' : '') + '</td>' +
+        '<td>' + (pk.out ? esc(dayLabel(pk.out).replace(/ Dec.*/, '')) : '?') + ' → ' + (pk.back ? esc(dayLabel(pk.back).replace(/ Dec.*/, '')) : '?') + '</td>' +
+        '<td>' + (s.fo ? esc(s.fo.airline + ' ' + s.fo.dep) : '?') + ' / ' + (s.fb ? esc(s.fb.airline + ' ' + s.fb.dep) : '?') + '</td>' +
+        '<td>' + (s.h ? esc(s.h.name) : '?') + '</td>' +
+        '<td class="n tot">' + money(s.total) + (s.complete ? '' : '*') + '</td></tr>';
+    }).join('');
+    document.getElementById('everyone').innerHTML = '<tr><th>Who</th><th>Days</th><th>Out / home</th><th>Hotel</th><th class="n">Each</th></tr>' + rows;
+  }
+
+  // Jelly's change events don't cross the shadow boundary; own the state via click.
+  document.addEventListener('click', function (e) {
+    var r = e.target.closest && e.target.closest('jelly-radio');
+    if (!r) return;
+    var name = r.getAttribute('name'), val = r.getAttribute('value');
+    if (!(name in sel)) return;
+    sel[name] = val;
+    if (name === 'who') {
+      var mine = others[val] || {};
+      FIELDS.forEach(function (f) { sel[f] = mine[f] || ''; });
+      try { localStorage.setItem('nyc2026_who', val); } catch (_) {}
+      render();
+      return;
+    }
+    render();
+    queueSave();
+  });
+
+  function queueSave() {
+    if (!sel.who) { document.getElementById('savedNote').textContent = 'Pick your name above so your choices save.'; return; }
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 400);
+  }
+  function save() {
+    var body = {};
+    FIELDS.forEach(function (f) { body[f] = sel[f]; });
+    fetch('/api/picks/' + encodeURIComponent(sel.who), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); })
+      .then(function (st) { others = st.picks || {}; document.getElementById('savedNote').textContent = 'Saved'; renderEveryone(); })
+      .catch(function () { document.getElementById('savedNote').textContent = 'Could not save'; });
+  }
+  function poll() {
+    fetch('/api/state').then(function (r) { return r.json(); }).then(function (st) {
+      others = st.picks || {};
+      renderEveryone();
+    }).catch(function () {});
+  }
+
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    var s = summarize(sel);
+    var t = [(sel.who || 'Me') + ' — NYC Dec 2026',
+      s.n ? dayLabel(sel.out) + ' → ' + dayLabel(sel.back) + ', ' + s.n + ' nights' : 'days not picked',
+      s.fo ? 'Out: ' + s.fo.airline + ' ' + s.fo.dep + ' → ' + s.fo.arr : 'Out: not picked',
+      s.fb ? 'Home: ' + s.fb.airline + ' ' + s.fb.dep + ' → ' + s.fb.arr : 'Home: not picked',
+      s.h ? 'Hotel: ' + s.h.name + ' (' + money(s.hotel) + ' each)' : 'Hotel: not picked',
+      'Flights ' + (s.fare != null ? money(s.fare) : '?') + ' · Total ' + money(s.total) + ' per person'].join('\n');
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { document.getElementById('savedNote').textContent = 'Summary copied'; });
+  });
+
+  try { sel.who = localStorage.getItem('nyc2026_who') || ''; } catch (_) {}
+  render();
+  fetch('/api/state').then(function (r) { return r.json(); }).then(function (st) {
+    others = st.picks || {};
+    if (sel.who && others[sel.who]) FIELDS.forEach(function (f) { sel[f] = others[sel.who][f] || ''; });
+    render();
+  }).catch(function () {});
+  setInterval(poll, 6000);
+})();
+</script>
+</body>
+</html>
