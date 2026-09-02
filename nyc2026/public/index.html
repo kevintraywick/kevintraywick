@@ -100,7 +100,7 @@
     if (!sel.out || !sel.back) return 0;
     return Math.round((new Date(sel.back) - new Date(sel.out)) / 86400000);
   }
-  function hotelTotal(h, n) { return h.nightly * n * (1 + D.hotelTaxRate) + D.hotelNightFee * n; }
+  function hotelTotal(h, n) { return (h.nightly + (h.fee || 0)) * n * (1 + D.hotelTaxRate) + D.hotelNightFee * n; }
   function flightFare(fo, fb) {
     if (!fo && !fb) return null;
     if (fo && fb) return fo.airline === fb.airline ? fo.roundTrip : (fo.roundTrip + fb.roundTrip) / 2;
@@ -117,7 +117,7 @@
   function hotelRow(h, n) {
     var tot = n ? hotelTotal(h, n) : 0;
     return '<span class="opt"><span class="t">' + esc(h.name) + '</span>' +
-      '<span class="p">' + money(h.nightly) + '<small>a night' + (n ? ' · ' + money(tot / 3) + ' each for ' + n + ' nights, tax in' : '') + '</small></span>' +
+      '<span class="p">' + money(h.nightly) + '<small>a night' + (h.fee ? ' + ' + money(h.fee) + ' fee' : '') + (n ? ' · ' + money(tot / 3) + ' each for ' + n + ' nights, tax in' : '') + '</small></span>' +
       '<span class="d">' + esc(h.neighborhood) + ' · ' + esc(h.room) + (h.note ? ' · ' + esc(h.note) : '') +
       (h.url ? ' · <a href="' + esc(h.url) + '" target="_blank" rel="noopener">book ↗</a>' : '') + '</span></span>';
   }

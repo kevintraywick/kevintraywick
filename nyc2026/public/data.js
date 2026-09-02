@@ -1,5 +1,6 @@
 // Price snapshot. Edit freely — the page reads this file on load.
 // Flights: nonstop BNA↔JFK only. Out = departs BNA 10am or later. Back = lands BNA by 8pm.
+// Hotels: nightly is the pre-tax room rate; optional fee = per-night resort/destination fee (also taxed).
 // roundTrip = estimated round-trip economy fare (Main cabin, not Basic). Times are the current
 // published schedule; December times usually shift only a few minutes.
 (function () {
@@ -46,14 +47,14 @@
     ],
     flights: flights,
     hotels: [
+      { id: 'martinique', name: 'Martinique New York on Broadway', neighborhood: 'Midtown / Herald Square · 49 W 32nd St', room: '2 queens (Curio by Hilton)', nightly: 275, fee: 46,
+        url: 'https://www.hilton.com/en/hotels/nyccuqq-martinique-new-york-on-broadway/', note: 'landmark 1897 building, 2 blocks from Penn Station · $46/night destination fee included in totals' },
       { id: 'hampton',  name: 'Hampton Inn Manhattan-Chelsea', neighborhood: 'Chelsea · 108 W 24th St', room: '2 queens, free breakfast', nightly: 275,
-        url: 'https://www.hilton.com/en/hotels/nycchhx-hampton-inn-manhattan-chelsea/', note: 'best Chelsea fit for three' },
+        url: 'https://www.hilton.com/en/hotels/nyccshx-hampton-manhattan-chelsea/', note: 'best Chelsea fit for three' },
       { id: 'cambria',  name: 'Cambria Hotel Chelsea', neighborhood: 'Chelsea · 123 W 28th St', room: '2 queens', nightly: 285,
-        url: 'https://www.choicehotels.com/new-york/new-york/cambria-hotels/ny961', note: 'newer build, rooftop bar' },
+        url: 'https://www.choicehotels.com/new-york/new-york/cambria-hotels/ny537', note: 'newer build, rooftop bar' },
       { id: 'hgi',      name: 'Hilton Garden Inn Chelsea', neighborhood: 'Chelsea · 121 W 28th St', room: '2 queens', nightly: 290,
-        url: 'https://www.hilton.com/en/hotels/nycmcgi-hilton-garden-inn-new-york-manhattan-chelsea/', note: '3 blocks from Penn Station' },
-      { id: 'hyatt',    name: 'Hyatt Place Midtown South', neighborhood: 'Midtown · 52 W 36th St', room: '2 queens + sofa bed, 310 sq ft', nightly: 330,
-        url: 'https://www.hyatt.com/hyatt-place/en-US/nyczm-hyatt-place-new-york-midtown-south', note: 'bigger room, free breakfast · fallback if Chelsea sells out' }
+        url: 'https://www.hilton.com/en/hotels/nycchgi-hilton-garden-inn-new-york-manhattan-chelsea/', note: '3 blocks from Penn Station' }
     ],
     ground: [
       { name: 'AirTrain + LIRR to Penn Station', fare: '$14 (AirTrain $8.75 + CityTicket $5.25, $7.25 peak)', minutes: 35,
