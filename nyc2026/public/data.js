@@ -66,6 +66,20 @@
       { id: 'acebk',     group: 'Brooklyn', name: 'Ace Hotel Brooklyn', neighborhood: 'Downtown Brooklyn · 252 Schermerhorn St', room: 'Double, two queens, ~360 sq ft', nightly: 400, fee: 40,
         url: 'https://acehotel.com/brooklyn/rooms/double/', note: 'steps from the Atlantic Ave / Barclays subway hub, ~10 min to Manhattan' }
     ],
+    // Per-person estimates. price 0 = free.
+    things: [
+      { id: 'sugarfish', name: 'Sugarfish', price: 85, note: 'omakase "Trust Me" dinner with a drink and tip · NoMad or Flatiron locations' },
+      { id: 'lostboys', name: 'The Lost Boys, the musical', price: 150, note: 'Palace Theatre, 47th St · mezzanine ~$95–250, orchestra more · $45 rush/lottery if you\'re lucky' },
+      { id: 'nypl', name: 'New York Public Library', price: 0, note: 'Rose Main Reading Room, 42nd & Fifth · free' },
+      { id: 'rock', name: 'Rockefeller Center Christmas tree', price: 0, note: 'free to see · Top of the Rock is ~$40 extra if you want the view' },
+      { id: 'firehouse', name: 'Ghostbusters firehouse', price: 0, note: 'Hook & Ladder 8, 14 N Moore St, Tribeca · working firehouse, photos from the sidewalk' },
+      { id: 'wtc', name: 'World Trade Center', price: 33, note: 'memorial pools are free · 9/11 Museum $33 · One World Observatory ~$47 if you add it' },
+      { id: 'met', name: 'Metropolitan Museum of Art', price: 30, note: 'Fifth Ave at 82nd · closed Wednesdays' },
+      { id: 'gugg', name: 'Guggenheim Museum', price: 30, note: 'Fifth Ave at 89th, a short walk from the Met · closed Tuesdays' },
+      { id: 'bridge', name: 'Walk the Brooklyn Bridge', price: 0, note: 'start in Brooklyn (subway to High St) and walk toward the skyline · about 30 min' },
+      { id: 'village', name: 'Greenwich Village', price: 0, note: 'Washington Square, the West Village streets, a coffee stop on you' },
+      { id: 'highline', name: 'The High Line & Chelsea Market', price: 0, note: 'right by the Chelsea hotels · free, and the market is lunch' }
+    ],
     ground: [
       { name: 'AirTrain + LIRR to Penn Station', fare: '$14 (AirTrain $8.75 + CityTicket $5.25, $7.25 peak)', minutes: 35,
         note: 'AirTrain to Jamaica, then LIRR every few minutes. Penn (34th St) is the closest rail stop to Chelsea: a 10–15 min walk or one subway stop to the W 24th–28th St hotels. Buy in the MTA TrainTime app.' },

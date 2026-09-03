@@ -7,31 +7,31 @@
 <script type="module" src="https://jelly-ui.com/package.js"></script>
 <script src="data.js"></script>
 <style>
-  :root { --accent: #2f6fed; --ink: #1c1c1e; --muted: #6b6b70; --line: #e6e6ea; --card: #fff; --bg: #f5f5f7; --ok: #1f8a4c; }
+  :root { --accent: #2f6fed; --ink: #1c1c1e; --muted: #6b6b70; --line: #e6e6ea; --card: rgba(255,255,255,.93); --bg: #0d1220; --ok: #1f8a4c; --hero: #fff; --hero-muted: rgba(255,255,255,.72); }
   @media (prefers-color-scheme: dark) {
-    :root { --ink: #f2f2f4; --muted: #a0a0a8; --line: #2c2c31; --card: #1b1b1f; --bg: #111114; }
+    :root { --ink: #f2f2f4; --muted: #a0a0a8; --line: #2c2c31; --card: rgba(24,26,34,.9); --accent: #6d9bff; }
   }
-  jelly-theme { display: block; min-height: 100vh; background: var(--bg); color: var(--ink); }
-  jelly-radio, jelly-radio-group, jelly-button { --jelly-accent: var(--accent); --jelly-fill: var(--accent); }
+  jelly-theme { display: block; min-height: 100vh; color: var(--ink); background-color: var(--bg);
+    background-image: linear-gradient(rgba(8,12,24,.55), rgba(8,12,24,.75)), url("https://images.unsplash.com/photo-1767342976156-83239d26f08e?fm=jpg&q=60&w=2000&auto=format&fit=crop");
+    background-size: cover; background-position: center top; background-attachment: fixed; }
+  jelly-radio, jelly-radio-group, jelly-checkbox, jelly-button { --jelly-accent: var(--accent); --jelly-fill: var(--accent); }
   body { margin: 0; font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
   main { max-width: 1440px; margin: 0 auto; padding: 22px 20px 40px; }
-  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
-  h1 { font-size: 26px; margin: 0 0 2px; letter-spacing: -0.01em; }
-  .sub { color: var(--muted); margin: 0; max-width: 620px; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; color: var(--hero); text-shadow: 0 1px 12px rgba(0,0,0,.5); }
+  h1 { font-size: 28px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--hero-muted); margin: 0; max-width: 620px; }
   .totalbox { text-align: right; margin-left: auto; }
-  .totalbox .big { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
-  .totalbox .big small { display: block; font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-top: 4px; }
-  .totalbox .lines { color: var(--muted); font-size: 13px; margin: 6px 0 8px; }
-  .totalbox .saved { color: var(--ok); font-size: 13px; margin-right: 10px; }
-  .cols { display: grid; grid-template-columns: 110px 1.3fr 1.3fr 1.5fr; gap: 10px; align-items: start; }
+  .totalbox .big { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .totalbox .big small { display: block; font-size: 13px; font-weight: 500; color: var(--hero-muted); letter-spacing: 0; margin-top: 4px; }
+  .totalbox .lines { color: var(--hero-muted); font-size: 13px; margin: 6px 0 8px; }
+  .cols { display: grid; grid-template-columns: 1.3fr 1.3fr 1.5fr; gap: 10px; align-items: start; }
   .stack { display: grid; gap: 10px; min-width: 0; }
   .row { display: flex; flex-wrap: wrap; gap: 6px 22px; }
   .row jelly-radio { padding: 4px 0; }
-  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; min-width: 0; }
+  section { background: var(--card); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 14px 16px; min-width: 0; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .col jelly-radio { display: flex; width: 100%; padding: 7px 0; }
-  .list jelly-radio { display: flex; width: 100%; padding: 8px 0; border-top: 1px solid var(--line); }
-  .list jelly-radio:first-child, .list .group + jelly-radio { border-top: 0; }
+  .list jelly-radio, .list jelly-checkbox { display: flex; width: 100%; padding: 8px 0; border-top: 1px solid var(--line); }
+  .list jelly-radio:first-child, .list jelly-checkbox:first-child, .list .group + jelly-radio { border-top: 0; }
   .group { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); font-weight: 600; margin: 12px 0 2px; }
   .group:first-child { margin-top: 0; }
   .opt { display: block; width: 100%; }
@@ -40,17 +40,25 @@
   .opt .p { font-weight: 700; font-variant-numeric: tabular-nums; display: block; }
   .opt .p small { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 6px; }
   .opt a { color: var(--accent); text-decoration: none; }
+  .thing { display: flex; justify-content: space-between; gap: 12px; width: 100%; align-items: baseline; }
+  .thing .p { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .thing .free { color: var(--ok); font-weight: 600; }
   .empty { color: var(--muted); font-style: italic; font-size: 14px; }
   .below { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  td, th { padding: 6px 4px; text-align: left; border-top: 1px solid var(--line); vertical-align: top; }
+  td, th { padding: 7px 4px; text-align: left; border-top: 1px solid var(--line); vertical-align: top; }
   th { border-top: 0; color: var(--muted); font-weight: 500; font-size: 12px; }
   td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  td.tot { font-weight: 700; }
+  td .d { color: var(--muted); font-size: 12px; display: block; }
+  tr.total td { font-weight: 800; font-size: 16px; border-top: 2px solid var(--ink); }
+  .summaryfoot { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; }
+  .saved { color: var(--ok); font-size: 13px; }
   .rail ul { padding-left: 18px; margin: 0; font-size: 14px; }
   .rail li { margin: 5px 0; }
   .fine { color: var(--muted); font-size: 12px; margin-top: 8px; }
-  @media (max-width: 1100px) { .cols { grid-template-columns: 110px 1fr 1fr; } .cols > section:last-child { grid-column: 1 / -1; } }
+  .credit { color: var(--hero-muted); font-size: 11px; text-align: right; margin-top: 14px; }
+  .credit a { color: inherit; }
+  @media (max-width: 1100px) { .cols { grid-template-columns: 1fr 1fr; } .cols > section:last-child { grid-column: 1 / -1; } }
   @media (max-width: 700px) { .cols, .below { grid-template-columns: 1fr; } .totalbox { text-align: left; margin-left: 0; } }
 </style>
 </head>
@@ -60,17 +68,15 @@
   <header>
     <div>
       <h1>New York, December 2026</h1>
-      <p class="sub">Nashville → JFK, nonstop. Work left to right: who you are, your days, flights, hotel. The total updates as you go and everyone sees each other's picks.</p>
+      <p class="sub">Nashville → JFK, nonstop. Pick your days, flights, hotel and a few things to do; the total updates as you go. Everything is per person, with the room split three ways.</p>
     </div>
     <div class="totalbox">
       <div class="big" id="total">—<small>per person</small></div>
       <div class="lines" id="totalLines">Pick your days to start.</div>
-      <span class="saved" id="savedNote"></span><jelly-button id="copyBtn" size="small" shape="square" type="button">Copy my summary</jelly-button>
     </div>
   </header>
 
   <div class="cols">
-    <section><h2>I am</h2><jelly-radio-group id="who" name="who" class="col"></jelly-radio-group></section>
     <div class="stack">
       <section><h2>Leave</h2><jelly-radio-group id="out" name="out" class="row"></jelly-radio-group></section>
       <section><h2>Flight out <span id="outDayLabel"></span></h2><jelly-radio-group id="flightOut" name="flightOut" class="list"></jelly-radio-group></section>
@@ -84,22 +90,26 @@
   </div>
 
   <div class="below">
-    <section><h2>Where everyone landed</h2><table id="everyone"></table></section>
-    <section class="rail"><h2>Getting in from JFK</h2><ul id="ground"></ul></section>
+    <section><h2>Things to do</h2><div id="things" class="list"></div>
+      <div class="fine">Check what you'd do and it lands in the summary. Prices are per person.</div></section>
+    <section><h2>Price summary</h2><table id="summary"></table>
+      <div class="summaryfoot"><span class="saved" id="savedNote"></span><jelly-button id="copyBtn" size="small" shape="square" type="button">Copy summary</jelly-button></div></section>
   </div>
 
-  <p class="fine" id="asOf"></p>
+  <div class="below">
+    <section class="rail"><h2>Getting in from JFK</h2><ul id="ground"></ul></section>
+    <section><h2>About these numbers</h2><p class="fine" id="asOf" style="margin:0;font-size:13px"></p></section>
+  </div>
+
+  <p class="credit">Photo: Zoshua Colah on <a href="https://unsplash.com/photos/new-york-city-skyline-illuminated-at-night-tmD5jTJO58o" target="_blank" rel="noopener">Unsplash</a></p>
 </main>
 </jelly-theme>
 
 <script>
 (function () {
   var D = window.TRIP;
-  var PEOPLE = ['Lisa', 'Amy', 'Kevin'];
-  var FIELDS = ['out', 'back', 'flightOut', 'flightBack', 'hotel'];
-  var sel = { who: '', out: '', back: '', flightOut: '', flightBack: '', hotel: '' };
-  var others = {};       // picks for all people from the server
-  var saveTimer = null;
+  var sel = { out: '', back: '', flightOut: '', flightBack: '', hotel: '' };
+  var things = {};   // id -> true when checked
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
@@ -130,10 +140,14 @@
       '<span class="d">' + esc(h.neighborhood) + ' · ' + esc(h.room) + (h.note ? ' · ' + esc(h.note) : '') +
       (h.url ? ' · <a href="' + esc(h.url) + '" target="_blank" rel="noopener">book ↗</a>' : '') + '</span></span>';
   }
+  function thingRow(t) {
+    return '<jelly-checkbox name="thing" value="' + esc(t.id) + '"' + (things[t.id] ? ' checked' : '') + '>' +
+      '<span class="opt"><span class="thing"><span class="t">' + esc(t.name) + '</span><span class="p' + (t.price ? '' : ' free') + '">' + (t.price ? money(t.price) : 'free') + '</span></span>' +
+      (t.note ? '<span class="d">' + esc(t.note) + '</span>' : '') + '</span></jelly-checkbox>';
+  }
 
   function render() {
     var n = nights();
-    document.getElementById('who').innerHTML = PEOPLE.map(function (p) { return radio('who', p, esc(p), sel.who === p); }).join('');
     document.getElementById('out').innerHTML = D.days.filter(function (d) { return d.dir === 'out'; }).map(function (d) { return radio('out', d.id, esc(d.label), sel.out === d.id); }).join('');
     document.getElementById('back').innerHTML = D.days.filter(function (d) { return d.dir === 'back'; }).map(function (d) { return radio('back', d.id, esc(d.label), sel.back === d.id); }).join('');
 
@@ -154,104 +168,81 @@
       return head + radio('hotel', h.id, hotelRow(h, n), sel.hotel === h.id);
     }).join('');
 
+    document.getElementById('things').innerHTML = D.things.map(thingRow).join('');
     document.getElementById('ground').innerHTML = D.ground.map(function (g) {
       return '<li><strong>' + esc(g.name) + '</strong> — ' + esc(g.fare) + ', about ' + esc(g.minutes) + ' min' + (g.note ? '. ' + esc(g.note) : '') + '</li>';
     }).join('');
-    document.getElementById('asOf').innerHTML = 'Prices are a snapshot from ' + esc(D.asOf) + ' and will move. ' + esc(D.asOfNote || '');
+    document.getElementById('asOf').textContent = 'Prices are a snapshot from ' + D.asOf + ' and will move. ' + (D.asOfNote || '');
 
-    renderTotal();
-    renderEveryone();
+    renderSummary();
   }
 
-  function summarize(p) {
-    var fo = byId(D.flights, p.flightOut), fb = byId(D.flights, p.flightBack), h = byId(D.hotels, p.hotel);
-    var n = (p.out && p.back) ? Math.round((new Date(p.back) - new Date(p.out)) / 86400000) : 0;
+  function summarize() {
+    var fo = byId(D.flights, sel.flightOut), fb = byId(D.flights, sel.flightBack), h = byId(D.hotels, sel.hotel);
+    var n = nights();
     var fare = flightFare(fo, fb);
     var hot = (h && n) ? hotelTotal(h, n) / 3 : null;
-    return { fo: fo, fb: fb, h: h, n: n, fare: fare, hotel: hot, total: (fare || 0) + (hot || 0), complete: !!(fo && fb && h && n) };
+    var picked = D.things.filter(function (t) { return things[t.id]; });
+    var thingsTotal = picked.reduce(function (a, t) { return a + t.price; }, 0);
+    return { fo: fo, fb: fb, h: h, n: n, fare: fare, hotel: hot, picked: picked, thingsTotal: thingsTotal,
+      total: (fare || 0) + (hot || 0) + thingsTotal, any: fare != null || hot != null || picked.length > 0 };
   }
 
-  function renderTotal() {
-    var s = summarize(sel);
+  function renderSummary() {
+    var s = summarize();
+    var rows = [];
+    if (s.n) rows.push('<tr><td>Days<span class="d">' + esc(dayLabel(sel.out)) + ' → ' + esc(dayLabel(sel.back)) + ', ' + s.n + ' nights</span></td><td class="n"></td></tr>');
+    if (s.fare != null) {
+      var fl = [s.fo ? 'out ' + s.fo.airline + ' ' + s.fo.dep : 'out not picked', s.fb ? 'home ' + s.fb.airline + ' ' + s.fb.dep : 'home not picked'].join(' · ');
+      rows.push('<tr><td>Flights<span class="d">' + esc(fl) + (s.fo && s.fb && s.fo.airline !== s.fb.airline ? ' · mixed airlines, averaged' : '') + '</span></td><td class="n">' + money(s.fare) + '</td></tr>');
+    }
+    if (s.hotel != null) rows.push('<tr><td>Hotel<span class="d">' + esc(s.h.name) + ', ' + s.n + ' nights, room ÷ 3, tax' + (s.h.fee ? ' and fee' : '') + ' in</span></td><td class="n">' + money(s.hotel) + '</td></tr>');
+    else if (s.h) rows.push('<tr><td>Hotel<span class="d">' + esc(s.h.name) + ' · pick both days to price it</span></td><td class="n">—</td></tr>');
+    s.picked.forEach(function (t) { rows.push('<tr><td>' + esc(t.name) + '</td><td class="n">' + (t.price ? money(t.price) : 'free') + '</td></tr>'); });
+    rows.push('<tr class="total"><td>Total per person</td><td class="n">' + (s.any ? money(s.total) : '—') + '</td></tr>');
+    document.getElementById('summary').innerHTML = rows.join('');
+
     var lines = [];
-    if (s.n) lines.push(dayLabel(sel.out) + ' → ' + dayLabel(sel.back) + ' (' + s.n + ' nights)');
-    if (s.fare != null) lines.push('Flights ' + money(s.fare) + (s.fo && s.fb && s.fo.airline !== s.fb.airline ? ' (mixed airlines, averaged)' : ''));
-    if (s.hotel != null) lines.push('Hotel ' + money(s.hotel) + ' each (room ÷ 3, tax in)');
-    document.getElementById('total').innerHTML = (s.fare != null || s.hotel != null ? money(s.total) : '—') + '<small>per person' + (s.complete ? '' : ' so far') + '</small>';
+    if (s.fare != null) lines.push('Flights ' + money(s.fare));
+    if (s.hotel != null) lines.push('Hotel ' + money(s.hotel));
+    if (s.picked.length) lines.push(s.picked.length + ' thing' + (s.picked.length === 1 ? '' : 's') + ' to do ' + money(s.thingsTotal));
+    document.getElementById('total').innerHTML = (s.any ? money(s.total) : '—') + '<small>per person</small>';
     document.getElementById('totalLines').textContent = lines.length ? lines.join(' · ') : 'Pick your days to start.';
-  }
-
-  function renderEveryone() {
-    var rows = PEOPLE.map(function (p) {
-      var pk = (p === sel.who) ? sel : (others[p] || {});
-      var s = summarize(pk);
-      if (!pk.out && !pk.back && !pk.flightOut && !pk.hotel) return '<tr><td>' + esc(p) + '</td><td colspan="4" class="empty">nothing yet</td></tr>';
-      return '<tr><td>' + esc(p) + (p === sel.who ? ' (you)' : '') + '</td>' +
-        '<td>' + (pk.out ? esc(dayLabel(pk.out).replace(/ Dec.*/, '')) : '?') + ' → ' + (pk.back ? esc(dayLabel(pk.back).replace(/ Dec.*/, '')) : '?') + '</td>' +
-        '<td>' + (s.fo ? esc(s.fo.airline + ' ' + s.fo.dep) : '?') + ' / ' + (s.fb ? esc(s.fb.airline + ' ' + s.fb.dep) : '?') + '</td>' +
-        '<td>' + (s.h ? esc(s.h.name) : '?') + '</td>' +
-        '<td class="n tot">' + money(s.total) + (s.complete ? '' : '*') + '</td></tr>';
-    }).join('');
-    document.getElementById('everyone').innerHTML = '<tr><th>Who</th><th>Days</th><th>Out / home</th><th>Hotel</th><th class="n">Each</th></tr>' + rows;
   }
 
   // Jelly's change events don't cross the shadow boundary; own the state via click.
   document.addEventListener('click', function (e) {
     var r = e.target.closest && e.target.closest('jelly-radio');
-    if (!r) return;
-    var name = r.getAttribute('name'), val = r.getAttribute('value');
-    if (!(name in sel)) return;
-    sel[name] = val;
-    if (name === 'who') {
-      var mine = others[val] || {};
-      FIELDS.forEach(function (f) { sel[f] = mine[f] || ''; });
-      try { localStorage.setItem('nyc2026_who', val); } catch (_) {}
+    if (r) {
+      var name = r.getAttribute('name');
+      if (!(name in sel)) return;
+      sel[name] = r.getAttribute('value');
       render();
       return;
     }
-    render();
-    queueSave();
+    var c = e.target.closest && e.target.closest('jelly-checkbox');
+    if (c && c.getAttribute('name') === 'thing') {
+      var id = c.getAttribute('value');
+      things[id] = !things[id];
+      render();
+    }
   });
 
-  function queueSave() {
-    if (!sel.who) { document.getElementById('savedNote').textContent = 'Pick your name above so your choices save.'; return; }
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(save, 400);
-  }
-  function save() {
-    var body = {};
-    FIELDS.forEach(function (f) { body[f] = sel[f]; });
-    fetch('/api/picks/' + encodeURIComponent(sel.who), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(function (r) { return r.json(); })
-      .then(function (st) { others = st.picks || {}; document.getElementById('savedNote').textContent = 'Saved'; renderEveryone(); })
-      .catch(function () { document.getElementById('savedNote').textContent = 'Could not save'; });
-  }
-  function poll() {
-    fetch('/api/state').then(function (r) { return r.json(); }).then(function (st) {
-      others = st.picks || {};
-      renderEveryone();
-    }).catch(function () {});
-  }
-
   document.getElementById('copyBtn').addEventListener('click', function () {
-    var s = summarize(sel);
-    var t = [(sel.who || 'Me') + ' — NYC Dec 2026',
+    var s = summarize();
+    var t = ['NYC, December 2026',
       s.n ? dayLabel(sel.out) + ' → ' + dayLabel(sel.back) + ', ' + s.n + ' nights' : 'days not picked',
       s.fo ? 'Out: ' + s.fo.airline + ' ' + s.fo.dep + ' → ' + s.fo.arr : 'Out: not picked',
       s.fb ? 'Home: ' + s.fb.airline + ' ' + s.fb.dep + ' → ' + s.fb.arr : 'Home: not picked',
-      s.h ? 'Hotel: ' + s.h.name + ' (' + money(s.hotel) + ' each)' : 'Hotel: not picked',
-      'Flights ' + (s.fare != null ? money(s.fare) : '?') + ' · Total ' + money(s.total) + ' per person'].join('\n');
-    if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { document.getElementById('savedNote').textContent = 'Summary copied'; });
+      'Flights: ' + (s.fare != null ? money(s.fare) : '?'),
+      s.h ? 'Hotel: ' + s.h.name + (s.hotel != null ? ' (' + money(s.hotel) + ' each)' : '') : 'Hotel: not picked'];
+    s.picked.forEach(function (x) { t.push('- ' + x.name + ': ' + (x.price ? money(x.price) : 'free')); });
+    t.push('Total: ' + money(s.total) + ' per person');
+    var text = t.join('\n');
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { document.getElementById('savedNote').textContent = 'Copied'; });
   });
 
-  try { sel.who = localStorage.getItem('nyc2026_who') || ''; } catch (_) {}
   render();
-  fetch('/api/state').then(function (r) { return r.json(); }).then(function (st) {
-    others = st.picks || {};
-    if (sel.who && others[sel.who]) FIELDS.forEach(function (f) { sel[f] = others[sel.who][f] || ''; });
-    render();
-  }).catch(function () {});
-  setInterval(poll, 6000);
 })();
 </script>
 </body>
