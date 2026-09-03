@@ -55,6 +55,10 @@
         url: 'https://www.choicehotels.com/new-york/new-york/cambria-hotels/ny537', note: 'newer build, rooftop bar' },
       { id: 'hgi',      group: 'Chelsea & Midtown', name: 'Hilton Garden Inn Chelsea', neighborhood: 'Chelsea · 121 W 28th St', room: '2 queens', nightly: 290,
         url: 'https://www.hilton.com/en/hotels/nycchgi-hilton-garden-inn-new-york-manhattan-chelsea/', note: '3 blocks from Penn Station' },
+      { id: 'standard', group: 'Chelsea & Midtown', name: 'The Standard, High Line', neighborhood: 'Meatpacking / West Chelsea · 848 Washington St', room: 'Standard Double, two doubles, 250 sq ft', nightly: 425, fee: 35,
+        url: 'https://www.standardhotels.com/new-york/properties/high-line', note: 'straddles the High Line, floor-to-ceiling windows, the Top of the Standard bar · beds are doubles' },
+      { id: 'knick',    group: 'Chelsea & Midtown', name: 'The Knickerbocker', neighborhood: 'Times Square · 42nd St & Broadway', room: 'Superior Room, two queens', nightly: 425, fee: 48,
+        url: 'https://www.theknickerbocker.com/stay/', note: '1906 landmark, rooftop bar over Times Square · 5 blocks from the Lost Boys theatre' },
 
       { id: 'plaza',     group: 'Splurge', name: 'The Plaza', neighborhood: 'Central Park South · 768 Fifth Ave', room: 'Deluxe Two Queens, 550 sq ft', nightly: 1250, fee: 65,
         url: 'https://www.fairmont.com/en/hotels/new-york-city/the-plaza/rooms/q2a.room.html', note: 'the Plaza · fee includes a $50/day food credit · December is its priciest month' },
