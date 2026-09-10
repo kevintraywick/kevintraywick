@@ -182,14 +182,6 @@ export function PhotoPanel() {
         </div>
       )}
 
-      {/* Header bar */}
-      <div
-        className="absolute top-0 left-0 right-0 flex items-center justify-center"
-        style={{ height: '22px', background: 'linear-gradient(rgba(0,0,0,0.35), transparent)' }}
-      >
-        <a href="https://movealong-production.up.railway.app" target="_blank" rel="noopener noreferrer" className="block" style={{ opacity: 0.4, fontSize: '20px', color: '#999', lineHeight: '20px', marginTop: '5px' }}>→</a>
-      </div>
-
       {/* Slideshow arrows — back in time on the left; forward appears once you've gone back */}
       {hasOlder && (
         <button
