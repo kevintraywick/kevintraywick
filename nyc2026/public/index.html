@@ -184,6 +184,14 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
 .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e0241b;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3);display:grid;place-items:center}
 .pin span{transform:rotate(45deg);color:#fff;font-weight:600;font-size:14px}
 .pin.eat{background:#e0241b}
+.pin.on{box-shadow:0 0 0 3px rgba(224,36,27,.35),0 3px 8px rgba(0,0,0,.3)}
+.rtoggle button{display:flex;align-items:center;gap:7px;font:14px Inter,sans-serif;color:var(--ink-2);background:var(--paper);border:1px solid rgba(20,20,20,.22);border-radius:999px;padding:5px 11px 5px 7px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.rtoggle button .lb{flex:none;white-space:nowrap}
+.rtoggle button .sw{width:26px;height:15px;border-radius:999px;background:#cfc8b9;position:relative;transition:background .15s;flex:none}
+.rtoggle button .sw::after{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#fff;transition:transform .15s}
+.rtoggle button.on{color:var(--ink);border-color:rgba(20,20,20,.5)}
+.rtoggle button.on .sw{background:#e0241b}
+.rtoggle button.on .sw::after{transform:translateX(11px)}
 .pin.res{background:var(--paper);border-color:var(--ink)}
 .pin.res span{font-size:15px}
 .star{width:34px;height:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
@@ -307,12 +315,16 @@ const RESERVATIONS = [
   {day:'sat', start:19*60, end:22*60, name:'The Lost Boys', sub:'Palace Theatre · curtain 7:30 · Orch O123–O127', lat:40.7590, lon:-73.9847, url:'https://www.palacetheatrenyc.com/'},
 ];
 const LANE_START = 8*60, LANE_END = 22*60;
-const LS_ITEMS = 'nyc_items_v1', LS_TOURS = 'nyc_tours_v3', LS_HIDDEN = 'nyc_hidden_v1', LS_DAY = 'nyc_day_v1';
+const LS_ITEMS = 'nyc_items_v1', LS_TOURS = 'nyc_tours_v3', LS_HIDDEN = 'nyc_hidden_v1', LS_DAY = 'nyc_day_v1', LS_BUILD = 'nyc_build_v1';
 
 let custom = load(LS_ITEMS, {places:[], eats:[]});
 let tours = load(LS_TOURS, {fri:[], sat:[], sun:[], mon:[]});
 let hidden = load(LS_HIDDEN, []);
 let activeDay = load(LS_DAY, 'sat');
+// Build route on: the map draws the whole day, stop to stop. Off: it draws
+// only the hotel to the one place you last picked.
+let buildRoute = load(LS_BUILD, true);
+let focusId = null;
 if (!DAYS.some(x=>x.k===activeDay)) activeDay = 'sat';
 const tour = () => tours[activeDay].map(x=>x.id);
 // The hotel is a destination like any other: every day departs from it, and it
@@ -322,7 +334,7 @@ const HOME = {id:'__home', name:'Virgin Hotels', sub:'1227 Broadway · home base
 let uidN = 0;
 const newUid = () => 'u' + Date.now().toString(36) + (uidN++).toString(36);
 for (const k in tours) (tours[k]||[]).forEach(x => { if (!x.uid) x.uid = newUid(); });
-function load(k, d){ try{ return JSON.parse(localStorage.getItem(k)) || d; }catch{ return d; } }
+function load(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : (JSON.parse(v) ?? d); }catch{ return d; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
 function allItems(){ return [...SEED_PLACES, ...custom.places, ...SEED_EATS, ...custom.eats].filter(i => !hidden.includes(i.id)); }
 function byId(id){ return id === HOME.id ? HOME : allItems().find(i => i.id === id); }
@@ -346,6 +358,12 @@ const GLYPH = {
   storm:'<path d="M7 15.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6 8a3.75 3.75 0 0 0 1 7.5z"/><path d="M13 15l-2.5 4h3L11 23"/>',
   wait:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
 };
+function syncToggle(){
+  const b = document.querySelector('.rtoggle button'); if (!b) return;
+  b.setAttribute('aria-checked', buildRoute ? 'true' : 'false');
+  b.classList.toggle('on', buildRoute);
+  b.title = buildRoute ? 'Showing the whole day, stop to stop' : 'Showing the hotel to one place';
+}
 function svg(g){ return `<svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${GLYPH[g]}</svg>`; }
 function dayName(iso){ return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'long'}); }
 var READY = false;
@@ -432,6 +450,7 @@ async function hydrateWikiImages(){
 document.addEventListener('click', e => {
   const t = e.target.closest('.tile:not(.add)');
   if (!t) return;
+  focusId = t.dataset.id;
   toggleTour(t.dataset.id);
 });
 function removeItem(id){
@@ -547,10 +566,34 @@ if (HAS_MAP){
   L.marker([HOTEL.lat, HOTEL.lon], {icon:L.divIcon({className:'', html:'<svg class="star" viewBox="0 0 24 24"><path fill="#e0241b" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>', iconSize:[34,34], iconAnchor:[17,17]}), zIndexOffset:1000}).addTo(map)
     .bindTooltip('Virgin Hotels · click to add a stop here')
     .on('click', addHomeStop);
+  // Build route toggle, top right of the map. A Leaflet control rather than a
+  // floating div so it stacks above the panes and doesn't pan the map.
+  const Toggle = L.Control.extend({
+    options:{position:'topright'},
+    onAdd(){
+      const el = L.DomUtil.create('div', 'rtoggle');
+      el.innerHTML = '<button type="button" role="switch"><span class="sw"></span><span class="lb">Build route</span></button>';
+      L.DomEvent.disableClickPropagation(el);
+      L.DomEvent.on(el.querySelector('button'), 'click', () => {
+        buildRoute = !buildRoute; save(LS_BUILD, buildRoute); syncToggle(); renderTour();
+      });
+      return el;
+    }
+  });
+  map.addControl(new Toggle());
+  syncToggle();
 } else {
   document.getElementById('map').innerHTML = '<div class="map-down">The map didn’t load.<br>Everything else still works.</div>';
 }
 let routeLine = null;
+// With build route off, the line runs from the hotel to this one place: the
+// last one picked, or failing that the day's last stop.
+function focusItem(act){
+  const f = focusId && byId(focusId);
+  if (f && !f.home) return f;
+  for (let i = act.stops.length - 1; i >= 0; i--) if (!act.stops[i].it.home) return act.stops[i].it;
+  return null;
+}
 const DWELL = it => it.home ? 45 : it.eat ? 75 : 90;
 // No walking-time estimate is shown. OSRM's public server only hosts the car
 // profile (every profile answers at ~22 km/h), and a distance-based guess was
@@ -654,9 +697,11 @@ async function renderTour(){
   // Active day: ask OSRM for a street-following line to draw on the map. Only
   // the geometry is used -- its durations are car times and are not shown.
   const act = dayData[activeDay];
-  if (act.stops.length){
+  const focus = focusItem(act);
+  act.seq = buildRoute ? act.stops.map(x=>x.it) : (focus ? [focus] : []);
+  if (act.seq.length){
     try{
-      const coords = [HOME, ...act.stops.map(x=>x.it)].map(i=>`${i.lon},${i.lat}`).join(';');
+      const coords = [HOME, ...act.seq].map(i=>`${i.lon},${i.lat}`).join(';');
       const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
       const j = await r.json();
       if (j.routes && j.routes[0]) act.geom = j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
@@ -695,7 +740,10 @@ async function renderTour(){
   items.forEach(it => {
     // the hotel keeps its permanent star on the map rather than taking a number
     if (it.home) return;
-    L.marker([it.lat, it.lon], {icon:L.divIcon({className:'', html:`<div class="pin ${it.eat?'eat':''}"><span>${++dn}</span></div>`, iconSize:[30,30], iconAnchor:[15,30]})}).addTo(layer).bindPopup(`<b>${esc(it.name)}</b><br>${esc(it.sub||'')}`);
+    L.marker([it.lat, it.lon], {icon:L.divIcon({className:'', html:`<div class="pin ${it.eat?'eat':''} ${!buildRoute && focus === it ? 'on':''}"><span>${++dn}</span></div>`, iconSize:[30,30], iconAnchor:[15,30]})}).addTo(layer)
+      .bindPopup(`<b>${esc(it.name)}</b><br>${esc(it.sub||'')}`)
+      // clicking a pin picks it; only worth redrawing when the line follows it
+      .on('click', () => { focusId = it.id; if (!buildRoute) renderTour(); });
   });
   const resPins = RESERVATIONS.filter(r => r.day===activeDay && r.lat);
   resPins.forEach(r => {
@@ -705,7 +753,7 @@ async function renderTour(){
     const b = L.latLngBounds([[HOTEL.lat,HOTEL.lon], ...items.map(i=>[i.lat,i.lon]), ...resPins.map(r=>[r.lat,r.lon])]); map.fitBounds(b.pad(0.2));
     // the day's route always leaves from the hotel; solid where OSRM gave us a
     // street-following line, dashed direct lines when it didn't answer
-    const direct = [[HOTEL.lat, HOTEL.lon], ...items.map(i=>[i.lat,i.lon])];
+    const direct = [[HOTEL.lat, HOTEL.lon], ...act.seq.map(i=>[i.lat,i.lon])];
     if (act.geom) routeLine = L.polyline(act.geom, {color:'#141414', weight:4, opacity:.9, lineJoin:'round'}).addTo(map);
     else if (direct.length > 1) routeLine = L.polyline(direct, {color:'#141414', weight:3, opacity:.7, dashArray:'6 8'}).addTo(map);
   }
