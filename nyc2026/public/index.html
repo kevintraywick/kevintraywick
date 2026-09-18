@@ -158,11 +158,17 @@ a{color:inherit}
 .lbk.stop .x:hover{opacity:1;color:#e0241b;background:rgba(224,36,27,.12)}
 .lbk.stop.drag{opacity:.85;box-shadow:0 8px 20px -8px rgba(0,0,0,.4);z-index:5;cursor:grabbing}
 .lbk.stop .n{display:inline-block;min-width:16px;height:16px;border-radius:50%;background:#e0241b;color:#fff;font-size:12px;line-height:16px;text-align:center;margin-right:4px;font-weight:600}
+.lbk.stop .n.hm{font-size:11px;line-height:17px}
+.lbk.stop.home{background:#fdf3f1;border-style:dashed}
+.lbk.walk .hm{color:#e0241b;font-size:12px;font-weight:400}
+/* the home leg is only as wide as the walk itself -- a 14 min walk is ~15px on
+   a 14 hour lane -- so its label sits to the left rather than under the stop */
+.lbk.walk.fromhome i{left:auto;right:100%;transform:none;margin-right:3px}
 .dayrow.over .lane{background-color:rgba(20,20,20,.04)}
 .lbk.stop b{font-weight:600}
 .dayrow .lane .lbk.res{background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);border-left-width:1.5px;padding-top:3px}
 .lbk.res span{color:var(--ink-2)}
-.lbk.walk{background:transparent;border-top:2px dotted #b9b2a3;top:50%;bottom:auto;height:0;padding:0;border-radius:0}
+.dayrow .lane .lbk.walk{background:transparent;border-top:2px dotted #b9b2a3;top:50%;bottom:auto;height:0;padding:0;border-radius:0;overflow:visible}
 .lbk.walk i{position:absolute;left:50%;top:-9px;transform:translateX(-50%);font-style:normal;font-size:14px;color:var(--ink-2);background:var(--paper);padding:0 4px;white-space:nowrap}
 .lbk.walk.tight{border-top-color:#e0241b}
 .lbk.walk.tight i{color:#e0241b}
@@ -316,10 +322,17 @@ let hidden = load(LS_HIDDEN, []);
 let activeDay = load(LS_DAY, 'sat');
 if (!DAYS.some(x=>x.k===activeDay)) activeDay = 'sat';
 const tour = () => tours[activeDay].map(x=>x.id);
+// The hotel is a destination like any other: every day departs from it, and it
+// can be dropped in mid-day for a nap between a lunch and an evening.
+const HOME = {id:'__home', name:'Virgin Hotels', sub:'1227 Broadway · home base', lat:HOTEL.lat, lon:HOTEL.lon, home:true};
+// A day can hold several hotel visits, so a stop needs its own identity.
+let uidN = 0;
+const newUid = () => 'u' + Date.now().toString(36) + (uidN++).toString(36);
+for (const k in tours) (tours[k]||[]).forEach(x => { if (!x.uid) x.uid = newUid(); });
 function load(k, d){ try{ return JSON.parse(localStorage.getItem(k)) || d; }catch{ return d; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
 function allItems(){ return [...SEED_PLACES, ...custom.places, ...SEED_EATS, ...custom.eats].filter(i => !hidden.includes(i.id)); }
-function byId(id){ return allItems().find(i => i.id === id); }
+function byId(id){ return id === HOME.id ? HOME : allItems().find(i => i.id === id); }
 
 /* ================= WEATHER ================= */
 const WX = {
@@ -381,7 +394,9 @@ renderWeather(null, null);
 const PALETTES = [['#0b3fa6','#1b5fd8'],['#d4491f','#f07a4a'],['#1f6f5a','#2fa084'],['#5b2a86','#8a4fc2'],['#8a6d1f','#c9a83c'],['#2b2b2b','#5a5a5a']];
 function hash(s){ let h=0; for (const c of s) h=(h*31+c.charCodeAt(0))>>>0; return h; }
 function tileHTML(it, kind){
-  const n = stopsOf(activeDay).findIndex(x=>x.id===it.id);
+  // numbered among the real destinations only, so the tile, the calendar block
+  // and the map pin all agree when the day includes a hotel stop
+  const n = stopsOf(activeDay).filter(x=>x.id!==HOME.id).findIndex(x=>x.id===it.id);
   const p = PALETTES[hash(it.id)%PALETTES.length];
   const media = it.img
     ? `<img src="${it.img}" alt="" loading="lazy" onerror="this.remove()">`
@@ -536,12 +551,20 @@ if (HAS_MAP){
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
   map.on('focus', () => map.scrollWheelZoom.enable()); map.on('blur', () => map.scrollWheelZoom.disable());
   layer = L.layerGroup().addTo(map);
-  L.marker([HOTEL.lat, HOTEL.lon], {icon:L.divIcon({className:'', html:'<svg class="star" viewBox="0 0 24 24"><path fill="#e0241b" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>', iconSize:[34,34], iconAnchor:[17,17]}), zIndexOffset:1000}).addTo(map).bindPopup('<b>Virgin Hotels</b><br>1227 Broadway · home base');
+  L.marker([HOTEL.lat, HOTEL.lon], {icon:L.divIcon({className:'', html:'<svg class="star" viewBox="0 0 24 24"><path fill="#e0241b" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>', iconSize:[34,34], iconAnchor:[17,17]}), zIndexOffset:1000}).addTo(map)
+    .bindTooltip('Virgin Hotels · click to add a stop here')
+    .on('click', addHomeStop);
 } else {
   document.getElementById('map').innerHTML = '<div class="map-down">The map didn’t load.<br>Everything else still works.</div>';
 }
 let routeLine = null;
-const DWELL = it => it.eat ? 75 : 90;
+const DWELL = it => it.home ? 45 : it.eat ? 75 : 90;
+// Walking time. We used to ask router.project-osrm.org for a /foot/ route, but
+// the public demo server only hosts the car profile and ignores the one in the
+// URL -- every profile returns the same ~22 km/h answer, so a 10 minute walk
+// came back as 2. Straight-line distance at 80 m/min plus a flat allowance for
+// crossings and getting out the door lands much closer, with no network call.
+const walkMins = (a, b) => Math.max(1, Math.round(2.5 + haversine(a, b) / 80));
 function fmt(m){ const h = Math.floor(m/60), mm = m%60; const ap = h>=12?'PM':'AM'; return `${((h+11)%12)+1}:${String(mm).padStart(2,'0')} ${ap}`; }
 const pct = m => ((m - LANE_START) / (LANE_END - LANE_START) * 100);
 function stopsOf(k){ return tours[k].slice().sort((a,b)=>a.start-b.start); }
@@ -560,16 +583,26 @@ function toggleTour(id){
     const st = stopsOf(k); let t = 9*60;
     const first = resOf(k).find(r => r.start <= t); if (first) t = first.end;
     if (st.length){ const last = st[st.length-1]; t = last.start + DWELL(byId(last.id)||{}) + 15; }
-    tours[k].push({id, start:clampStart(k, it, t)});
+    tours[k].push({id, uid:newUid(), start:clampStart(k, it, t)});
   }
   save(LS_TOURS, tours); renderGrids(); renderTour();
 }
-function moveStop(fromDay, id, toDay, start){
-  const i = tours[fromDay].findIndex(x=>x.id===id); if (i<0) return;
-  const it = byId(id);
+// Clicking the star on the map drops the hotel in as the next destination --
+// lunch, back for a nap, then out again. Unlike a tile, it never toggles off.
+function addHomeStop(){
+  const k = activeDay, st = stopsOf(k);
+  let t = 9*60;
+  const first = resOf(k).find(r => r.start <= t); if (first) t = first.end;
+  if (st.length){ const last = st[st.length-1]; t = last.start + DWELL(byId(last.id)||{}) + 15; }
+  tours[k].push({id:HOME.id, uid:newUid(), start:clampStart(k, HOME, t)});
+  save(LS_TOURS, tours); renderGrids(); renderTour();
+}
+function moveStop(fromDay, uid, toDay, start){
+  const i = tours[fromDay].findIndex(x=>x.uid===uid); if (i<0) return;
+  const rec = tours[fromDay][i], it = byId(rec.id);
   tours[fromDay].splice(i,1);
-  tours[toDay] = tours[toDay].filter(x=>x.id!==id);
-  tours[toDay].push({id, start:clampStart(toDay, it, start)});
+  if (!it.home) tours[toDay] = tours[toDay].filter(x=>x.id!==rec.id);
+  tours[toDay].push({id:rec.id, uid:rec.uid, start:clampStart(toDay, it, start)});
   save(LS_TOURS, tours);
   if (toDay !== activeDay){ activeDay = toDay; save(LS_DAY, toDay); }
   renderGrids(); renderTour();
@@ -583,7 +616,7 @@ function wireDrag(){
     el.addEventListener('pointerdown', e => {
       if (e.button !== 0) return;
       const lane = el.parentElement, rect = lane.getBoundingClientRect();
-      const id = el.dataset.id, fromDay = el.closest('.dayrow').dataset.day, start0 = +el.dataset.start;
+      const uid = el.dataset.uid, fromDay = el.closest('.dayrow').dataset.day, start0 = +el.dataset.start;
       const x0 = e.clientX; let moved = false, overRow = null;
       el.setPointerCapture(e.pointerId);
       const mm = ev => {
@@ -606,14 +639,14 @@ function wireDrag(){
         const dx = ev.clientX - x0;
         const mins = dx / rect.width * (LANE_END - LANE_START);
         const toDay = overRow ? overRow.dataset.day : fromDay;
-        moveStop(fromDay, id, toDay, start0 + mins);
+        moveStop(fromDay, uid, toDay, start0 + mins);
       };
       el.addEventListener('pointermove', mm); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
     });
   });
 }
 
-async function renderTour(){
+function renderTour(){
   const daysEl = document.getElementById('days');
   let ticks = '';
   for (let h = LANE_START/60; h <= LANE_END/60; h += 2){
@@ -621,36 +654,34 @@ async function renderTour(){
     ticks += `<span class="tk ${h===12||h===19?'meal':''}" style="left:${pct(h*60)}%">${lbl}</span>`;
   }
   let html = `<div class="ruler"><div></div><div class="ticks">${ticks}</div></div>`;
-  // per-day stop lists (sorted by time) with straight-line walk estimates
+  // per-day stop lists, sorted by time, with the walk between each pair
   const dayData = {};
   for (const day of DAYS){
     const stops = stopsOf(day.k).map(x => ({...x, it:byId(x.id)})).filter(x=>x.it);
-    const legs = stops.slice(1).map((x,j) => Math.round(haversine(stops[j].it, x.it)/80));
-    dayData[day.k] = {stops, legs};
+    const legs = stops.slice(1).map((x,j) => walkMins(stops[j].it, x.it));
+    // every day leaves from the hotel, so the first walk is measured from there
+    const homeLeg = stops.length && !stops[0].it.home ? walkMins(HOME, stops[0].it) : 0;
+    dayData[day.k] = {stops, legs, homeLeg};
   }
-  // active day: real street routing
   const act = dayData[activeDay];
-  if (act.stops.length > 1){
-    try{
-      const coords = act.stops.map(x=>`${x.it.lon},${x.it.lat}`).join(';');
-      const r = await fetch(`https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`);
-      const j = await r.json();
-      if (j.routes && j.routes[0]){
-        act.geom = j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
-        act.legs = j.routes[0].legs.map(l => Math.max(1, Math.round(l.duration/60)));
-      }
-    }catch(e){}
-  }
   for (const day of DAYS){
-    const {stops, legs} = dayData[day.k];
+    const {stops, legs, homeLeg} = dayData[day.k];
+    let dest = 0;
     let lane = resOf(day.k).map(r => `<div class="lbk res" style="left:${pct(r.start)}%;width:${pct(r.end)-pct(r.start)}%"><b>${esc(r.name)}</b> <span>${esc(r.sub||'')}</span></div>`).join('');
     stops.forEach((sd, n) => {
       const end = sd.start + DWELL(sd.it);
+      if (n === 0 && homeLeg){
+        // the walk out of the hotel, marked with the star
+        const from = Math.max(LANE_START, sd.start - homeLeg), room = sd.start - from;
+        if (room > 0) lane += `<div class="lbk walk fromhome ${room < homeLeg ? 'tight':''}" style="left:${pct(from)}%;width:${pct(sd.start)-pct(from)}%"><i><b class="hm">★</b> ${homeLeg} min</i></div>`;
+      }
       if (n > 0){
         const prev = stops[n-1], pend = prev.start + DWELL(prev.it), gap = sd.start - pend, need = legs[n-1] || 10;
         if (gap > 0) lane += `<div class="lbk walk ${gap < need ? 'tight':''}" style="left:${pct(pend)}%;width:${pct(sd.start)-pct(pend)}%"><i>${need} min</i></div>`;
       }
-      lane += `<div class="lbk stop ${sd.it.eat?'eat':''}" data-id="${sd.id}" data-start="${sd.start}" style="left:${pct(sd.start)}%;width:${pct(Math.min(end,LANE_END))-pct(sd.start)}%" title="${esc(sd.it.name)} · ${fmt(sd.start)} — drag to move"><span class="n">${n+1}</span>${esc(sd.it.name)} · ${fmt(sd.start)}<span class="x" title="Remove from this day" data-x="${sd.id}" data-day="${day.k}">×</span></div>`;
+      // the hotel is starred; only real destinations take a number
+      const badge = sd.it.home ? '<span class="n hm">★</span>' : `<span class="n">${++dest}</span>`;
+      lane += `<div class="lbk stop ${sd.it.eat?'eat':''} ${sd.it.home?'home':''}" data-id="${sd.id}" data-uid="${sd.uid}" data-start="${sd.start}" style="left:${pct(sd.start)}%;width:${pct(Math.min(end,LANE_END))-pct(sd.start)}%" title="${esc(sd.it.name)} · ${fmt(sd.start)} — drag to move">${badge}${esc(sd.it.name)} · ${fmt(sd.start)}<span class="x" title="Remove from this day" data-x="${sd.uid}" data-day="${day.k}">×</span></div>`;
     });
     const w = WXD[day.k] || {hi:'–',lo:'–',line:'',g:'cloudsun'};
     html += `<div class="dayrow ${day.k===activeDay?'active':''}" data-day="${day.k}">
@@ -660,14 +691,17 @@ async function renderTour(){
   daysEl.innerHTML = html;
   daysEl.querySelectorAll('.dayrow').forEach(r => r.addEventListener('click', e => { if (!e.target.closest('.lbk.stop')) setDay(r.dataset.day); }));
   wireDrag();
-  daysEl.querySelectorAll('.lbk.stop .x').forEach(x => x.addEventListener('pointerdown', e => { e.stopPropagation(); const k=x.dataset.day; tours[k]=tours[k].filter(t=>t.id!==x.dataset.x); save(LS_TOURS,tours); renderGrids(); renderTour(); }));
+  daysEl.querySelectorAll('.lbk.stop .x').forEach(x => x.addEventListener('pointerdown', e => { e.stopPropagation(); const k=x.dataset.day; tours[k]=tours[k].filter(t=>t.uid!==x.dataset.x); save(LS_TOURS,tours); renderGrids(); renderTour(); }));
 
   // map: active day only
   const items = act.stops.map(x=>x.it);
   if (!HAS_MAP) return;
   layer.clearLayers(); if (routeLine){ map.removeLayer(routeLine); routeLine = null; }
-  items.forEach((it, n) => {
-    L.marker([it.lat, it.lon], {icon:L.divIcon({className:'', html:`<div class="pin ${it.eat?'eat':''}"><span>${n+1}</span></div>`, iconSize:[30,30], iconAnchor:[15,30]})}).addTo(layer).bindPopup(`<b>${esc(it.name)}</b><br>${esc(it.sub||'')}`);
+  let dn = 0;
+  items.forEach(it => {
+    // the hotel keeps its permanent star on the map rather than taking a number
+    if (it.home) return;
+    L.marker([it.lat, it.lon], {icon:L.divIcon({className:'', html:`<div class="pin ${it.eat?'eat':''}"><span>${++dn}</span></div>`, iconSize:[30,30], iconAnchor:[15,30]})}).addTo(layer).bindPopup(`<b>${esc(it.name)}</b><br>${esc(it.sub||'')}`);
   });
   const resPins = RESERVATIONS.filter(r => r.day===activeDay && r.lat);
   resPins.forEach(r => {
@@ -675,11 +709,10 @@ async function renderTour(){
   });
   if (items.length || resPins.length){
     const b = L.latLngBounds([[HOTEL.lat,HOTEL.lon], ...items.map(i=>[i.lat,i.lon]), ...resPins.map(r=>[r.lat,r.lon])]); map.fitBounds(b.pad(0.2));
-    if (items.length > 1){
-      routeLine = act.geom
-        ? L.polyline(act.geom, {color:'#141414', weight:4, opacity:.9, lineJoin:'round'}).addTo(map)
-        : L.polyline(items.map(i=>[i.lat,i.lon]), {color:'#141414', weight:3, opacity:.7, dashArray:'6 8'}).addTo(map);
-    }
+    // the day's route always leaves from the hotel. Dashed, because these are
+    // direct lines between stops, not surveyed sidewalk routes.
+    const path = [[HOTEL.lat, HOTEL.lon], ...items.map(i=>[i.lat,i.lon])];
+    if (path.length > 1) routeLine = L.polyline(path, {color:'#141414', weight:3, opacity:.7, dashArray:'6 8'}).addTo(map);
   }
 }
 function haversine(a,b){ const R=6371000, toR=x=>x*Math.PI/180; const dLat=toR(b.lat-a.lat), dLon=toR(b.lon-a.lon); const s=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(s)); }
