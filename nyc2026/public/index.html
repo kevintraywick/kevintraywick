@@ -185,13 +185,16 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
 .pin span{transform:rotate(45deg);color:#fff;font-weight:600;font-size:14px}
 .pin.eat{background:#e0241b}
 .pin.on{box-shadow:0 0 0 3px rgba(224,36,27,.35),0 3px 8px rgba(0,0,0,.3)}
-.rtoggle button{display:flex;align-items:center;gap:7px;font:14px Inter,sans-serif;color:var(--ink-2);background:var(--paper);border:1px solid rgba(20,20,20,.22);border-radius:999px;padding:5px 11px 5px 7px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.18)}
-.rtoggle button .lb{flex:none;white-space:nowrap}
-.rtoggle button .sw{width:26px;height:15px;border-radius:999px;background:#cfc8b9;position:relative;transition:background .15s;flex:none}
-.rtoggle button .sw::after{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#fff;transition:transform .15s}
-.rtoggle button.on{color:var(--ink);border-color:rgba(20,20,20,.5)}
-.rtoggle button.on .sw{background:#e0241b}
-.rtoggle button.on .sw::after{transform:translateX(11px)}
+.rtoggle{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.rtoggle .rt-build{display:flex;align-items:center;gap:7px;font:14px Inter,sans-serif;color:var(--ink-2);background:var(--paper);border:1px solid rgba(20,20,20,.22);border-radius:999px;padding:5px 11px 5px 7px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.rtoggle .rt-build .lb{flex:none;white-space:nowrap}
+.rtoggle .rt-build .sw{width:26px;height:15px;border-radius:999px;background:#cfc8b9;position:relative;transition:background .15s;flex:none}
+.rtoggle .rt-build .sw::after{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#fff;transition:transform .15s}
+.rtoggle .rt-build.on{color:var(--ink);border-color:rgba(20,20,20,.5)}
+.rtoggle .rt-build.on .sw{background:#e0241b}
+.rtoggle .rt-build.on .sw::after{transform:translateX(11px)}
+.rtoggle .rt-clear{font:14px Inter,sans-serif;white-space:nowrap;color:var(--ink-2);background:var(--paper);border:1px solid rgba(20,20,20,.22);border-radius:999px;padding:2px 10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.rtoggle .rt-clear:hover{color:var(--ink);border-color:var(--ink)}
 .pin.res{background:var(--paper);border-color:var(--ink)}
 .pin.res span{font-size:15px}
 .star{width:34px;height:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
@@ -359,10 +362,13 @@ const GLYPH = {
   wait:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
 };
 function syncToggle(){
-  const b = document.querySelector('.rtoggle button'); if (!b) return;
+  const b = document.querySelector('.rtoggle .rt-build'); if (!b) return;
   b.setAttribute('aria-checked', buildRoute ? 'true' : 'false');
   b.classList.toggle('on', buildRoute);
   b.title = buildRoute ? 'Showing the whole day, stop to stop' : 'Showing the hotel to one place';
+  // like the calendar's, it only appears when the day has something in it
+  const c = document.querySelector('.rtoggle .rt-clear');
+  if (c) c.style.display = (tours[activeDay] || []).length ? '' : 'none';
 }
 function svg(g){ return `<svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${GLYPH[g]}</svg>`; }
 function dayName(iso){ return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'long'}); }
@@ -572,11 +578,14 @@ if (HAS_MAP){
     options:{position:'topright'},
     onAdd(){
       const el = L.DomUtil.create('div', 'rtoggle');
-      el.innerHTML = '<button type="button" role="switch"><span class="sw"></span><span class="lb">Build route</span></button>';
+      el.innerHTML = '<button class="rt-build" type="button" role="switch"><span class="sw"></span><span class="lb">Build route</span></button>'
+                   + '<button class="rt-clear" type="button">Clear</button>';
       L.DomEvent.disableClickPropagation(el);
-      L.DomEvent.on(el.querySelector('button'), 'click', () => {
+      L.DomEvent.on(el.querySelector('.rt-build'), 'click', () => {
         buildRoute = !buildRoute; save(LS_BUILD, buildRoute); syncToggle(); renderTour();
       });
+      // same thing the Clear on the calendar row does, for the day on show
+      L.DomEvent.on(el.querySelector('.rt-clear'), 'click', () => clearDay(activeDay));
       return el;
     }
   });
@@ -729,6 +738,7 @@ async function renderTour(){
   }
   daysEl.innerHTML = html;
   daysEl.querySelectorAll('.dayrow').forEach(r => r.addEventListener('click', e => { if (!e.target.closest('.lbk.stop')) setDay(r.dataset.day); }));
+  syncToggle();
   wireDrag();
   daysEl.querySelectorAll('.lbk.stop .x').forEach(x => x.addEventListener('pointerdown', e => { e.stopPropagation(); const k=x.dataset.day; tours[k]=tours[k].filter(t=>t.uid!==x.dataset.x); save(LS_TOURS,tours); renderGrids(); renderTour(); }));
 
