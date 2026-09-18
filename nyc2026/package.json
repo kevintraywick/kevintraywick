@@ -1,10 +1,10 @@
 {
   "name": "nyc2026",
-  "version": "1.0.0",
-  "description": "NYC December 2026 trip picker — shared flight/hotel choices for Lisa, Amy and Kevin",
+  "version": "2.0.0",
+  "description": "New York, Dec 4-7 2026 — places, eats, weather and walking routes",
   "type": "module",
   "main": "server.js",
-  "scripts": { "start": "node server.js", "test": "node --test" },
+  "scripts": { "start": "node server.js" },
   "engines": { "node": ">=18" },
   "dependencies": { "express": "^4.19.2" }
 }
