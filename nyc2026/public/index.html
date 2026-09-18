@@ -160,18 +160,11 @@ a{color:inherit}
 .lbk.stop .n{display:inline-block;min-width:16px;height:16px;border-radius:50%;background:#e0241b;color:#fff;font-size:12px;line-height:16px;text-align:center;margin-right:4px;font-weight:600}
 .lbk.stop .n.hm{font-size:11px;line-height:17px}
 .lbk.stop.home{background:#fdf3f1;border-style:dashed}
-.lbk.walk .hm{color:#e0241b;font-size:12px;font-weight:400}
-/* the home leg is only as wide as the walk itself -- a 14 min walk is ~15px on
-   a 14 hour lane -- so its label sits to the left rather than under the stop */
-.lbk.walk.fromhome i{left:auto;right:100%;transform:none;margin-right:3px}
 .dayrow.over .lane{background-color:rgba(20,20,20,.04)}
 .lbk.stop b{font-weight:600}
 .dayrow .lane .lbk.res{background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);border-left-width:1.5px;padding-top:3px}
 .lbk.res span{color:var(--ink-2)}
 .dayrow .lane .lbk.walk{background:transparent;border-top:2px dotted #b9b2a3;top:50%;bottom:auto;height:0;padding:0;border-radius:0;overflow:visible}
-.lbk.walk i{position:absolute;left:50%;top:-9px;transform:translateX(-50%);font-style:normal;font-size:14px;color:var(--ink-2);background:var(--paper);padding:0 4px;white-space:nowrap}
-.lbk.walk.tight{border-top-color:#e0241b}
-.lbk.walk.tight i{color:#e0241b}
 .dayrow .lane .hint{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-2)}
 .dayrow .lab button{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:14px Inter,sans-serif;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:2px 8px;cursor:pointer;color:var(--ink-2)}
 .dayrow .lab button:hover{color:var(--ink);border-color:var(--ink)}
@@ -559,12 +552,10 @@ if (HAS_MAP){
 }
 let routeLine = null;
 const DWELL = it => it.home ? 45 : it.eat ? 75 : 90;
-// Walking time. We used to ask router.project-osrm.org for a /foot/ route, but
-// the public demo server only hosts the car profile and ignores the one in the
-// URL -- every profile returns the same ~22 km/h answer, so a 10 minute walk
-// came back as 2. Straight-line distance at 80 m/min plus a flat allowance for
-// crossings and getting out the door lands much closer, with no network call.
-const walkMins = (a, b) => Math.max(1, Math.round(2.5 + haversine(a, b) / 80));
+// No walking-time estimate is shown. OSRM's public server only hosts the car
+// profile (every profile answers at ~22 km/h), and a distance-based guess was
+// too shaky to put a number on. The dotted connector shows the hop; the map's
+// route line shows the way.
 function fmt(m){ const h = Math.floor(m/60), mm = m%60; const ap = h>=12?'PM':'AM'; return `${((h+11)%12)+1}:${String(mm).padStart(2,'0')} ${ap}`; }
 const pct = m => ((m - LANE_START) / (LANE_END - LANE_START) * 100);
 function stopsOf(k){ return tours[k].slice().sort((a,b)=>a.start-b.start); }
@@ -646,7 +637,7 @@ function wireDrag(){
   });
 }
 
-function renderTour(){
+async function renderTour(){
   const daysEl = document.getElementById('days');
   let ticks = '';
   for (let h = LANE_START/60; h <= LANE_END/60; h += 2){
@@ -654,30 +645,33 @@ function renderTour(){
     ticks += `<span class="tk ${h===12||h===19?'meal':''}" style="left:${pct(h*60)}%">${lbl}</span>`;
   }
   let html = `<div class="ruler"><div></div><div class="ticks">${ticks}</div></div>`;
-  // per-day stop lists, sorted by time, with the walk between each pair
+  // per-day stop lists, sorted by time
   const dayData = {};
   for (const day of DAYS){
     const stops = stopsOf(day.k).map(x => ({...x, it:byId(x.id)})).filter(x=>x.it);
-    const legs = stops.slice(1).map((x,j) => walkMins(stops[j].it, x.it));
-    // every day leaves from the hotel, so the first walk is measured from there
-    const homeLeg = stops.length && !stops[0].it.home ? walkMins(HOME, stops[0].it) : 0;
-    dayData[day.k] = {stops, legs, homeLeg};
+    dayData[day.k] = {stops};
   }
+  // Active day: ask OSRM for a street-following line to draw on the map. Only
+  // the geometry is used -- its durations are car times and are not shown.
   const act = dayData[activeDay];
+  if (act.stops.length){
+    try{
+      const coords = [HOME, ...act.stops.map(x=>x.it)].map(i=>`${i.lon},${i.lat}`).join(';');
+      const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+      const j = await r.json();
+      if (j.routes && j.routes[0]) act.geom = j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+    }catch(e){}
+  }
   for (const day of DAYS){
-    const {stops, legs, homeLeg} = dayData[day.k];
+    const {stops} = dayData[day.k];
     let dest = 0;
     let lane = resOf(day.k).map(r => `<div class="lbk res" style="left:${pct(r.start)}%;width:${pct(r.end)-pct(r.start)}%"><b>${esc(r.name)}</b> <span>${esc(r.sub||'')}</span></div>`).join('');
     stops.forEach((sd, n) => {
       const end = sd.start + DWELL(sd.it);
-      if (n === 0 && homeLeg){
-        // the walk out of the hotel, marked with the star
-        const from = Math.max(LANE_START, sd.start - homeLeg), room = sd.start - from;
-        if (room > 0) lane += `<div class="lbk walk fromhome ${room < homeLeg ? 'tight':''}" style="left:${pct(from)}%;width:${pct(sd.start)-pct(from)}%"><i><b class="hm">★</b> ${homeLeg} min</i></div>`;
-      }
       if (n > 0){
-        const prev = stops[n-1], pend = prev.start + DWELL(prev.it), gap = sd.start - pend, need = legs[n-1] || 10;
-        if (gap > 0) lane += `<div class="lbk walk ${gap < need ? 'tight':''}" style="left:${pct(pend)}%;width:${pct(sd.start)-pct(pend)}%"><i>${need} min</i></div>`;
+        // a plain connector between stops -- it carries no time claim
+        const prev = stops[n-1], pend = prev.start + DWELL(prev.it), gap = sd.start - pend;
+        if (gap > 0) lane += `<div class="lbk walk" style="left:${pct(pend)}%;width:${pct(sd.start)-pct(pend)}%"></div>`;
       }
       // the hotel is starred; only real destinations take a number
       const badge = sd.it.home ? '<span class="n hm">★</span>' : `<span class="n">${++dest}</span>`;
@@ -709,10 +703,11 @@ function renderTour(){
   });
   if (items.length || resPins.length){
     const b = L.latLngBounds([[HOTEL.lat,HOTEL.lon], ...items.map(i=>[i.lat,i.lon]), ...resPins.map(r=>[r.lat,r.lon])]); map.fitBounds(b.pad(0.2));
-    // the day's route always leaves from the hotel. Dashed, because these are
-    // direct lines between stops, not surveyed sidewalk routes.
-    const path = [[HOTEL.lat, HOTEL.lon], ...items.map(i=>[i.lat,i.lon])];
-    if (path.length > 1) routeLine = L.polyline(path, {color:'#141414', weight:3, opacity:.7, dashArray:'6 8'}).addTo(map);
+    // the day's route always leaves from the hotel; solid where OSRM gave us a
+    // street-following line, dashed direct lines when it didn't answer
+    const direct = [[HOTEL.lat, HOTEL.lon], ...items.map(i=>[i.lat,i.lon])];
+    if (act.geom) routeLine = L.polyline(act.geom, {color:'#141414', weight:4, opacity:.9, lineJoin:'round'}).addTo(map);
+    else if (direct.length > 1) routeLine = L.polyline(direct, {color:'#141414', weight:3, opacity:.7, dashArray:'6 8'}).addTo(map);
   }
 }
 function haversine(a,b){ const R=6371000, toR=x=>x*Math.PI/180; const dLat=toR(b.lat-a.lat), dLon=toR(b.lon-a.lon); const s=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(s)); }
