@@ -60,17 +60,18 @@ a{color:inherit}
 .track::before,.track::after{content:"";position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--ink)}
 .track::before{left:-2px}.track::after{right:-2px}
 .track .dur{position:absolute;left:50%;top:-24px;transform:translateX(-50%);font-size:14px;color:var(--ink-2);white-space:nowrap;background:var(--paper);padding:0 6px}
-.leg .meta{margin-top:10px;font-size:14px;color:var(--ink-2)}
-.leg .meta b{color:var(--ink);font-weight:500}
 
 /* hotel */
 .hotel{padding:22px 24px;display:flex;gap:18px;align-items:flex-start}
-.hotel .name{font-size:26px;line-height:1.1}
-.hotel .addr{color:var(--ink-2);font-size:14px;margin-top:4px}
-.hotel .dates{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-top:16px}
-.hotel .d .lbl{font-size:14px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
-.hotel .d .day{font-size:22px;line-height:1.1;margin-top:2px}
-.hotel .d .at{font-size:14px;margin-top:2px}
+.hotel .name{font-size:24px;line-height:1.05}
+.hotel .name .ext{display:inline-grid;place-items:center;width:18px;height:18px;margin-left:7px;vertical-align:baseline;color:var(--ink-2);opacity:.75;transition:color .15s,opacity .15s}
+.hotel .name .ext:hover{color:var(--accent);opacity:1}
+.hotel .name .ext svg{width:14px;height:14px}
+.hotel .addr{color:var(--ink-2);font-size:14px;line-height:1.3;margin-top:3px}
+.hotel .dates{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-top:10px}
+.hotel .d .lbl{font-size:14px;line-height:1.2;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.hotel .d .day{font-size:20px;line-height:1.1;margin-top:0}
+.hotel .d .at{font-size:14px;line-height:1.2;margin-top:0}
 .hotel .nights{font-size:14px;color:var(--ink-2);text-align:center;border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap}
 
 /* weather */
@@ -151,10 +152,10 @@ a{color:inherit}
 .dayrow.active .lab::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ink)}
 .dayrow .lane{position:relative;height:58px;background-image:repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px calc(100%/14));background-size:100% 100%}
 .dayrow .lane .lbk{position:absolute;top:9px;bottom:9px;border-radius:7px;padding:4px 8px;font-size:14px;line-height:1.15;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--ink)}
-.lbk.stop{background:#ebe7de;border:1px solid var(--ink);cursor:grab;user-select:none;touch-action:none}
+.lbk.stop{background:#ebe7de;border:1px solid var(--ink);cursor:grab;user-select:none;touch-action:none;padding-right:25px}
 .lbk.stop.eat{border-left:4px solid #e0241b}
-.lbk.stop .x{position:absolute;left:3px;bottom:2px;width:14px;height:14px;border-radius:50%;background:transparent;color:var(--ink-2);font-size:14px;line-height:12px;text-align:center;cursor:pointer;opacity:.7}
-.lbk.stop .x:hover{opacity:1;color:#e0241b}
+.lbk.stop .x{position:absolute;right:4px;top:4px;width:15px;height:15px;border-radius:50%;background:transparent;color:var(--ink-2);font-size:14px;line-height:15px;text-align:center;cursor:pointer;opacity:.65}
+.lbk.stop .x:hover{opacity:1;color:#e0241b;background:rgba(224,36,27,.12)}
 .lbk.stop.drag{opacity:.85;box-shadow:0 8px 20px -8px rgba(0,0,0,.4);z-index:5;cursor:grabbing}
 .lbk.stop .n{display:inline-block;min-width:16px;height:16px;border-radius:50%;background:#e0241b;color:#fff;font-size:12px;line-height:16px;text-align:center;margin-right:4px;font-weight:600}
 .dayrow.over .lane{background-color:rgba(20,20,20,.04)}
@@ -178,6 +179,7 @@ a{color:inherit}
 body.alt .tile:hover .rm{display:grid;opacity:1}
 @media (max-width:760px){.tour{grid-template-columns:1fr;height:auto}.picks{--tile:64px;overflow:auto}.grid{grid-auto-flow:row;grid-template-rows:none;grid-template-columns:repeat(auto-fill,var(--tile));grid-auto-rows:var(--tile);height:auto}.tour #map{height:420px}.days .ruler,.dayrow{grid-template-columns:110px 1fr}}
 #map{height:100%;width:100%;background:#e9e5dc}
+.map-down{height:100%;display:grid;place-items:center;text-align:center;font-size:14px;color:var(--ink-2);line-height:1.6}
 .leaflet-container{font:14px Inter,sans-serif}
 .leaflet-tile-pane{filter:grayscale(1) contrast(.92) brightness(1.06)}
 .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e0241b;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3);display:grid;place-items:center}
@@ -197,27 +199,25 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
   <!-- ROW 1: flights + hotel -->
   <div class="row row-top">
     <div class="card flights">
-      <div class="icon-badge" title="American Eagle · operated by Republic Airways">
+      <div class="icon-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 19h19"/><path d="M3.8 13.5l2.4-.5 3.9 2.2 8.5-4.4c1.2-.6 2.1-.2 2.5.6.3.7-.1 1.5-1.2 2.1L7.3 19.3 5 18l3.1-2.1-4.2-2.4z"/></svg>
       </div>
       <div class="legs">
         <div class="leg">
-          <div class="label"><span>Out · Fri Dec 4</span><span class="mono">AA 4561</span></div>
+          <div class="label"><span>Out · Fri Dec 4</span><span><span class="mono">AA 4561</span> · Business</span></div>
           <div class="route">
             <div class="ap"><span class="code serif">BNA</span><span class="time mono">10:58 AM</span><span class="city">Nashville</span></div>
             <div class="track"><span class="dur">2h 32m · nonstop</span></div>
             <div class="ap right"><span class="code serif">JFK</span><span class="time mono">2:30 PM</span><span class="city">New York Kennedy</span></div>
           </div>
-          <div class="meta"><b>American Eagle</b> · Republic Airways · Business</div>
         </div>
         <div class="leg">
-          <div class="label"><span>Back · Mon Dec 7</span><span class="mono">AA 4350</span></div>
+          <div class="label"><span>Back · Mon Dec 7</span><span><span class="mono">AA 4350</span> · Economy</span></div>
           <div class="route">
             <div class="ap"><span class="code serif">JFK</span><span class="time mono">1:23 PM</span><span class="city">New York Kennedy</span></div>
             <div class="track"><span class="dur">2h 43m · nonstop</span></div>
             <div class="ap right"><span class="code serif">BNA</span><span class="time mono">3:06 PM</span><span class="city">Nashville</span></div>
           </div>
-          <div class="meta"><b>American Eagle</b> · Republic Airways · Economy</div>
         </div>
       </div>
     </div>
@@ -227,7 +227,7 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M15 9h4a2 2 0 0 1 2 2v10"/><path d="M3 21h18"/><path d="M7 7h2M7 11h2M7 15h2M11 7h2M11 11h2M11 15h2M18 13h1M18 17h1"/><path d="M9 21v-3h4v3"/></svg>
       </div>
       <div style="flex:1">
-        <div class="name serif"><a href="https://virginhotels.com/new-york/" target="_blank" rel="noopener" style="text-decoration:none">Virgin Hotels New York</a></div>
+        <div class="name serif">Virgin Hotels New York<a class="ext" href="https://virginhotels.com/new-york/" target="_blank" rel="noopener" title="virginhotels.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></a></div>
         <div class="addr">1227 Broadway at 30th St · NoMad</div>
         <div class="dates">
           <div class="d"><div class="lbl">Check-in</div><div class="day serif">Fri, Dec 4</div><div class="at mono">3:00 PM</div></div>
@@ -527,11 +527,19 @@ async function accept(c, nm, kind, url, tile){
 }
 
 /* ================= MAP + TOUR ================= */
-const map = L.map('map', {zoomControl:true, scrollWheelZoom:false}).setView([40.752, -73.985], 13);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
-map.on('focus', () => map.scrollWheelZoom.enable()); map.on('blur', () => map.scrollWheelZoom.disable());
-const layer = L.layerGroup().addTo(map);
-L.marker([HOTEL.lat, HOTEL.lon], {icon:L.divIcon({className:'', html:'<svg class="star" viewBox="0 0 24 24"><path fill="#e0241b" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>', iconSize:[34,34], iconAnchor:[17,17]}), zIndexOffset:1000}).addTo(map).bindPopup('<b>Virgin Hotels</b><br>1227 Broadway · home base');
+// Leaflet comes from a CDN. If it fails to load, keep the rest of the page
+// alive — the tiles, days and tour are all useful without a map.
+const HAS_MAP = typeof L !== 'undefined';
+let map = null, layer = null;
+if (HAS_MAP){
+  map = L.map('map', {zoomControl:true, scrollWheelZoom:false}).setView([40.752, -73.985], 13);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+  map.on('focus', () => map.scrollWheelZoom.enable()); map.on('blur', () => map.scrollWheelZoom.disable());
+  layer = L.layerGroup().addTo(map);
+  L.marker([HOTEL.lat, HOTEL.lon], {icon:L.divIcon({className:'', html:'<svg class="star" viewBox="0 0 24 24"><path fill="#e0241b" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>', iconSize:[34,34], iconAnchor:[17,17]}), zIndexOffset:1000}).addTo(map).bindPopup('<b>Virgin Hotels</b><br>1227 Broadway · home base');
+} else {
+  document.getElementById('map').innerHTML = '<div class="map-down">The map didn’t load.<br>Everything else still works.</div>';
+}
 let routeLine = null;
 const DWELL = it => it.eat ? 75 : 90;
 function fmt(m){ const h = Math.floor(m/60), mm = m%60; const ap = h>=12?'PM':'AM'; return `${((h+11)%12)+1}:${String(mm).padStart(2,'0')} ${ap}`; }
@@ -655,8 +663,9 @@ async function renderTour(){
   daysEl.querySelectorAll('.lbk.stop .x').forEach(x => x.addEventListener('pointerdown', e => { e.stopPropagation(); const k=x.dataset.day; tours[k]=tours[k].filter(t=>t.id!==x.dataset.x); save(LS_TOURS,tours); renderGrids(); renderTour(); }));
 
   // map: active day only
-  layer.clearLayers(); if (routeLine){ map.removeLayer(routeLine); routeLine = null; }
   const items = act.stops.map(x=>x.it);
+  if (!HAS_MAP) return;
+  layer.clearLayers(); if (routeLine){ map.removeLayer(routeLine); routeLine = null; }
   items.forEach((it, n) => {
     L.marker([it.lat, it.lon], {icon:L.divIcon({className:'', html:`<div class="pin ${it.eat?'eat':''}"><span>${n+1}</span></div>`, iconSize:[30,30], iconAnchor:[15,30]})}).addTo(layer).bindPopup(`<b>${esc(it.name)}</b><br>${esc(it.sub||'')}`);
   });
@@ -679,7 +688,7 @@ READY = true;
 sizeTiles();
 renderGrids();
 renderTour();
-setTimeout(()=>{ sizeTiles(); map.invalidateSize(); }, 50);
+setTimeout(()=>{ sizeTiles(); if (HAS_MAP) map.invalidateSize(); }, 50);
 </script>
 </body>
 </html>
