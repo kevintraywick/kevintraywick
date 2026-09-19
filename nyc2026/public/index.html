@@ -530,6 +530,40 @@ document.addEventListener('click', e => {
   focusId = t.dataset.id;
   toggleTour(t.dataset.id);
 });
+
+// Hovering a tile rings where it is on the map, so you can find a place before
+// deciding to add it. One marker, moved -- not one per tile.
+let hoverRing = null, hoverId = null, hoverPan = null;
+function ringPlace(id){
+  if (id === hoverId) return;
+  hoverId = id;
+  if (!HAS_MAP) return;
+  clearTimeout(hoverPan);
+  if (hoverRing){ map.removeLayer(hoverRing); hoverRing = null; }
+  const it = id && byId(id);
+  if (!it) return;
+  hoverRing = L.circleMarker([it.lat, it.lon], {
+    radius:13, color:'#e0241b', weight:2.5, opacity:.95, fill:false, interactive:false
+  }).addTo(map);
+  // The map is usually framed on the day's stops, so most places are off
+  // screen and the ring would land somewhere you can't see. panInside moves
+  // the minimum to bring it in, and nothing at all if it's already visible.
+  // On a delay, so sweeping down the column doesn't drag the map around.
+  clearTimeout(hoverPan);
+  hoverPan = setTimeout(() => {
+    if (hoverId === id && map.panInside) map.panInside([it.lat, it.lon], {padding:[70,70]});
+  }, 320);
+}
+document.addEventListener('mouseover', e => {
+  const t = e.target.closest && e.target.closest('.tile:not(.add)');
+  ringPlace(t ? t.dataset.id : null);
+});
+document.addEventListener('mouseout', e => {
+  const t = e.target.closest && e.target.closest('.tile:not(.add)');
+  // ignore moves between a tile's own children
+  if (t && e.relatedTarget && t.contains(e.relatedTarget)) return;
+  if (t) ringPlace(null);
+});
 function removeItem(id){
   custom.places = custom.places.filter(i=>i.id!==id);
   custom.eats = custom.eats.filter(i=>i.id!==id);
