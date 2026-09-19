@@ -591,8 +591,33 @@ if (HAS_MAP){
   });
   map.addControl(new Toggle());
   syncToggle();
+  drawSubway();
 } else {
   document.getElementById('map').innerHTML = '<div class="map-down">The map didn’t load.<br>Everything else still works.</div>';
+}
+// The subway, as background. subway.json is the MTA's own service-line and
+// station data (data.ny.gov), dissolved into one network and simplified from
+// 225k points to ~1.6k -- the 29 services overlap almost entirely on the
+// trunks, so drawing them raw was 8.8MB of mostly the same track drawn twice.
+// It ships with the page rather than being fetched live: it is static data,
+// and one less thing that can be down.
+async function drawSubway(){
+  try{
+    const r = await fetch('subway.json');
+    const d = await r.json();
+    const pane = map.createPane('subway');
+    pane.style.zIndex = 350;                       // over tiles, under markers
+    const track = L.layerGroup([], {pane:'subway'}).addTo(map);
+    for (const line of d.lines){
+      L.polyline(line.map(c=>[c[1],c[0]]), {pane:'subway', color:'#0039a6', weight:1.2, opacity:.55, interactive:false}).addTo(track);
+    }
+    const stops = L.layerGroup([], {pane:'subway'});
+    for (const [lon, lat, name, routes] of d.stations){
+      L.circleMarker([lat, lon], {pane:'subway', radius:2.6, color:'#fff', weight:1.2, opacity:.9, fillColor:'#0039a6', fillOpacity:1})
+        .bindTooltip(routes ? `${name} · ${routes}` : name).addTo(stops);
+    }
+    stops.addTo(map);
+  }catch(e){}
 }
 let routeLine = null;
 // With build route off, the line runs from the hotel to this one place: the
