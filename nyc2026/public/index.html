@@ -201,6 +201,7 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
 .leaflet-popup-content{font-size:14px;margin:10px 14px}
 .leaflet-popup-content b{font-size:15px}
 .foot{text-align:center;font-size:14px;color:var(--ink-2);padding:0 0 40px}
+.syncnote{text-align:center;font-size:14px;color:var(--accent-2);padding:10px 0 0}
 </style>
 </head>
 <body>
@@ -258,6 +259,7 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
     <div class="picks right"><div class="grid" id="eats"></div></div>
   </div>
 
+  <div class="syncnote" id="syncnote" style="display:none">Not syncing — changes are staying on this device.</div>
   <div class="foot">Map © OpenStreetMap contributors · Walking routes via OSRM · Forecast via Open-Meteo</div>
 </div>
 
@@ -338,7 +340,71 @@ let uidN = 0;
 const newUid = () => 'u' + Date.now().toString(36) + (uidN++).toString(36);
 for (const k in tours) (tours[k]||[]).forEach(x => { if (!x.uid) x.uid = newUid(); });
 function load(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : (JSON.parse(v) ?? d); }catch{ return d; } }
-function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+// The plan (days, added places, deleted places) is one shared document on the
+// server -- everyone with the link edits the same one. localStorage is only a
+// cache now, so the page paints instantly and still works if the API is down.
+// activeDay and the Build route switch stay local: they're per-viewer, not part
+// of the plan.
+const SHARED = new Set([LS_TOURS, LS_ITEMS, LS_HIDDEN]);
+function save(k, v){
+  try{ localStorage.setItem(k, JSON.stringify(v)); }catch{}
+  if (SHARED.has(k)) schedulePush();
+}
+
+let myRev = -1, pushTimer = null, pushing = false, syncBad = false;
+function schedulePush(){
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(push, 600);   // coalesce a drag into one write
+}
+async function push(){
+  pushTimer = null; pushing = true;
+  try{
+    const r = await fetch('api/state', {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({tours, items:custom, hidden})
+    });
+    if (!r.ok) throw new Error(r.status);
+    myRev = (await r.json()).rev;
+    setSync(true);
+  }catch(e){ setSync(false); }
+  finally{ pushing = false; }
+}
+function adopt(st){
+  tours = st.tours || tours;
+  for (const k in tours) (tours[k]||[]).forEach(x => { if (!x.uid) x.uid = newUid(); });
+  custom = st.items || custom;
+  hidden = st.hidden || hidden;
+  myRev = st.rev;
+  try{
+    localStorage.setItem(LS_TOURS, JSON.stringify(tours));
+    localStorage.setItem(LS_ITEMS, JSON.stringify(custom));
+    localStorage.setItem(LS_HIDDEN, JSON.stringify(hidden));
+  }catch{}
+}
+async function pull(){
+  // don't clobber an edit that hasn't reached the server yet
+  if (pushTimer || pushing) return;
+  try{
+    const r = await fetch('api/state', {cache:'no-store'});
+    if (!r.ok) throw new Error(r.status);
+    const st = await r.json();
+    setSync(true);
+    if (st.rev === myRev) return;
+    // Nobody has written the shared plan yet. If this browser already has one,
+    // seed it rather than letting an empty document wipe it.
+    const mine = Object.values(tours).some(a => a && a.length)
+      || custom.places.length || custom.eats.length || hidden.length;
+    if (!st.updated && st.rev === 0 && mine){ myRev = st.rev; schedulePush(); return; }
+    adopt(st);
+    if (READY){ renderGrids(); renderTour(); }
+  }catch(e){ setSync(false); }
+}
+function setSync(ok){
+  if (syncBad === !ok) return;
+  syncBad = !ok;
+  const el = document.getElementById('syncnote');
+  if (el) el.style.display = ok ? 'none' : '';
+}
 function allItems(){ return [...SEED_PLACES, ...custom.places, ...SEED_EATS, ...custom.eats].filter(i => !hidden.includes(i.id)); }
 function byId(id){ return id === HOME.id ? HOME : allItems().find(i => i.id === id); }
 
@@ -416,9 +482,9 @@ function tileHTML(it, kind){
   const n = stopsOf(activeDay).filter(x=>x.id!==HOME.id).findIndex(x=>x.id===it.id);
   const p = PALETTES[hash(it.id)%PALETTES.length];
   const media = it.img
-    ? `<img src="${it.img}" alt="" loading="lazy" onerror="this.remove()">`
-    : `<div class="typo" style="background:linear-gradient(135deg,${p[0]},${p[1]})"><div class="big serif">${it.name.trim()[0]}</div><div class="nm">${esc(it.name)}</div></div>`;
-  return `<div class="tile ${kind==='eats'?'eat':''} ${n>=0?'on':''}" data-id="${it.id}" title="${esc(it.name)}">
+    ? `<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">`
+    : `<div class="typo" style="background:linear-gradient(135deg,${p[0]},${p[1]})"><div class="big serif">${esc(it.name.trim()[0])}</div><div class="nm">${esc(it.name)}</div></div>`;
+  return `<div class="tile ${kind==='eats'?'eat':''} ${n>=0?'on':''}" data-id="${esc(it.id)}" title="${esc(it.name)}">
     ${media}
     <div class="veil"></div>
     <div class="num">${n+1}</div>
@@ -799,6 +865,10 @@ READY = true;
 sizeTiles();
 renderGrids();
 renderTour();
+// adopt the shared plan, then watch for everyone else's edits
+pull();
+setInterval(pull, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
 setTimeout(()=>{ sizeTiles(); if (HAS_MAP) map.invalidateSize(); }, 50);
 </script>
 </body>
