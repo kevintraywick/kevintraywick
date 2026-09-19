@@ -390,11 +390,16 @@ async function pull(){
     const st = await r.json();
     setSync(true);
     if (st.rev === myRev) return;
-    // Nobody has written the shared plan yet. If this browser already has one,
-    // seed it rather than letting an empty document wipe it.
+    // If the shared plan is empty and this browser has one, seed it rather than
+    // letting an empty document wipe it. Keyed on the content being empty, not
+    // on rev 0: a plan that was written and then emptied should behave the same
+    // as one that was never written, or the first person to open the page after
+    // that loses everything they had.
+    const has = st => Object.values(st.tours || {}).some(a => a && a.length)
+      || (st.items?.places || []).length || (st.items?.eats || []).length;
     const mine = Object.values(tours).some(a => a && a.length)
-      || custom.places.length || custom.eats.length || hidden.length;
-    if (!st.updated && st.rev === 0 && mine){ myRev = st.rev; schedulePush(); return; }
+      || custom.places.length || custom.eats.length;
+    if (!has(st) && mine){ myRev = st.rev; schedulePush(); return; }
     adopt(st);
     if (READY){ renderGrids(); renderTour(); }
   }catch(e){ setSync(false); }
