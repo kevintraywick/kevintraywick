@@ -39,40 +39,45 @@ a{color:inherit}
 /* ---------- cards ---------- */
 .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 .row{display:grid;gap:12px;margin-bottom:12px}
-.row-top{grid-template-columns:2fr 1fr}
+.row-top{grid-template-columns:minmax(0,1.18fr) minmax(0,1.12fr) 176px}
+@media (max-width:1000px){.row-top{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.row-top .money{grid-column:1/-1}}
 @media (max-width:820px){.row-top{grid-template-columns:1fr}}
 
-/* flights */
-.flights{padding:22px 24px;display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:start}
-.icon-badge{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:var(--ink);color:var(--paper);flex:none}
-.icon-badge svg{width:26px;height:26px}
-.legs{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
-@media (max-width:640px){.legs{grid-template-columns:1fr;gap:18px}}
-.leg .label{font-size:14px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;justify-content:space-between}
-.leg .label span:last-child{text-transform:none;letter-spacing:0;color:var(--ink)}
-.leg .route{display:flex;align-items:center;gap:12px}
-.ap{display:flex;flex-direction:column}
-.ap .code{font-size:34px;line-height:1;letter-spacing:-.02em}
-.ap .time{font-size:16px;margin-top:6px}
-.ap .city{font-size:14px;color:var(--ink-2)}
-.ap.right{text-align:right;align-items:flex-end}
-.track{flex:1;position:relative;height:2px;background:var(--line);margin:0 4px}
-.track::before,.track::after{content:"";position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--ink)}
-.track::before{left:-2px}.track::after{right:-2px}
-.track .dur{position:absolute;left:50%;top:-24px;transform:translateX(-50%);font-size:14px;color:var(--ink-2);white-space:nowrap;background:var(--paper);padding:0 6px}
+/* top row: one typeface — the title serif */
+.row-top, .row-top .mono, .row-top .serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400;word-spacing:.12em}
 
-/* hotel */
-.hotel{padding:22px 24px;display:flex;gap:18px;align-items:flex-start}
-.hotel .name{font-size:24px;line-height:1.05}
-.hotel .name .ext{display:inline-grid;place-items:center;width:18px;height:18px;margin-left:7px;vertical-align:baseline;color:var(--ink-2);opacity:.75;transition:color .15s,opacity .15s}
-.hotel .name .ext:hover{color:var(--accent);opacity:1}
-.hotel .name .ext svg{width:14px;height:14px}
-.hotel .addr{color:var(--ink-2);font-size:14px;line-height:1.3;margin-top:3px}
-.hotel .dates{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-top:10px}
-.hotel .d .lbl{font-size:14px;line-height:1.2;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
-.hotel .d .day{font-size:20px;line-height:1.1;margin-top:0}
-.hotel .d .at{font-size:14px;line-height:1.2;margin-top:0}
-.hotel .nights{font-size:14px;color:var(--ink-2);text-align:center;border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap}
+/* flights — one line per leg */
+.flights{padding:8px 16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.icon-badge{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--ink);color:var(--paper);flex:none}
+.icon-badge svg{width:19px;height:19px}
+.legs{display:grid;gap:0}
+.leg{display:flex;align-items:baseline;gap:11px;padding:5px 0;border-bottom:1px solid var(--line)}
+.leg:last-child{border-bottom:0}
+.leg .tag{width:42px;flex:none;font-size:14px;letter-spacing:.11em;color:var(--ink-2)}
+.leg .ap{display:flex;align-items:baseline;gap:6px;min-width:0}
+.leg .ap b{font-size:20px;font-weight:400;letter-spacing:-.01em}
+.leg .ap i{font-style:normal;font-size:14px;color:var(--ink-2);white-space:nowrap}
+.leg .t{font-size:16px;white-space:nowrap}
+.leg .track{flex:1;position:relative;height:1px;background:var(--line);min-width:60px;align-self:center}
+.leg .track::before,.leg .track::after{content:"";position:absolute;top:-2.5px;width:6px;height:6px;border-radius:50%;background:var(--ink)}
+.leg .track::before{left:-1px}.leg .track::after{right:-1px}
+.leg .track em{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-style:normal;font-size:14px;color:var(--ink-2);white-space:nowrap;background:var(--paper);padding:0 7px}
+.leg .when{flex:none;text-align:right;display:flex;align-items:baseline;gap:6px;font-size:15px}
+.leg .when i{font-style:normal;font-size:14px;color:var(--ink-2);white-space:nowrap}
+
+/* hotel — two lines, matching height */
+.hotel{padding:8px 16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.hbody{min-width:0}
+.hrow{display:flex;align-items:baseline;gap:9px;padding:5px 0;border-bottom:1px solid var(--line)}
+.hrow:last-child{border-bottom:0}
+.hotel .name{font-size:20px;text-decoration:none;white-space:nowrap}
+.hotel .addr{font-size:14px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hotel .dates{align-items:center}
+.hotel .d{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
+.hotel .d i{font-style:normal;font-size:14px;letter-spacing:.11em;color:var(--ink-2)}
+.hotel .d b{font-size:16px;font-weight:400}
+.hotel .d u{text-decoration:none;font-size:14px;color:var(--ink-2)}
+.hotel .nights{margin:0 auto;font-size:14px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:1px 9px;white-space:nowrap}
 
 /* weather */
 .row-weather{grid-template-columns:repeat(4,1fr)}
@@ -133,24 +138,95 @@ a{color:inherit}
 .tile.add .ask .no{background:#eee8dc;color:var(--ink)}
 .tile.add .ask .busy{font-size:14px;color:var(--ink-2)}
 
+
+/* money card — third in the top row, rows matching the flight legs */
+.money{padding:8px 0 8px 16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.money .names{display:flex;flex-direction:column;align-self:stretch}
+.money .who{flex:1;display:flex;align-items:center;justify-content:flex-start;appearance:none;background:transparent;border:0;border-bottom:1px solid var(--line);font:500 15px Inter,sans-serif;color:var(--ink-2);padding:0 14px 0 0;cursor:pointer;text-align:left;transition:color .15s}
+.money .who:last-child{border-bottom:0}
+.money .who:hover{color:#e0241b}
+
+/* weather strip */
+.wxrow{display:grid;grid-template-columns:repeat(4,1fr);margin-bottom:12px;overflow:hidden}
+.wxrow .w{display:flex;align-items:center;gap:9px;padding:7px 15px;border-right:1px solid var(--line);min-width:0}
+.wxrow .w:last-child{border-right:0}
+.wxrow .glyph{width:28px;height:28px;color:var(--ink);flex:none}
+.wxrow .d{font-size:15px;color:var(--ink);white-space:nowrap}
+.wxrow .dt{font-size:14px;color:var(--ink-2);white-space:nowrap}
+.wxrow .c{flex:1 1 auto;min-width:0;text-align:center;font-size:14px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.wxrow .t{font-size:15px;color:var(--ink);white-space:nowrap;margin-left:auto}
+.wxrow .t .lo{color:var(--ink-2)}
+@media (max-width:1000px){.wxrow{grid-template-columns:repeat(2,1fr)}}
+
+/* weather strip */
+.wxrow{display:grid;grid-template-columns:repeat(4,1fr);margin-bottom:12px;overflow:hidden}
+.wxrow .w{display:flex;align-items:center;gap:9px;padding:7px 15px;border-right:1px solid var(--line);min-width:0}
+.wxrow .w:last-child{border-right:0}
+.wxrow .glyph{width:28px;height:28px;color:var(--ink);flex:none}
+.wxrow .d{font-size:15px;color:var(--ink);white-space:nowrap}
+.wxrow .dt{font-size:14px;color:var(--ink-2);white-space:nowrap}
+.wxrow .c{flex:1 1 auto;min-width:0;text-align:center;font-size:14px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.wxrow .t{font-size:15px;color:var(--ink);white-space:nowrap;margin-left:auto}
+.wxrow .t .lo{color:var(--ink-2)}
+@media (max-width:1000px){.wxrow{grid-template-columns:repeat(2,1fr)}}
+
+/* tiles */
+
+.section-h h2{margin:0;font-size:28px;line-height:1}
+.section-h .hint{font-size:14px;color:var(--ink-2)}
+.tile{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#ddd6c8;cursor:pointer;border:1px solid var(--line);box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease;user-select:none}
+.tile:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(20,20,20,.06),0 16px 30px -14px rgba(20,20,20,.35)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
+.tile:hover img{transform:scale(1.05)}
+.tile .typo{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:6px;color:#fff}
+.tile .typo .big{font-size:28px;line-height:.9;letter-spacing:-.03em;opacity:.95}
+.tile .typo .nm{display:none}
+.tile .veil{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.2) 45%,rgba(0,0,0,0) 70%);opacity:1}
+.tile .cap{position:absolute;left:0;right:0;bottom:0;padding:6px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.tile .cap .t{font-size:14px;line-height:1.1;font-family:Inter,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .cap .s{display:none}
+.tile .go{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;background:rgba(255,253,248,.92);display:grid;place-items:center;opacity:0;transform:scale(.8);transition:all .2s;color:var(--ink);border:0;cursor:pointer}
+.tile:hover .go{opacity:1;transform:none}
+.tile .go:hover{background:#fff}
+.tile .go svg{width:14px;height:14px}
+.tile .num{position:absolute;top:5px;left:5px;width:24px;height:24px;border-radius:50%;background:#e0241b;color:#fff;display:grid;place-items:center;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.25);transform:scale(0);transition:transform .2s cubic-bezier(.2,1.4,.5,1)}
+.tile.on{outline:3px solid #e0241b;outline-offset:-3px}
+.tile.on .num{transform:none}
+
+.tile .rm{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(224,36,27,.95);color:#fff;border:0;place-items:center;cursor:pointer;font-size:14px;line-height:1;z-index:3}
+
+/* add tile */
+.tile.add{background:transparent;border:2px dashed #c9c2b3;box-shadow:none;display:grid;place-items:center;color:var(--ink-2)}
+.tile.add:hover,.tile.add.over{border-color:var(--accent);color:var(--accent);background:rgba(11,63,166,.04)}
+.tile.add .plus{font-size:26px;line-height:1;font-weight:300}
+.tile.add .lbl{display:none}
+.tile.add .inner{display:flex;flex-direction:column;align-items:center}
+.tile.add input{width:calc(100% - 20px);margin:0 10px;border:0;border-bottom:2px solid var(--accent);background:transparent;font:15px Inter,sans-serif;padding:6px 2px;outline:0;color:var(--ink)}
+.tile.add .ask{position:absolute;inset:0;background:var(--paper);display:flex;flex-direction:column;justify-content:space-between;padding:8px;text-align:left;z-index:5}
+.tile.add.open{grid-row:span 3;aspect-ratio:auto;height:auto}
+.tile.add .ask .q{font-size:14px;color:var(--ink-2)}
+.tile.add .ask .who{font-size:15px;line-height:1.2;margin-top:4px;color:var(--ink)}
+.tile.add .ask .sub{font-size:14px;color:var(--ink-2);margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tile.add .ask .btns{display:flex;gap:8px;justify-content:flex-end}
+.tile.add .ask button{width:34px;height:34px;border-radius:50%;border:0;cursor:pointer;font-size:18px;display:grid;place-items:center}
+.tile.add .ask .yes{background:var(--accent);color:#fff}
+.tile.add .ask .no{background:#eee8dc;color:var(--ink)}
+.tile.add .ask .busy{font-size:14px;color:var(--ink-2)}
+
 /* days (horizontal) */
 .days{margin-bottom:12px;padding:10px 34px 10px 0;overflow:hidden}
-.days .ruler{display:grid;grid-template-columns:270px 1fr;height:22px}
+.days .ruler{display:grid;grid-template-columns:186px 1fr;height:22px}
 .days .ruler .ticks{position:relative}
 .days .ruler .tk{position:absolute;top:0;transform:translateX(-50%);font-size:14px;color:var(--ink-2);white-space:nowrap}
 .days .ruler .tk.meal{color:var(--ink)}
-.dayrow{display:grid;grid-template-columns:270px 1fr;align-items:stretch;border-top:1px solid var(--line);cursor:pointer}
+.dayrow{display:grid;grid-template-columns:186px 1fr;align-items:stretch;border-top:1px solid var(--line);cursor:pointer}
 .dayrow:last-child{border-bottom:1px solid var(--line)}
-.dayrow .lab{padding:6px 58px 6px 12px;display:grid;grid-template-columns:44px 1fr;gap:0 10px;align-content:center;align-items:center;line-height:1.25;border-right:1px solid var(--line);position:relative}
-.dayrow .lab .glyph{width:40px;height:40px;color:var(--ink);grid-row:1/3}
-.dayrow .lab b{font-size:16px;font-weight:500}
-.dayrow .lab .t{font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dayrow .lab .t .hi{font-weight:500}
-.dayrow .lab .t .lo{color:var(--ink-2)}
+.dayrow .lab{padding:4px 48px 4px 13px;display:flex;flex-direction:column;justify-content:center;gap:1px;line-height:1.25;border-right:1px solid var(--line);position:relative}
+.dayrow .lab b{font-size:15px;font-weight:400;color:var(--ink)}
 .dayrow .lab span.s{font-size:14px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dayrow.active .lab{background:rgba(20,20,20,.05)}
 .dayrow.active .lab::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ink)}
-.dayrow .lane{position:relative;height:58px;background-image:repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px calc(100%/14));background-size:100% 100%}
+.dayrow .lane{position:relative;height:46px;background-image:repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px calc(100%/14));background-size:100% 100%}
 .dayrow .lane .lbk{position:absolute;top:9px;bottom:9px;border-radius:7px;padding:4px 8px;font-size:14px;line-height:1.15;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--ink)}
 .lbk.stop{background:#ebe7de;border:1px solid var(--ink);cursor:grab;user-select:none;touch-action:none}
 .lbk.stop.eat{border-left:4px solid #e0241b}
@@ -165,6 +241,9 @@ a{color:inherit}
 .dayrow .lane .lbk.res{background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);border-left-width:1.5px;padding-top:3px}
 .lbk.res span{color:var(--ink-2)}
 .dayrow .lane .lbk.walk{background:transparent;border-top:2px dotted #b9b2a3;top:50%;bottom:auto;height:0;padding:0;border-radius:0;overflow:visible}
+.dayrow .lane .lbk.walk i{position:absolute;left:50%;top:-9px;transform:translateX(-50%);font-style:normal;font-size:14px;color:var(--ink-2);background:var(--paper);padding:0 4px;white-space:nowrap}
+.dayrow .lane .lbk.walk.tight{border-top-color:#e0241b}
+.dayrow .lane .lbk.walk.tight i{color:#e0241b}
 .dayrow .lane .hint{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-2)}
 .dayrow .lab button{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:14px Inter,sans-serif;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:2px 8px;cursor:pointer;color:var(--ink-2)}
 .dayrow .lab button:hover{color:var(--ink);border-color:var(--ink)}
@@ -210,44 +289,52 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
   <!-- ROW 1: flights + hotel -->
   <div class="row row-top">
     <div class="card flights">
-      <div class="icon-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 19h19"/><path d="M3.8 13.5l2.4-.5 3.9 2.2 8.5-4.4c1.2-.6 2.1-.2 2.5.6.3.7-.1 1.5-1.2 2.1L7.3 19.3 5 18l3.1-2.1-4.2-2.4z"/></svg>
-      </div>
+      <div class="icon-badge" title="American Eagle · operated by Republic Airways"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 19h19"/><path d="M3.8 13.5l2.4-.5 3.9 2.2 8.5-4.4c1.2-.6 2.1-.2 2.5.6.3.7-.1 1.5-1.2 2.1L7.3 19.3 5 18l3.1-2.1-4.2-2.4z"/></svg></div>
       <div class="legs">
         <div class="leg">
-          <div class="label"><span>Out · Fri Dec 4</span><span class="mono">AA 4561</span></div>
-          <div class="route">
-            <div class="ap"><span class="code serif">BNA</span><span class="time mono">10:58 AM</span><span class="city">Nashville</span></div>
-            <div class="track"><span class="dur">2h 32m · nonstop</span></div>
-            <div class="ap right"><span class="code serif">JFK</span><span class="time mono">2:30 PM</span><span class="city">New York Kennedy</span></div>
-          </div>
+          <span class="tag">OUT</span>
+          <span class="ap"><b>BNA</b></span>
+          <span class="t">10:58 AM</span>
+          <span class="track"><em>2h 32m</em></span>
+          <span class="t">2:30 PM</span>
+          <span class="ap"><b>JFK</b></span>
+          <span class="when">Fri, Dec 4<i>· AA 4561</i></span>
         </div>
         <div class="leg">
-          <div class="label"><span>Back · Mon Dec 7</span><span class="mono">AA 4350</span></div>
-          <div class="route">
-            <div class="ap"><span class="code serif">JFK</span><span class="time mono">1:23 PM</span><span class="city">New York Kennedy</span></div>
-            <div class="track"><span class="dur">2h 43m · nonstop</span></div>
-            <div class="ap right"><span class="code serif">BNA</span><span class="time mono">3:06 PM</span><span class="city">Nashville</span></div>
-          </div>
+          <span class="tag">BACK</span>
+          <span class="ap"><b>JFK</b></span>
+          <span class="t">1:23 PM</span>
+          <span class="track"><em>2h 43m</em></span>
+          <span class="t">3:06 PM</span>
+          <span class="ap"><b>BNA</b></span>
+          <span class="when">Mon, Dec 7<i>· AA 4350</i></span>
         </div>
       </div>
     </div>
 
     <div class="card hotel">
-      <div class="icon-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M15 9h4a2 2 0 0 1 2 2v10"/><path d="M3 21h18"/><path d="M7 7h2M7 11h2M7 15h2M11 7h2M11 11h2M11 15h2M18 13h1M18 17h1"/><path d="M9 21v-3h4v3"/></svg>
-      </div>
-      <div style="flex:1">
-        <div class="name serif">Virgin Hotels New York<a class="ext" href="https://virginhotels.com/new-york/" target="_blank" rel="noopener" title="virginhotels.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></a></div>
-        <div class="addr">1227 Broadway at 30th St · NoMad</div>
-        <div class="dates">
-          <div class="d"><div class="lbl">Check-in</div><div class="day serif">Fri, Dec 4</div><div class="at mono">3:00 PM</div></div>
-          <div class="nights">3 nights</div>
-          <div class="d" style="text-align:right"><div class="lbl">Check-out</div><div class="day serif">Mon, Dec 7</div><div class="at mono">12:00 PM</div></div>
+      <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M15 9h4a2 2 0 0 1 2 2v10"/><path d="M3 21h18"/><path d="M7 7h2M7 11h2M7 15h2M11 7h2M11 11h2M11 15h2M18 13h1M18 17h1"/><path d="M9 21v-3h4v3"/></svg></div>
+      <div class="hbody">
+        <div class="hrow">
+          <a class="name" href="https://virginhotels.com/new-york/" target="_blank" rel="noopener">Virgin Hotels New York</a>
+          <span class="addr">1227 Broadway at 30th St · NoMad</span>
+        </div>
+        <div class="hrow dates">
+          <span class="d"><i>IN</i><b>Fri, Dec 4</b><u>3:00 PM</u></span>
+          <span class="nights">3 nights</span>
+          <span class="d"><i>OUT</i><b>Mon, Dec 7</b><u>12:00 PM</u></span>
         </div>
       </div>
     </div>
+
+    <div class="card money">
+      <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8v18.4"/><path d="M16.6 7.4c0-2-2.1-3.2-4.6-3.2S7.4 5.4 7.4 7.4s2.1 3.2 4.6 3.6 4.6 1.6 4.6 3.6-2.1 3.2-4.6 3.2-4.6-1.2-4.6-3.2"/></svg></div>
+      <div class="names" id="cash"></div>
+    </div>
   </div>
+
+  <!-- ROW 2: weather -->
+  <div class="card wxrow" id="wx"></div>
 
   <!-- ROW 3: the four days -->
   <div class="card days" id="days"></div>
@@ -264,6 +351,7 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* ================= DATA ================= */
 const W = 'https://commons.wikimedia.org/wiki/Special:FilePath/';
@@ -459,6 +547,7 @@ function renderWeather(daily, mode){ // mode: 'live' | 'lastyear' | null
     const line = mode==='live' ? `${desc}${pop!=null && pop>0 ? ` · ${pop}%` : ''}` : mode==='lastyear' && have ? `${desc}, last yr` : desc;
     WXD[DAYS[i].k] = {hi, lo, line, g};
   });
+  renderWxRow();
   if (READY) renderTour();
 }
 renderWeather(null, null);
@@ -477,6 +566,199 @@ renderWeather(null, null);
     if (j && j.daily && j.daily.weather_code) renderWeather(j.daily, 'lastyear');
   }catch(e){}
 })();
+
+/* ================= WHO OWES WHAT ================= */
+// Kevin fronted these. Cents on the two American charges were cut off in the
+// statement screenshot — correct FARE and SEAT here and everything re-totals.
+const FARE = 455.00;        // AA ticket, one per person (tkt 00123781001xx)
+const SEAT = 45.00;         // AA seat selection, one per person (00142105997xx)
+const SHOW_TOTAL = 661.83;  // Broadway.com, 3 tickets, order 207237762-8633251
+const CREW = [
+  {name:'Amy',   tkt:'0012378100111', emd:'0014210599730'},
+  {name:'Lisa',  tkt:'0012378100112', emd:'0014210599731'},
+  {name:'Kevin', tkt:'0012378100113', emd:'0014210599732', fronted:true},
+];
+const money = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const SHARE = Math.round(SHOW_TOTAL / CREW.length * 100) / 100;
+const perPerson = () => FARE + SEAT + SHARE;
+const advanced  = () => CREW.length * (FARE + SEAT) + SHOW_TOTAL;
+
+function renderWxRow(){
+  const el = document.getElementById('wx'); if (!el) return;
+  el.innerHTML = DAYS.map(day => {
+    const w = WXD[day.k] || {hi:'–', lo:'–', line:'', g:'cloudsun', note:''};
+    return `<div class="w" title="${esc(day.name)} — ${esc(w.line)} (${esc(w.note||'')})">${svg(w.g)}`
+         + `<span class="d">${day.name.slice(0,3)}</span>`
+         + `<span class="c">${esc(w.line)}</span>`
+         + `<span class="t"><span class="hi">${w.hi}°</span> <span class="lo">${w.lo}°</span></span></div>`;
+  }).join('');
+}
+
+function renderCash(){
+  const el = document.getElementById('cash');
+  el.innerHTML = CREW.map(c =>
+    `<button class="who" data-who="${c.name}" title="Open ${c.name}\u2019s invoice">${c.name}</button>`).join('');
+  el.querySelectorAll('.who').forEach(w => w.addEventListener('click', () => invoice(w.dataset.who)));
+}
+
+const GUIDO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 360" width="320" height="360"> <defs> <pattern id="pin" width="7" height="7" patternUnits="userSpaceOnUse"> <rect width="7" height="7" fill="#1e1e1e"/> <line x1="3.5" y1="0" x2="3.5" y2="7" stroke="#787878" stroke-width="0.9"/> </pattern> </defs> <g stroke="#111" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"> <!-- bat leaning against his side, butt on the ground --> <g transform="translate(-42,0) rotate(13 268 352)"> <rect x="256" y="120" width="24" height="112" rx="12" fill="#c99a5b"/> <rect x="260" y="228" width="16" height="124" rx="8" fill="#a87a3e"/> <line x1="260" y1="268" x2="276" y2="268" stroke-width="3"/> </g> <!-- shoulders / torso --> <path d="M72 352 V244 c0-42 28-64 78-64 s78 22 78 64 V352 Z" fill="url(#pin)"/> <!-- shirt V + lapels --> <path d="M124 184 L150 240 L176 184 Z" fill="#fff"/> <path d="M124 184 L150 240 L137 184 Z" fill="#141414"/> <path d="M176 184 L150 240 L163 184 Z" fill="#141414"/> <path d="M150 240 l-9 11 9 34 9-34 Z" fill="#d81f16"/> <!-- crossed arms: far arm first, then near arm on top --> <g fill="#212121"> <rect x="86" y="258" width="132" height="34" rx="17" transform="rotate(9 152 275)"/> <rect x="86" y="250" width="132" height="34" rx="17" transform="rotate(-9 152 267)"/> </g> <circle cx="96" cy="262" r="18" fill="#f0c9a0"/> <path d="M85 258 q11 6 22 0" stroke-width="2.4" fill="none"/> <circle cx="209" cy="286" r="18" fill="#f0c9a0"/> <path d="M198 282 q11 6 22 0" stroke-width="2.4" fill="none"/> <!-- neck --> <rect x="134" y="152" width="32" height="32" fill="#f0c9a0"/> <!-- head --> <path d="M104 102 c0-36 20-56 46-56 s46 20 46 56 c0 38-20 60-46 60 s-46-22-46-60 Z" fill="#f0c9a0"/> <circle cx="102" cy="110" r="9" fill="#f0c9a0"/> <circle cx="198" cy="110" r="9" fill="#f0c9a0"/> <!-- brows --> <path d="M117 92 l28 9" stroke-width="7" fill="none"/> <path d="M183 92 l-28 9" stroke-width="7" fill="none"/> <circle cx="129" cy="112" r="4.6" fill="#111" stroke="none"/> <circle cx="171" cy="112" r="4.6" fill="#111" stroke="none"/> <path d="M151 114 q8 14 -3 18" stroke-width="3" fill="none"/> <!-- mustache --> <path d="M122 142 q28-17 28 1 q0-18 28-1 q-13 15 -28 8 q-15 7 -28-8 Z" fill="#2a2a2a"/> <path d="M137 157 q13 6 26 0" stroke-width="3" fill="none"/> <!-- fedora --> <path d="M80 62 q70 17 140 0 q-7 13 -15 15 q-55 13 -110 0 q-8-2 -15-15 Z" fill="#161616"/> <path d="M107 60 q-5-44 43-44 q48 0 43 44 q-43 13 -86 0 Z" fill="#161616"/> <path d="M105 49 q45 13 90 0" stroke="#d81f16" stroke-width="7" fill="none"/> </g> </svg>`;
+function guidoPNG(){
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = 640; c.height = 720;
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,640,720);
+      x.drawImage(img, 0, 0, 640, 720); res(c.toDataURL('image/png'));
+    };
+    img.onerror = () => res(null);
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(GUIDO_SVG);
+  });
+}
+
+async function invoice(who){
+  const c = CREW.find(x => x.name === who); if (!c) return;
+  // opened synchronously so Safari treats it as part of the click, not a popup
+  const win = window.open('', '_blank');
+  if (!window.jspdf){ if (win) win.close(); alert("Couldn't load the PDF library — check your connection and try again."); return; }
+  const { jsPDF } = window.jspdf;
+  const d = new jsPDF({unit:'mm', format:'letter'});
+  const W = 215.9, M = 18, RED = [224,36,27], INK = [20,20,20], GREY = [110,106,98];
+  const settle = c.fronted;
+  const num = 'NYC-2026-' + String(CREW.indexOf(c)+1).padStart(3,'0');
+
+  // header
+  d.setFillColor(...INK); d.rect(0,0,W,34,'F');
+  d.setFillColor(...RED); d.rect(0,34,W,2.2,'F');
+  d.setTextColor(255,255,255);
+  d.setFont('helvetica','bold'); d.setFontSize(22); d.text('GUIDO & SONS', M, 17);
+  d.setFont('helvetica','normal'); d.setFontSize(9.5); d.setTextColor(200,198,194);
+  d.text('TRAVEL RECEIVABLES  ·  NOMAD, NEW YORK  ·  NO EXCEPTIONS, NO EXCUSES', M, 25.5);
+  d.setTextColor(255,255,255); d.setFont('helvetica','bold'); d.setFontSize(13);
+  d.text(settle ? 'SETTLEMENT' : 'INVOICE', W-M, 17, {align:'right'});
+  d.setFont('helvetica','normal'); d.setFontSize(9.5); d.setTextColor(200,198,194);
+  d.text(num, W-M, 25.5, {align:'right'});
+
+  let y = 52;
+  d.setTextColor(...GREY); d.setFont('helvetica','bold'); d.setFontSize(8.6);
+  d.text(settle ? 'PREPARED FOR' : 'THE PARTY IN ARREARS', M, y);
+  d.text('ISSUED', 120, y); d.text('DUE', 158, y);
+  d.setTextColor(...INK); d.setFont('helvetica','bold'); d.setFontSize(17);
+  d.text(c.name, M, y+9);
+  d.setFont('helvetica','normal'); d.setFontSize(10.5);
+  d.text(new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), 120, y+9);
+  d.setFont('helvetica','bold'); d.setTextColor(...RED);
+  d.text('Oct 31, 2026', 158, y+9);
+  d.setFont('helvetica','normal'); d.setFontSize(8.6); d.setTextColor(...GREY);
+  d.text('Halloween', 158, y+14);
+
+  y += 26;
+  d.setDrawColor(...INK); d.setLineWidth(0.5); d.line(M, y, W-M, y);
+  y += 6;
+  d.setFont('helvetica','bold'); d.setFontSize(8.6); d.setTextColor(...GREY);
+  d.text('DESCRIPTION', M, y); d.text('REFERENCE', 128, y); d.text('AMOUNT', W-M, y, {align:'right'});
+  y += 3; d.setDrawColor(210,205,196); d.setLineWidth(0.3); d.line(M, y, W-M, y);
+
+  const rows = settle ? [
+    ['American Airlines — 3 × round trip', 'BNA/JFK · Dec 4 + Dec 7', CREW.length*FARE],
+    ['Seat selection — 3 passengers', 'AA 4561 / AA 4350', CREW.length*SEAT],
+    ['The Lost Boys — 3 tickets', 'Broadway.com · 207237762-8633251', SHOW_TOTAL],
+  ] : [
+    ['American Airlines — round trip', 'Ticket ' + c.tkt, FARE],
+    ['  BNA 10:58a to JFK 2:30p, Fri Dec 4 (AA 4561, Business)', '', null],
+    ['  JFK 1:23p to BNA 3:06p, Mon Dec 7 (AA 4350, Economy)', '', null],
+    ['Seat selection', 'Doc ' + c.emd, SEAT],
+    ['The Lost Boys — Palace Theatre', 'Broadway.com', SHARE],
+    ['  Sat Dec 5, 7:30 PM · Orchestra O123–O127 · 1 of 3 seats', '', null],
+  ];
+  y += 7;
+  for (const [desc, ref, amt] of rows){
+    const sub = amt === null;
+    d.setFont('helvetica', sub ? 'normal' : 'bold'); d.setFontSize(sub ? 9 : 10.5);
+    d.setTextColor(...(sub ? GREY : INK));
+    d.text(desc, M, y);
+    if (!sub){
+      d.setFont('helvetica','normal'); d.setFontSize(9); d.setTextColor(...GREY);
+      d.text(ref, 128, y);
+      d.setFont('helvetica','bold'); d.setFontSize(10.5); d.setTextColor(...INK);
+      d.text(money(amt), W-M, y, {align:'right'});
+    }
+    y += sub ? 5.4 : 8;
+  }
+
+  y += 2; d.setDrawColor(...INK); d.setLineWidth(0.5); d.line(120, y, W-M, y); y += 9;
+  d.setFont('helvetica','bold'); d.setFontSize(11); d.setTextColor(...INK);
+  d.text(settle ? 'YOU ADVANCED' : 'TOTAL DUE', 120, y);
+  d.setFontSize(19); d.setTextColor(...(settle ? INK : RED));
+  d.text(money(settle ? advanced() : perPerson()), W-M, y, {align:'right'});
+
+  if (settle){
+    y += 11; d.setFontSize(11); d.setTextColor(...GREY); d.setFont('helvetica','bold');
+    d.text('LESS YOUR OWN SHARE', 120, y);
+    d.setFontSize(12); d.text('-' + money(perPerson()), W-M, y, {align:'right'});
+    y += 5; d.setDrawColor(...INK); d.setLineWidth(0.5); d.line(120, y, W-M, y); y += 9;
+    d.setFontSize(11); d.setTextColor(...INK); d.text('OWED TO YOU', 120, y);
+    d.setFontSize(19); d.setTextColor(...RED);
+    d.text(money(advanced() - perPerson()), W-M, y, {align:'right'});
+    y += 10; d.setFont('helvetica','normal'); d.setFontSize(9.5); d.setTextColor(...GREY);
+    d.text(CREW.filter(x=>!x.fronted).map(x => x.name + ' ' + money(perPerson())).join('     ·     '), W-M, y, {align:'right'});
+  }
+
+  // the enforcer
+  const png = await guidoPNG();
+  const baseY = Math.min(Math.max(y + 20, 150), 196);
+  if (png) d.addImage(png, 'PNG', M, baseY, 46, 51.75);
+  const bx = M + 52, bw = W - M - bx;
+  d.setFillColor(248,245,238); d.setDrawColor(...INK); d.setLineWidth(0.5);
+  d.roundedRect(bx, baseY + 6, bw, 34, 3, 3, 'FD');
+  d.setFillColor(248,245,238); d.triangle(bx, baseY+19, bx, baseY+27, bx-5, baseY+23, 'F');
+  d.setDrawColor(...INK); d.line(bx, baseY+19, bx-5, baseY+23); d.line(bx-5, baseY+23, bx, baseY+27);
+  d.setFillColor(248,245,238); d.rect(bx-0.6, baseY+19.5, 1.2, 7, 'F');
+  d.setTextColor(...INK); d.setFont('helvetica','bolditalic'); d.setFontSize(11.5);
+  const line = settle
+    ? ['"You carried the freight, boss. I\'ll go have a word', 'with the other two. Friendly-like. At first."']
+    : ['"Nice trip you got comin\'. Be a real shame if somebody', 'had to sit in the middle seat the whole way home."'];
+  d.text(line[0], bx + 6, baseY + 17);
+  d.text(line[1], bx + 6, baseY + 24);
+  d.setFont('helvetica','normal'); d.setFontSize(8.6); d.setTextColor(...GREY);
+  d.text('— Luigi Guido, Collections', bx + 6, baseY + 33);
+
+  // footer
+  const fy = 252;
+  d.setDrawColor(210,205,196); d.setLineWidth(0.3); d.line(M, fy, W-M, fy);
+  d.setFont('helvetica','normal'); d.setFontSize(9.5); d.setTextColor(...GREY);
+  const foot = settle
+    ? 'Charges hit the card Sep 16 (Broadway.com) and Sep 18 (American). Hotel and meals settle separately.'
+    : 'Remit to Kevin — Zelle, Apple Pay, cash in a plain envelope, or check in the mail '
+      + '(160 Weldon Drive, Martin, TN 38237). Hotel and meals settle separately.';
+  d.splitTextToSize(foot, W - M*2).forEach((ln, i) => d.text(ln, M, fy + 7 + i*5.5));
+
+  const file = 'NYC2026-' + c.name + (settle ? '-settlement' : '-invoice') + '.pdf';
+  if (win){
+    try{
+      const url = d.output('bloburl');
+      // wrapped in a tiny page rather than navigating straight to the blob:
+      // Safari is much happier showing a PDF this way
+      win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + file +
+        '</title><style>html,body{margin:0;height:100%;background:#525659}iframe{border:0;width:100%;height:100%;display:block}</style></head>' +
+        '<body><iframe src="' + url + '" title="' + file + '"></iframe></body></html>');
+      win.document.close();
+    }catch(e){ try{ win.location.href = d.output('bloburl'); }catch(e2){} }
+  } else {
+    // tab blocked — fall back to a download so the invoice still arrives
+    d.save(file);
+  }
+}
+
+function renderWxRow(){
+  const el = document.getElementById('wx'); if (!el) return;
+  el.innerHTML = DAYS.map(day => {
+    const w = WXD[day.k] || {hi:'–', lo:'–', line:'', g:'cloudsun', note:''};
+    return `<div class="w" title="${esc(day.name)} — ${esc(w.line)} (${esc(w.note||'')})">${svg(w.g)}`
+         + `<span class="d">${day.name.slice(0,3)}</span>`
+         + `<span class="c">${esc(w.line)}</span>`
+         + `<span class="t"><span class="hi">${w.hi}°</span> <span class="lo">${w.lo}°</span></span></div>`;
+  }).join('');
+}
 
 /* ================= TILES ================= */
 const PALETTES = [['#0b3fa6','#1b5fd8'],['#d4491f','#f07a4a'],['#1f6f5a','#2fa084'],['#5b2a86','#8a4fc2'],['#8a6d1f','#c9a83c'],['#2b2b2b','#5a5a5a']];
@@ -734,10 +1016,25 @@ function focusItem(act){
   return null;
 }
 const DWELL = it => it.home ? 45 : it.eat ? 75 : 90;
-// No walking-time estimate is shown. OSRM's public server only hosts the car
-// profile (every profile answers at ~22 km/h), and a distance-based guess was
-// too shaky to put a number on. The dotted connector shows the hop; the map's
-// route line shows the way.
+// Walking times are real again. The public OSRM demo server only has the car
+// profile loaded -- that is why /foot/ there answered at ~22 km/h -- but
+// FOSSGIS runs genuine foot instances, which route at 2.8 mph, avoid ferries,
+// and land within a couple of minutes of Google. PACE/DETOUR are the offline
+// fallback, tuned to agree with the router.
+const ROUTER = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/';
+const PACE = 65;      // metres of straight line per minute
+const DETOUR = 1.15;  // street distance over straight line
+const walkMin = (a,b) => Math.max(2, Math.round(haversine(a,b)/PACE));
+const walkMi  = (a,b) => haversine(a,b) * DETOUR / 1609.34;
+async function route(coords){            // null when the router can't be reached
+  const ac = new AbortController(); const t = setTimeout(()=>ac.abort(), 6000);
+  try{
+    const r = await fetch(`${ROUTER}${coords}?overview=full&geometries=geojson`, {signal:ac.signal});
+    const j = await r.json();
+    return (j.routes && j.routes[0]) ? j.routes[0] : null;
+  }catch(e){ return null; }
+  finally{ clearTimeout(t); }
+}
 function fmt(m){ const h = Math.floor(m/60), mm = m%60; const ap = h>=12?'PM':'AM'; return `${((h+11)%12)+1}:${String(mm).padStart(2,'0')} ${ap}`; }
 const pct = m => ((m - LANE_START) / (LANE_END - LANE_START) * 100);
 function stopsOf(k){ return tours[k].slice().sort((a,b)=>a.start-b.start); }
@@ -839,12 +1136,13 @@ async function renderTour(){
   const focus = focusItem(act);
   act.seq = buildRoute ? act.stops.map(x=>x.it) : (focus ? [focus] : []);
   if (act.seq.length){
-    try{
-      const coords = [HOME, ...act.seq].map(i=>`${i.lon},${i.lat}`).join(';');
-      const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-      const j = await r.json();
-      if (j.routes && j.routes[0]) act.geom = j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
-    }catch(e){}
+    const rt = await route([HOME, ...act.seq].map(i=>`${i.lon},${i.lat}`).join(';'));
+    if (rt){
+      act.geom = rt.geometry.coordinates.map(c=>[c[1],c[0]]);
+      act.legs = rt.legs.map(l => Math.max(1, Math.round(l.duration/60)));
+      act.miles = rt.distance / 1609.34;
+      act.mins  = Math.max(1, Math.round(rt.duration/60));
+    }
   }
   for (const day of DAYS){
     const {stops} = dayData[day.k];
@@ -853,9 +1151,10 @@ async function renderTour(){
     stops.forEach((sd, n) => {
       const end = sd.start + DWELL(sd.it);
       if (n > 0){
-        // a plain connector between stops -- it carries no time claim
         const prev = stops[n-1], pend = prev.start + DWELL(prev.it), gap = sd.start - pend;
-        if (gap > 0) lane += `<div class="lbk walk" style="left:${pct(pend)}%;width:${pct(sd.start)-pct(pend)}%"></div>`;
+        // real walking minutes when the day on show was routed, else an estimate
+        const need = (day.k===activeDay && legsOf(act,n)) || walkMin(prev.it, sd.it);
+        if (gap > 0) lane += `<div class="lbk walk ${gap < need ? 'tight':''}" style="left:${pct(pend)}%;width:${pct(sd.start)-pct(pend)}%"><i>${need} min</i></div>`;
       }
       // the hotel is starred; only real destinations take a number
       const badge = sd.it.home ? '<span class="n hm">★</span>' : `<span class="n">${++dest}</span>`;
@@ -863,7 +1162,7 @@ async function renderTour(){
     });
     const w = WXD[day.k] || {hi:'–',lo:'–',line:'',g:'cloudsun'};
     html += `<div class="dayrow ${day.k===activeDay?'active':''}" data-day="${day.k}">
-      <div class="lab">${svg(w.g)}<div><b>${day.name}</b> <span class="s">${day.sub}</span></div><div class="t"><span class="hi">${w.hi}°</span> <span class="lo">${w.lo}°</span> · ${esc(w.line)}</div>${stops.length?`<button onclick="event.stopPropagation();clearDay('${day.k}')">Clear</button>`:''}</div>
+      <div class="lab"><div><b>${day.name}</b> <span class="s">${day.sub}</span></div><span class="s">${stops.length?`${stops.length} stop${stops.length>1?'s':''}`:'&nbsp;'}</span>${stops.length?`<button onclick="event.stopPropagation();clearDay('${day.k}')">Clear</button>`:''}</div>
       <div class="lane">${lane}</div></div>`;
   }
   daysEl.innerHTML = html;
@@ -881,7 +1180,10 @@ async function renderTour(){
     // the hotel keeps its permanent star on the map rather than taking a number
     if (it.home) return;
     L.marker([it.lat, it.lon], {icon:L.divIcon({className:'', html:`<div class="pin ${it.eat?'eat':''} ${!buildRoute && focus === it ? 'on':''}"><span>${++dn}</span></div>`, iconSize:[30,30], iconAnchor:[15,30]})}).addTo(layer)
-      .bindPopup(`<b>${esc(it.name)}</b><br>${esc(it.sub||'')}`)
+      .bindPopup(`<b>${esc(it.name)}</b><br>${esc(it.sub||'')}`
+        + (!buildRoute && focusId === it.id
+            ? `<br>${act.mins ? '' : '≈ '}${act.mins || walkMin(HOME, it)} min walk from the hotel · ${(act.miles || walkMi(HOME, it)).toFixed(1)} mi`
+            : ''))
       // clicking a pin picks it; only worth redrawing when the line follows it
       .on('click', () => { focusId = it.id; if (!buildRoute) renderTour(); });
   });
@@ -898,9 +1200,13 @@ async function renderTour(){
     else if (direct.length > 1) routeLine = L.polyline(direct, {color:'#141414', weight:3, opacity:.7, dashArray:'6 8'}).addTo(map);
   }
 }
+// leg n of the routed day: the router is given HOME first, so stop n follows leg n
+function legsOf(act, n){ return act.legs && act.legs[n] ? act.legs[n] : 0; }
 function haversine(a,b){ const R=6371000, toR=x=>x*Math.PI/180; const dLat=toR(b.lat-a.lat), dLon=toR(b.lon-a.lon); const s=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(s)); }
 
 READY = true;
+renderCash();
+renderWxRow();
 sizeTiles();
 renderGrids();
 renderTour();
