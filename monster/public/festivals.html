@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monster Spray — Festival Run</title>
+<style>
+  :root {
+    --paper: #f6f2ec; --card: #fffdf9; --ink: #1c1917; --ink2: #44403c; --ink3: #78716c; --line: #e7e0d6;
+    --orange: #ea580c; --orange2: #fdba74; --orange-bg: #fff4ec; --blue: #0369a1; --blue-bg: #eef7fc; --red: #b91c1c; --red-bg: #fef2f2; --green: #166534; --green-bg: #f0fdf4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; background: var(--paper); color: var(--ink); line-height: 1.5; padding: 40px 20px 80px; }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  h1 span { color: var(--orange); }
+  .sub { font-size: 15px; color: var(--ink3); margin-top: 8px; }
+  .kicker { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--orange); font-weight: 700; margin-bottom: 6px; }
+  h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 12px; }
+  h3 { font-size: 17px; font-weight: 700; margin: 18px 0 8px; }
+  section { margin-top: 44px; }
+  p { font-size: 15px; color: var(--ink2); max-width: 780px; }
+  p + p { margin-top: 8px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; }
+  .card + .card { margin-top: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); font-weight: 700; padding: 8px 10px; border-bottom: 2px solid var(--line); }
+  td { padding: 10px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.d { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  td.fee { white-space: nowrap; font-variant-numeric: tabular-nums; text-align: right; }
+  td .name { font-weight: 700; color: var(--ink); }
+  td .name a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--orange2); }
+  td .name a:hover { color: var(--orange); }
+  td .why { color: var(--ink2); }
+  .tag { display: inline-block; font-size: 12.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
+  .tag.go { background: var(--green-bg); color: var(--green); }
+  .tag.hold { background: var(--red-bg); color: var(--red); }
+  .tag.if { background: var(--blue-bg); color: var(--blue); }
+  .tag.opt { background: #f5f5f4; color: var(--ink3); }
+  .tag.horror { background: var(--orange-bg); color: var(--orange); }
+  .week { margin-top: 18px; }
+  .week h3 { display: flex; align-items: baseline; gap: 10px; margin-top: 0; }
+  .week h3 small { font-size: 13px; color: var(--ink3); font-weight: 600; }
+  .week .sum { font-size: 13px; color: var(--ink3); text-align: right; padding: 6px 10px 0; }
+  .cities { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+  .city { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+  .city h3 { margin-top: 0; font-size: 18px; }
+  .city ul { list-style: none; margin-top: 8px; }
+  .city li { padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .city li:first-child { border-top: none; }
+  .city li b { display: block; color: var(--ink); }
+  .city li span { color: var(--ink2); }
+  .city .verdict { font-size: 14px; color: var(--ink2); background: var(--orange-bg); border-left: 3px solid var(--orange); padding: 8px 12px; border-radius: 0 8px 8px 0; margin-top: 4px; }
+  .budget { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .budget .card h3 { margin-top: 0; }
+  .budget ul { list-style: none; margin-top: 8px; font-size: 14px; }
+  .budget li { display: flex; justify-content: space-between; padding: 5px 0; border-top: 1px solid var(--line); }
+  .budget li:first-child { border-top: none; }
+  .budget li.total { font-weight: 800; border-top: 2px solid var(--ink); margin-top: 6px; padding-top: 8px; }
+  .note { font-size: 14px; color: var(--ink3); }
+  .footer { margin-top: 40px; font-size: 13px; color: var(--ink3); border-top: 1px solid var(--line); padding-top: 14px; }
+  .sitenav { display: flex; gap: 10px; align-items: baseline; font-size: 14px; margin-bottom: 26px; color: var(--ink3); }
+  .sitenav a { color: var(--ink2); text-decoration: none; font-weight: 600; }
+  .sitenav a:first-child { color: var(--orange); font-weight: 800; letter-spacing: -0.01em; }
+  .sitenav a.on { color: var(--ink); border-bottom: 2px solid var(--orange); }
+  .sitenav a:hover { color: var(--orange); }
+  @media (max-width: 640px) { html { font-size: 14px; } h1 { font-size: 28px; } td, th { padding: 8px 6px; } }
+  @media print { body { background: #fff; padding: 0; } .card, .city { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="sitenav"><a href="./">Monster Spray</a><span>·</span><a href="festivals.html" class="on">Festivals</a><span>·</span><a href="schedule.html">Schedule</a></nav>
+
+  <h1>Monster Spray — <span>the festival run</span></h1>
+  <div class="sub">10-minute horror short · final cut Dec 1, 2026 · deadlines from Dec 1 onward · fees are standard (non-Gold) short-film rates in USD, checked Sep 29, 2026</div>
+
+  <section>
+    <h2>Week by week</h2>
+
+    <div class="card week">
+      <h3>Dec 1 – 7</h3>
+      <table>
+        <tr><th>Deadline</th><th>Festival</th><th>Why</th><th style="text-align:right">Fee</th></tr>
+        <tr><td class="d">Dec 1</td><td><span class="name"><a href="https://filmfreeway.com/ChattanoogaFilmFest">Chattanooga Film Festival</a></span><span class="tag go">go</span><span class="tag horror">genre-loved</span></td><td class="why">Jun 24–Jul 1 2027, in-person + virtual. The Tennessee festival for this film. Regular deadline; $75 Feb 1, $80 Apr 30. Shorts under 30 min, zero tolerance on generative AI.</td><td class="fee">$65</td></tr>
+        <tr><td class="d">Dec 1</td><td><span class="name"><a href="https://filmfreeway.com/FantasiaFilmFestival">Fantasia</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Montreal, Jul 15–Aug 1 2027. North America's largest genre festival. Early-bird; $85 by Jan 15, $120 by Apr 15. Montreal premiere, not online.</td><td class="fee">$80</td></tr>
+        <tr><td class="d">Dec 1</td><td><span class="name"><a href="https://filmfreeway.com/FilmQuest">FilmQuest</a></span><span class="tag go">go</span><span class="tag horror">genre-only</span></td><td class="why">Provo UT, Oct 2027. FilmFreeway's best-reviewed festival; genre only; no premiere rule for non-Utah shorts. The 2027 call is expected to open ~Dec 1 with a super-early-bird around $40.</td><td class="fee">~$40</td></tr>
+        <tr><td class="d">Dec 3</td><td><span class="name"><a href="https://tribecafilm.com/festival/submissions">Tribeca Festival</a></span><span class="tag go">go — verify</span></td><td class="why">Jun 2027. A-list, Oscar-qualifying, has programmed genre shorts. The 2027 page still showed 2026 when checked; last year Regular was Dec 3 at $70, Extended Feb 4 at $85. No prior NY-region public screening.</td><td class="fee">~$70</td></tr>
+        <tr><td class="d">~Dec</td><td><span class="name"><a href="https://filmfreeway.com/PortlandHorrorFilmFestival">Portland Horror Film Festival</a></span><span class="tag go">go</span><span class="tag horror">Portland</span></td><td class="why">Hollywood Theatre, June 2027. The Portland target; wants at least a Portland premiere, so nothing else in Portland screens first. Call opens late Nov/early Dec; shorts from ~$10 at the first tier.</td><td class="fee">~$10</td></tr>
+        <tr><td class="d">~Dec 1</td><td><span class="name"><a href="https://filmfreeway.com/TellurideHorrorShow">Telluride Horror Show</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Oct 2027. Colorado's premier horror fest. 2027 call opens ~Dec 1; last cycle's early-bird was Mar 15 at $45 — enter at the first tier.</td><td class="fee">~$45</td></tr>
+      </table>
+      <div class="sum">Week: ~$310</div>
+    </div>
+
+    <div class="card week">
+      <h3>Dec 8 – 14</h3>
+      <table>
+        <tr><th>Deadline</th><th>Festival</th><th>Why</th><th style="text-align:right">Fee</th></tr>
+        <tr><td class="d">Dec 9</td><td><span class="name"><a href="https://filmfreeway.com/FloridaFilmFestival">Florida Film Festival</a></span><span class="tag go">go</span></td><td class="why">Enzian, Maitland (Orlando), Apr 9–18 2027. Academy-accredited in all three shorts categories; genre shorts run in its Midnight block and stay eligible for Best Narrative Short. Submit as Narrative Short. Extended (final) deadline, so it's the pricey tier. Florida premiere for competition. Notification Feb 26.</td><td class="fee">$90</td></tr>
+        <tr><td class="d">Dec 10</td><td><span class="name"><a href="https://filmfreeway.com/LasVegasFilmFestival">Las Vegas Film Festival</a></span><span class="tag go">go</span></td><td class="why">Jan 14–21 2027 relaunch, entry fees waived this year. Unproven, no premiere rule, costs nothing. Extended deadline.</td><td class="fee">$0</td></tr>
+        <tr><td class="d">Dec 10</td><td><span class="name"><a href="https://filmfreeway.com/InternationalHorrorSciFiFilmFestival">International Horror &amp; Sci-Fi Film Festival</a></span><span class="tag opt">optional</span><span class="tag horror">horror</span></td><td class="why">Phoenix, Apr 1–11 2027, inside Phoenix Film Festival at a Harkins multiplex. 21 years. Extended price.</td><td class="fee">$80</td></tr>
+      </table>
+      <div class="sum">Week: $90 (+$80 optional)</div>
+    </div>
+
+    <div class="card week">
+      <h3>Dec 15 – 21</h3>
+      <table>
+        <tr><th>Deadline</th><th>Festival</th><th>Why</th><th style="text-align:right">Fee</th></tr>
+        <tr><td class="d">Dec 17</td><td><span class="name"><a href="https://filmfreeway.com/SIFF">Seattle International Film Festival</a></span><span class="tag go">go</span></td><td class="why">May 13–23 2027. 53 years, A-tier, Oscar-qualifying shorts. Western Washington premiere required; no US broadcast/VOD. $100 by Jan 7. The Seattle prestige entry.</td><td class="fee">$80</td></tr>
+        <tr><td class="d">Dec 18</td><td><span class="name"><a href="https://filmfreeway.com/ConeyIslandFilmFestival">Coney Island Film Festival</a></span><span class="tag go">go</span><span class="tag horror">horror category</span></td><td class="why">Brooklyn, Apr 30–May 2 2027. 27 years, Sideshow venue, dedicated Horror category. Late deadline; $45 by Feb 12.</td><td class="fee">$40</td></tr>
+        <tr><td class="d">Dec 19</td><td><span class="name"><a href="https://filmfreeway.com/HorrorHoundWeekendFilmFestival">Spring HorrorHound Film Festival</a></span><span class="tag opt">optional</span><span class="tag horror">horror</span></td><td class="why">Cincinnati, Mar 19–21 2027. HorrorHound magazine's convention fest; big fan audience. Extended price.</td><td class="fee">$55</td></tr>
+        <tr><td class="d">Dec 21</td><td><span class="name"><a href="https://filmfreeway.com/SalemHorrorFest">Salem Horror Fest</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Salem MA, Apr 29–May 8 2027. Highly regarded, socially minded horror fest; 15-min cap. Regular (final) deadline.</td><td class="fee">$55</td></tr>
+      </table>
+      <div class="sum">Week: $175 (+$55 optional)</div>
+    </div>
+
+    <div class="card week">
+      <h3>Dec 22 – Jan 4</h3>
+      <table>
+        <tr><th>Deadline</th><th>Festival</th><th>Why</th><th style="text-align:right">Fee</th></tr>
+        <tr><td class="d">Dec 31</td><td><span class="name"><a href="https://filmfreeway.com/PopcornFrights">Popcorn Frights</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Fort Lauderdale, Aug 5–15 2027. Largest genre fest in the Southeast, cheap. Wants a Florida premiere — if Florida Film Festival selects the film, this is the one to give up. New Year tier; $35 by Feb 28.</td><td class="fee">$30</td></tr>
+        <tr><td class="d">Dec 31</td><td><span class="name"><a href="https://filmfreeway.com/BostonUndergroundFilmFestival">Boston Underground</a></span><span class="tag opt">optional</span><span class="tag horror">cult</span></td><td class="why">Brattle Theatre, Mar 17–21 2027. Strong horror reputation. Late; $50 by Jan 20.</td><td class="fee">$45</td></tr>
+        <tr><td class="d">Dec 31</td><td><span class="name"><a href="https://filmfreeway.com/BuriedAliveFilmFestival">Buried Alive</a></span><span class="tag opt">optional</span><span class="tag horror">horror</span></td><td class="why">Atlanta, Plaza Theatre, Nov 2027. Punk-spirited horror fest. 2027 call expected ~Dec with early-bird ~Dec 31 at $25 (last cycle's pattern).</td><td class="fee">~$25</td></tr>
+        <tr><td class="d">Dec 31</td><td><span class="name"><a href="https://filmfreeway.com/TerrorintheBay">Terror in the Bay</a></span><span class="tag opt">optional</span><span class="tag horror">horror</span></td><td class="why">Thunder Bay ON, Oct 2027. Small, well-reviewed, distribution ties to Terror Films. Super-early-bird ~Dec 31 at $15 (last cycle's pattern).</td><td class="fee">~$15</td></tr>
+        <tr><td class="d">Jan 4</td><td><span class="name"><a href="https://filmfreeway.com/OverlookFilmFestival">Overlook Film Festival</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">New Orleans, Apr 15–18 2027. Blumhouse-adjacent, industry-heavy — the prestige US horror fest. Late tier; $95 by Jan 29. Not online, not released.</td><td class="fee">$85</td></tr>
+      </table>
+      <div class="sum">Week: $115 (+$85 optional)</div>
+    </div>
+
+    <div class="card week">
+      <h3>Jan 5 – 18</h3>
+      <table>
+        <tr><th>Deadline</th><th>Festival</th><th>Why</th><th style="text-align:right">Fee</th></tr>
+        <tr><td class="d">Jan 5</td><td><span class="name"><a href="https://filmfreeway.com/BrooklynFilmFestival">Brooklyn Film Festival</a></span><span class="tag opt">optional</span></td><td class="why">May 20–Jun 3 2027. 30 years, solid indie fest, all genres. Regular; ladder to $100.</td><td class="fee">$80</td></tr>
+        <tr><td class="d">Jan 10</td><td><span class="name"><a href="https://filmfreeway.com/BrusselsInternationalFantasticFilmFestival">BIFFF Brussels</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Mar 25–Apr 10 2027. One of Europe's big three fantastic festivals, Méliès-qualifying, cheap. Belgian premiere; not freely online.</td><td class="fee">~$22</td></tr>
+        <tr><td class="d">Jan 10</td><td><span class="name"><a href="https://filmfreeway.com/Fantaspoa">Fantaspoa</a></span><span class="tag opt">optional</span><span class="tag horror">top tier</span></td><td class="why">Porto Alegre, Apr 7–25 2027. Latin America's largest genre fest, Méliès federation. Extended (final) tier.</td><td class="fee">$74</td></tr>
+        <tr><td class="d">Jan 15</td><td><span class="name"><a href="https://filmfreeway.com/CrypticonSeattleHorrorFilmFestival">Crypticon Seattle</a></span><span class="tag go">go</span><span class="tag horror">Seattle</span></td><td class="why">Apr 30–May 2 2027. Convention fest with a big genre audience; "WTF Shorts" category. Early-bird; $35 by Mar 1. Free for OR/WA/ID filmmakers.</td><td class="fee">$25</td></tr>
+        <tr><td class="d">~Jan</td><td><span class="name"><a href="https://filmfreeway.com/NightmaresFilmFest">Nightmares Film Festival</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Columbus OH, Oct 2027. "Best genre fest" per many filmmakers; huge shorts slate. 2027 call ~Jan; last cycle's early-bird was Jan 13 at $29.</td><td class="fee">~$29</td></tr>
+        <tr><td class="d">~Jan</td><td><span class="name"><a href="https://filmfreeway.com/Grimmfest">Grimmfest</a></span><span class="tag opt">optional</span><span class="tag horror">top tier</span></td><td class="why">Manchester UK, Oct 2027. UK's #2 horror fest, BIFA-qualifying. 2027 call ~Dec/Jan; earliest tier ~$20.</td><td class="fee">~$20</td></tr>
+      </table>
+      <div class="sum">Week: ~$76 (+$174 optional)</div>
+    </div>
+
+    <div class="card week">
+      <h3>Jan 19 – Feb 1</h3>
+      <table>
+        <tr><th>Deadline</th><th>Festival</th><th>Why</th><th style="text-align:right">Fee</th></tr>
+        <tr><td class="d">~Jan 21</td><td><span class="name"><a href="https://filmfreeway.com/BrooklynHorrorFest">Brooklyn Horror Film Festival</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Nitehawk, Oct 2027. The most prestigious East Coast horror fest. 2027 call ~Jan; last cycle's super-early-bird was Jan 21 at $38. NY premiere preferred; not online.</td><td class="fee">~$38</td></tr>
+        <tr><td class="d">Jan 21</td><td><span class="name"><a href="https://filmfreeway.com/CrimsonScreenHorrorFilmFest">Crimson Screen</a></span><span class="tag opt">optional</span><span class="tag horror">horror</span></td><td class="why">Columbia SC, May 14–16 2027. Joe Bob Briggs-endorsed; ShortsTV broadcast potential. Regular.</td><td class="fee">$39</td></tr>
+        <tr><td class="d">~late Jan</td><td><span class="name"><a href="https://filmfreeway.com/FREAKSHOWHorrorFilmFestival">Freak Show Horror Film Festival</a></span><span class="tag go">go</span><span class="tag horror">Orlando</span></td><td class="why">Orlando's only horror-only fest, 21 years, Oct 2027. No premiere rule; 10 min is its "Super Short" category. Early-bird ~late Jan at ~$25 (last cycle's pattern).</td><td class="fee">~$25</td></tr>
+        <tr><td class="d">Jan 29</td><td><span class="name"><a href="https://filmfreeway.com/SinCityHorrorFest">Sin City Horror Fest</a></span><span class="tag go">go</span><span class="tag horror">Las Vegas</span></td><td class="why">Sep 8–12 2027. 10 years, respected, very cheap. Early-bird; $20 by Apr 30. The Las Vegas horror entry.</td><td class="fee">$18</td></tr>
+        <tr><td class="d">Jan 29</td><td><span class="name"><a href="https://filmfreeway.com/HollyShortsFilmFestival">HollyShorts</a></span><span class="tag go">go</span></td><td class="why">Los Angeles, Aug 2027. Oscar- and BAFTA-qualifying with a Midnight section — the most accessible qualifying route for a horror short. Early-bird; $65 by Apr 2. LA premiere if selected.</td><td class="fee">$55</td></tr>
+        <tr><td class="d">Jan 31</td><td><span class="name"><a href="https://filmfreeway.com/BushwickFilmFestival">Bushwick Film Festival</a></span><span class="tag opt">optional</span></td><td class="why">Brooklyn, Oct 2027. ~1,100 submissions / 100 selected. Early-bird ~$35 (last cycle's pattern).</td><td class="fee">~$35</td></tr>
+      </table>
+      <div class="sum">Week: ~$136 (+$74 optional)</div>
+    </div>
+
+    <div class="card week">
+      <h3>February and beyond</h3>
+      <table>
+        <tr><th>Deadline</th><th>Festival</th><th>Why</th><th style="text-align:right">Fee</th></tr>
+        <tr><td class="d">~Feb</td><td><span class="name"><a href="https://filmfreeway.com/FantasticFest">Fantastic Fest</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Austin, Sep 2027. The #1 US genre festival (Alamo Drafthouse). 2027 call ~Dec/Jan; last cycle's early-bird was Feb 13 at $50. Texas premiere or better; not online.</td><td class="fee">~$50</td></tr>
+        <tr><td class="d">~Feb</td><td><span class="name"><a href="https://filmfreeway.com/BeyondFest">Beyond Fest</a></span><span class="tag opt">optional</span><span class="tag horror">top tier</span></td><td class="why">Los Angeles, Sep–Oct 2027. Biggest-attended US genre fest (American Cinematheque). Early-bird ~Feb 15 at $30.</td><td class="fee">~$30</td></tr>
+        <tr><td class="d">~Feb</td><td><span class="name"><a href="https://filmfreeway.com/NashvilleHorrorFilmFestival">Nashville Horror Film Festival</a></span><span class="tag opt">optional</span><span class="tag horror">Nashville</span></td><td class="why">Oct 2027, Regal Green Hills. Young and cheap; no premiere rule, so it can follow Chattanooga. Early-bird ~Feb 28 at $14.</td><td class="fee">~$14</td></tr>
+        <tr><td class="d">Feb 12</td><td><span class="name">Coney Island final</span><span class="tag opt">backstop</span></td><td class="why">$45 if the Dec 18 tier slipped.</td><td class="fee">$45</td></tr>
+        <tr><td class="d">Feb 14</td><td><span class="name"><a href="https://filmfreeway.com/FestivalofCinemaNYC">Festival of Cinema NYC</a></span><span class="tag opt">optional</span></td><td class="why">Queens, Aug 2027. Mid-tier, all genres. Regular through Feb 14.</td><td class="fee">$50</td></tr>
+        <tr><td class="d">Feb 19</td><td><span class="name"><a href="https://filmfreeway.com/PanicFest">Panic Fest</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Kansas City, Apr 1–11 2027, in-person + virtual. Well-regarded Midwest genre fest. Regular tier runs Jan 1 to the extended cutoff; $60 in January, $65 by Feb 19. Notification by Feb 19. No premiere rule.</td><td class="fee">$60</td></tr>
+        <tr><td class="d">~Mar</td><td><span class="name"><a href="https://filmfreeway.com/SpookyEmpireFilmFest">Spooky Empire Film Festival</a></span><span class="tag go">go</span><span class="tag horror">Orlando</span></td><td class="why">Inside the 15,000-person Spooky Empire convention, Orlando, late Oct 2027. 20 years, no premiere rule. 2027 call ~Mar–Jul; first tier ~$10.</td><td class="fee">~$10</td></tr>
+        <tr><td class="d">Mar 31</td><td><span class="name"><a href="https://filmfreeway.com/Macabro">Macabro</a></span><span class="tag opt">optional</span><span class="tag horror">horror</span></td><td class="why">Mexico City, Aug 2027. Mexico's oldest horror fest; no premiere rule for shorts. Fee not published.</td><td class="fee">—</td></tr>
+        <tr><td class="d">~Apr</td><td><span class="name"><a href="https://filmfreeway.com/ScreamfestHorrorFilmFestival">Screamfest</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Los Angeles, TCL Chinese 6, Oct 2027. Longest-running LA horror fest. Early-bird ~Apr 15 at $37 (super-shorts under 10 min are $5 less). LA County premiere; not online.</td><td class="fee">~$37</td></tr>
+        <tr><td class="d">~Apr</td><td><span class="name"><a href="https://filmfreeway.com/TorontoAfterDark">Toronto After Dark</a></span><span class="tag opt">optional</span><span class="tag horror">top tier</span></td><td class="why">Oct 2027. Canada's big-city genre fest. Super-early-bird ~Apr 7 at $55.</td><td class="fee">~$55</td></tr>
+        <tr><td class="d">~May</td><td><span class="name"><a href="https://filmfreeway.com/IndieMemphis">Indie Memphis</a></span><span class="tag go">go</span><span class="tag horror">Memphis</span></td><td class="why">Nov 2027, 28 years, Oscar-qualifying, the top Southern regional fest. Memphis premiere required. Early ~May 1 at $45.</td><td class="fee">~$45</td></tr>
+        <tr><td class="d">~May</td><td><span class="name"><a href="https://filmfreeway.com/NewYorkCityFilmFestival">NYC Horror Film Festival</a></span><span class="tag opt">optional</span><span class="tag horror">horror</span></td><td class="why">Dec 2027, 23 years, the longest-running NYC horror fest. Bars NYC-metro screenings within 3 months of its dates. Early ~May 30 at $47.</td><td class="fee">~$47</td></tr>
+        <tr><td class="d">~Jun</td><td><span class="name"><a href="https://filmfreeway.com/SITGES-InternationalFantasticFilmFestivalofCatalonia">Sitges</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Catalonia, Oct 2027. The most prestigious genre festival in the world, and the only horror fest on the Academy's shorts-qualifying list. 2027 call ~Feb; early-bird ~Jun 18 at ~€60. Spanish premiere for competition.</td><td class="fee">~$65</td></tr>
+        <tr><td class="d">~Jun</td><td><span class="name"><a href="https://filmfreeway.com/FrightFest">FrightFest London</a></span><span class="tag go">go</span><span class="tag horror">top tier</span></td><td class="why">Aug 26–30 2027. UK's biggest horror fest. Standard shorts deadline Jun 6 at $25 (the $15 early-bird closed Nov 29). DCP only.</td><td class="fee">$25</td></tr>
+        <tr><td class="d">~Aug</td><td><span class="name"><a href="https://filmfreeway.com/KnoxvilleHorrorFilmFest">Knoxville Horror Film Fest</a></span><span class="tag opt">optional</span><span class="tag horror">Tennessee</span></td><td class="why">Oct 2027. "Tennessee Terrors" category at $35. Can follow Chattanooga.</td><td class="fee">$35–50</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">City by city</div>
+    <h2>Portland, Las Vegas, Nashville, Chattanooga, Memphis, Orlando, New York, Seattle</h2>
+    <div class="cities">
+      <div class="city">
+        <h3>Portland</h3>
+        <div class="verdict">Portland Horror Film Festival only (June 2027, call opens ~Dec). It wants a Portland premiere; nothing else in town is worth spending that on.</div>
+        <ul>
+          <li><b>Portland Horror Film Festival</b><span>Hollywood Theatre. 11 years, the genre fest in town. Shorts from ~$10 at the first tier. No US commercial/online play.</span></li>
+          <li><b>Portland Panorama</b><span>Apr 2027. Dec 15 $40 / Jan 9 $50. Held — screens before PHFF.</span></li>
+          <li><b>Portland Film Festival</b><span>Oct 2027. Mid-tier, closes Nov 18. Held.</span></li>
+          <li><b>H.P. Lovecraft Film Festival</b><span>Oct 2027, 31 years, prestigious but cosmic-horror only. Only if the film fits; 2027 tiers run to Aug.</span></li>
+        </ul>
+      </div>
+      <div class="city">
+        <h3>Las Vegas</h3>
+        <div class="verdict">Las Vegas FF (Dec 10, free) and Sin City Horror Fest (Jan 29, $18). Dam Short closed Oct 31 — next cycle opens Mar 2027 for Feb 2028.</div>
+        <ul>
+          <li><b>Sin City Horror Fest</b><span>Sep 2027. Jan 29 $18 / Apr 30 $20 / Jul 2 $25. Shorts ≤30 min, no premiere rule.</span></li>
+          <li><b>Las Vegas Film Festival</b><span>Jan 14–21 2027 relaunch, fees waived. Dec 10 final.</span></li>
+          <li><b>Dam Short Film Festival</b><span>Boulder City, horror category, no premiere rule. 2028 cycle opens ~Mar 2027 ($35 extra-early-bird).</span></li>
+          <li><b>LV Int'l Film &amp; Screenwriting</b><span>Modest; 2027 call ~Dec. Low priority.</span></li>
+        </ul>
+      </div>
+      <div class="city">
+        <h3>Nashville</h3>
+        <div class="verdict">Nashville Film Festival is off the list: its Graveyard Shorts need a Tennessee premiere and Chattanooga screens first. Nashville Horror can follow Chattanooga.</div>
+        <ul>
+          <li><b>Nashville Horror Film Festival</b><span>Oct 2027, 3 years, cheap ($14–29), no premiere rule. Call ~Feb.</span></li>
+          <li><b>Nashville Film Festival</b><span>Sep 2027, Oscar-qualifying, TN premiere required. Skipped for Chattanooga.</span></li>
+        </ul>
+      </div>
+      <div class="city">
+        <h3>Chattanooga</h3>
+        <div class="verdict">Chattanooga Film Festival, Dec 1, $65 — the Tennessee festival for this film. No premiere rule, so Knoxville Horror and Nashville Horror can follow.</div>
+        <ul>
+          <li><b>Chattanooga Film Festival</b><span>Jun 24–Jul 1 2027, in-person + virtual, 13 years. Shorts under 30 min. Zero tolerance on generative AI.</span></li>
+          <li><b>Nooga Underground</b><span>Oct 2027, scrappy local fest, opens Jan 1, $20–35 (TN discount).</span></li>
+        </ul>
+      </div>
+      <div class="city">
+        <h3>Memphis</h3>
+        <div class="verdict">Indie Memphis, call ~May 2027 for Nov 2027. Requires a Memphis premiere, which nothing else on the list touches.</div>
+        <ul>
+          <li><b>Indie Memphis</b><span>28 years, Oscar-qualifying, top Southern regional fest. Shorts ≤25 min. Early ~May 1 $45 → late ~Jun 26 $65.</span></li>
+        </ul>
+      </div>
+      <div class="city">
+        <h3>Orlando</h3>
+        <div class="verdict">Florida Film Festival (Dec 9, $90) now; Freak Show at its early-bird (~late Jan); Spooky Empire in spring. Hold the Florida premiere for Enzian.</div>
+        <ul>
+          <li><b>Florida Film Festival (Enzian)</b><span>Apr 9–18 2027, Oscar-qualifying, the region's prestige fest. Genre shorts in the Midnight block. Dec 9 $90 (final). Florida premiere for competition.</span></li>
+          <li><b>Freak Show Horror Film Festival</b><span>Orlando's horror-only fest, 21 years, Oct 2027. No premiere rule. Early-bird ~late Jan ~$25; ladder to $65.</span></li>
+          <li><b>Spooky Empire Film Festival</b><span>Inside the horror convention, Oct 2027. 20 years, $10–30, no premiere rule. Call ~Mar–Jul.</span></li>
+          <li><b>Love Your Shorts</b><span>Sanford, Feb 2027, horror block. Closed Nov 1.</span></li>
+          <li><b>Bizarroland (ex-Sick 'n' Wrong)</b><span>Dec 2027 next; cult/transgressive; call ~spring, $11–30.</span></li>
+          <li><b>Central Florida FF (Mount Dora)</b><span>Jan 2028 next; Best Horror Short award; call ~May, $25–55.</span></li>
+          <li><b>Orlando Film Festival</b><span>Needs a Central Florida premiere and bars prior screenings within 15 miles — incompatible with the horror fests above. Skip.</span></li>
+          <li><b>Orlando International FF</b><span>Reviews call it unresponsive. Skip.</span></li>
+        </ul>
+      </div>
+      <div class="city">
+        <h3>New York</h3>
+        <div class="verdict">Tribeca (Dec 3) as the lottery ticket; Coney Island (Dec 18) as the real bet; Brooklyn Horror in January. If Tribeca or Brooklyn Horror selects the film, withdraw from the smaller one.</div>
+        <ul>
+          <li><b>Tribeca</b><span>Jun 2027. Oscar-qualifying. Last cycle's fees $70 Dec 3 / $85 Feb 4; confirm the 2027 call. No prior NY-region public screening.</span></li>
+          <li><b>Coney Island Film Festival</b><span>Apr 30–May 2 2027. Horror category, any runtime. Dec 18 $40 / Feb 12 $45.</span></li>
+          <li><b>Brooklyn Horror</b><span>Oct 2027. The East Coast horror fest. Call ~Jan, from ~$38. NY premiere preferred.</span></li>
+          <li><b>NYC Horror FF</b><span>Dec 2027; call ~May, $47–68. Bars NYC-metro screenings within 3 months.</span></li>
+          <li><b>Brooklyn Film Festival</b><span>May 2027. Jan 5 $80, ladder to $100. Optional.</span></li>
+          <li><b>Festival of Cinema NYC</b><span>Aug 2027, $50 through Feb 14. Optional.</span></li>
+          <li><b>Queens World · NY Shorts · Big Apple</b><span>Queens World closed Nov 16; NY Shorts and Big Apple are 2027 calls (~May, ~Sep). Low priority.</span></li>
+        </ul>
+      </div>
+      <div class="city">
+        <h3>Seattle</h3>
+        <div class="verdict">SIFF (Dec 17, $80) for prestige, Crypticon (Jan 15, $25) for the horror crowd.</div>
+        <ul>
+          <li><b>SIFF</b><span>May 13–23 2027, 53 years, Oscar-qualifying shorts. Western Washington premiere required; no US broadcast/VOD.</span></li>
+          <li><b>Crypticon Seattle</b><span>Apr 30–May 2 2027, convention fest, shorts under 30 min. Free for OR/WA/ID filmmakers.</span></li>
+          <li><b>SFFSFF (MoPOP)</b><span>Sci-fi/fantasy only. Dec 31 late, $35. Only if the film reads as a monster fable rather than horror.</span></li>
+          <li><b>Seattle Film Festival</b><span>Volume model, 11 deadlines. Skip.</span></li>
+          <li><b>Seattle Shorts FF · NW Filmmakers' Festival · Local Sightings</b><span>Dormant, dormant, and PNW-shot-only. Not this year.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">The circuit</div>
+    <h2>Top-tier horror &amp; genre festivals that take shorts</h2>
+    <p>Ranked roughly by reputation. Sitges is the only horror festival on the Academy's shorts-qualifying list; HollyShorts is the accessible qualifying route with a genre section.</p>
+    <div class="card">
+      <table>
+        <tr><th>Festival</th><th>Where · when</th><th>Next deadline</th><th>Runtime cap</th><th style="text-align:right">Short fee</th></tr>
+        <tr><td><span class="name">Sitges</span></td><td>Catalonia · Oct</td><td>call ~Feb; early-bird ~Jun 18</td><td>30 min</td><td class="fee">~$65–76</td></tr>
+        <tr><td><span class="name">Fantastic Fest</span></td><td>Austin · Sep</td><td>call ~Dec/Jan; early-bird ~Feb 13</td><td>25 min</td><td class="fee">~$50–70</td></tr>
+        <tr><td><span class="name">Fantasia</span></td><td>Montreal · Jul–Aug</td><td><span class="tag go">Dec 1</span></td><td>22 min</td><td class="fee">$80–120</td></tr>
+        <tr><td><span class="name">Overlook</span></td><td>New Orleans · Apr</td><td><span class="tag go">Jan 4</span></td><td>40 min</td><td class="fee">$85–95</td></tr>
+        <tr><td><span class="name">Brooklyn Horror</span></td><td>Brooklyn · Oct</td><td>call ~Jan 21</td><td>45 min</td><td class="fee">~$38–70</td></tr>
+        <tr><td><span class="name">FrightFest</span></td><td>London · Aug</td><td>Jun 6</td><td>20 min</td><td class="fee">$25</td></tr>
+        <tr><td><span class="name">Screamfest</span></td><td>Los Angeles · Oct</td><td>call ~Jan; early-bird ~Apr 15</td><td>25 min</td><td class="fee">~$37–67</td></tr>
+        <tr><td><span class="name">Nightmares</span></td><td>Columbus · Oct</td><td>call ~Jan 13</td><td>59 min</td><td class="fee">~$29–49</td></tr>
+        <tr><td><span class="name">Popcorn Frights</span></td><td>Fort Lauderdale · Aug</td><td><span class="tag go">Dec 31</span></td><td>—</td><td class="fee">$30–55</td></tr>
+        <tr><td><span class="name">Panic Fest</span></td><td>Kansas City · Apr</td><td><span class="tag go">Jan – Feb 19</span></td><td>16 min</td><td class="fee">$60–65</td></tr>
+        <tr><td><span class="name">Telluride Horror Show</span></td><td>Telluride · Oct</td><td>call ~Dec 1</td><td>49 min</td><td class="fee">~$45–75</td></tr>
+        <tr><td><span class="name">Salem Horror Fest</span></td><td>Salem · Apr–May</td><td><span class="tag go">Dec 21</span></td><td>15 min</td><td class="fee">$55</td></tr>
+        <tr><td><span class="name">Beyond Fest</span></td><td>Los Angeles · Sep–Oct</td><td>call ~Jan; early-bird ~Feb 15</td><td>25 min</td><td class="fee">~$30–50</td></tr>
+        <tr><td><span class="name">Grimmfest</span></td><td>Manchester · Oct</td><td>call ~Dec/Jan</td><td>30 min</td><td class="fee">~$20–40</td></tr>
+        <tr><td><span class="name">Celluloid Screams</span></td><td>Sheffield · Oct</td><td>call ~Dec; early-bird ~Dec 31</td><td>25 min</td><td class="fee">~$20–47</td></tr>
+        <tr><td><span class="name">Toronto After Dark</span></td><td>Toronto · Oct</td><td>call ~spring; ~Apr 7</td><td>30 min</td><td class="fee">~$55–85</td></tr>
+        <tr><td><span class="name">BIFFF</span></td><td>Brussels · Mar–Apr</td><td><span class="tag go">Jan 10</span></td><td>25 min</td><td class="fee">~$16–22</td></tr>
+        <tr><td><span class="name">Chattanooga FF</span></td><td>Chattanooga · Jun–Jul</td><td><span class="tag go">Dec 1</span></td><td>30 min</td><td class="fee">$65–80</td></tr>
+        <tr><td><span class="name">FilmQuest</span></td><td>Provo · Oct</td><td>call ~Dec 1</td><td>40 min</td><td class="fee">~$40–75</td></tr>
+        <tr><td><span class="name">Fantaspoa</span></td><td>Porto Alegre · Apr</td><td><span class="tag go">Jan 10</span></td><td>30 min</td><td class="fee">$74</td></tr>
+        <tr><td><span class="name">Boston Underground</span></td><td>Cambridge · Mar</td><td><span class="tag go">Dec 31</span></td><td>20 min</td><td class="fee">$45–50</td></tr>
+        <tr><td><span class="name">HollyShorts (Midnight)</span></td><td>Los Angeles · Aug</td><td><span class="tag go">Jan 29</span></td><td>40 min</td><td class="fee">$55–85</td></tr>
+        <tr><td><span class="name">Mórbido</span></td><td>Mexico City · Oct–Nov</td><td>2027 call TBA</td><td>15 min · Spanish subs</td><td class="fee">~$20</td></tr>
+      </table>
+    </div>
+
+    <h3>Quirky and worth it</h3>
+    <div class="card">
+      <table>
+        <tr><th>Festival</th><th>Where · when</th><th>Next deadline</th><th>Note</th><th style="text-align:right">Short fee</th></tr>
+        <tr><td><span class="name">Coney Island FF</span></td><td>Brooklyn · Apr–May</td><td><span class="tag go">Dec 18 / Feb 12</span></td><td>Sideshow venue; horror category, any runtime.</td><td class="fee">$40 / $45</td></tr>
+        <tr><td><span class="name">Spring HorrorHound</span></td><td>Cincinnati · Mar</td><td><span class="tag go">Dec 19</span></td><td>Magazine's convention fest; big fan audience.</td><td class="fee">$55</td></tr>
+        <tr><td><span class="name">Crypticon Seattle</span></td><td>Seattle · Apr–May</td><td><span class="tag go">Jan 15</span></td><td>Convention fest, "WTF Shorts."</td><td class="fee">$25</td></tr>
+        <tr><td><span class="name">Freak Show</span></td><td>Orlando · Oct</td><td>~late Jan</td><td>Orlando's horror-only fest; Super Short category.</td><td class="fee">~$25</td></tr>
+        <tr><td><span class="name">Sin City Horror Fest</span></td><td>Las Vegas · Sep</td><td><span class="tag go">Jan 29</span></td><td>Cheap, respected.</td><td class="fee">$18</td></tr>
+        <tr><td><span class="name">Crimson Screen</span></td><td>Columbia SC · May</td><td><span class="tag go">Jan 21</span></td><td>Joe Bob Briggs-endorsed; ShortsTV broadcast potential.</td><td class="fee">$39</td></tr>
+        <tr><td><span class="name">Spooky Empire</span></td><td>Orlando · Oct</td><td>~Mar</td><td>Inside a 15,000-person horror convention.</td><td class="fee">~$10–30</td></tr>
+        <tr><td><span class="name">Buried Alive</span></td><td>Atlanta · Nov</td><td>call ~Dec; ~Dec 31</td><td>Punk-spirited, Plaza Theatre.</td><td class="fee">~$25–85</td></tr>
+        <tr><td><span class="name">Terror in the Bay</span></td><td>Thunder Bay · Oct</td><td>call ~Dec; ~Dec 31</td><td>Distribution ties to Terror Films.</td><td class="fee">~$15–45</td></tr>
+        <tr><td><span class="name">Atlanta HorrorFest</span></td><td>Atlanta · Oct</td><td>~Feb 28</td><td>Code "horrorfreak" for 20% off.</td><td class="fee">~$30–60</td></tr>
+        <tr><td><span class="name">Nashville Horror</span></td><td>Nashville · Oct</td><td>~Feb 28</td><td>Cheap; no premiere rule.</td><td class="fee">~$14–29</td></tr>
+        <tr><td><span class="name">Knoxville Horror</span></td><td>Knoxville · Oct</td><td>~Aug 1</td><td>"Tennessee Terrors" category.</td><td class="fee">$35–50</td></tr>
+        <tr><td><span class="name">Dead Northern</span></td><td>York UK · Sep</td><td>~early 2027</td><td>Rising UK fest.</td><td class="fee">~$16</td></tr>
+        <tr><td><span class="name">Unnamed Footage Festival</span></td><td>San Francisco · Mar</td><td>Dec 31</td><td>Found-footage / POV only.</td><td class="fee">$20</td></tr>
+      </table>
+      <p class="note" style="margin-top:12px">Closed before Dec 1 and off the list: Nevermore (Nov 20), Days of the Dead (Nov 15), Queens World (Nov 16), Dam Short (Oct 31), Fright Night (Nov 21), Love Your Shorts (Nov 1), Another Hole in the Head (Oct 31), Mórbido (Oct 10), Las Vegas FF's earlier tiers. Dormant or unverifiable for 2027: Horrible Imaginings, Shriekfest (reopens ~Jan), Mile High Horror, Buffalo Dreams, Dead of Winter, Phoenix FearCON, Cinepocalypse. Final Girls Berlin, Ax Wound and Sick Chick Flicks require a woman/trans/non-binary writer, director or producer.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Money</div>
+    <h2>What it costs</h2>
+    <div class="budget">
+      <div class="card">
+        <h3>Recommended core · 22 entries</h3>
+        <ul>
+          <li><span>Chattanooga</span><span>$65</span></li>
+          <li><span>Fantasia</span><span>$80</span></li>
+          <li><span>FilmQuest</span><span>~$40</span></li>
+          <li><span>Tribeca (verify)</span><span>~$70</span></li>
+          <li><span>Portland Horror FF</span><span>~$10</span></li>
+          <li><span>Telluride Horror Show</span><span>~$45</span></li>
+          <li><span>Florida Film Festival</span><span>$90</span></li>
+          <li><span>Las Vegas FF</span><span>$0</span></li>
+          <li><span>SIFF</span><span>$80</span></li>
+          <li><span>Coney Island</span><span>$40</span></li>
+          <li><span>Salem Horror Fest</span><span>$55</span></li>
+          <li><span>Popcorn Frights</span><span>$30</span></li>
+          <li><span>Overlook</span><span>$85</span></li>
+          <li><span>BIFFF</span><span>~$22</span></li>
+          <li><span>Crypticon Seattle</span><span>$25</span></li>
+          <li><span>Nightmares</span><span>~$29</span></li>
+          <li><span>Brooklyn Horror</span><span>~$38</span></li>
+          <li><span>Freak Show</span><span>~$25</span></li>
+          <li><span>Sin City Horror Fest</span><span>$18</span></li>
+          <li><span>HollyShorts</span><span>$55</span></li>
+          <li><span>Fantastic Fest</span><span>~$50</span></li>
+          <li><span>Panic Fest</span><span>$60</span></li>
+          <li class="total"><span>Through February</span><span>~$1,012</span></li>
+        </ul>
+        <p class="note" style="margin-top:8px">Spring adds Spooky Empire (~$10), Screamfest (~$37), Indie Memphis (~$45), Sitges (~$65), FrightFest ($25): ~$1,194 for the year. FilmFreeway Gold takes roughly 10% off most of these.</p>
+      </div>
+      <div class="card">
+        <h3>The five most prestigious, open first</h3>
+        <ul>
+          <li><span>Fantasia (Dec 1)</span><span>$80</span></li>
+          <li><span>Overlook (Jan 4)</span><span>$85</span></li>
+          <li><span>Salem (Dec 21)</span><span>$55</span></li>
+          <li><span>Popcorn Frights (Dec 31)</span><span>$30</span></li>
+          <li><span>BIFFF (Jan 10)</span><span>~$22</span></li>
+          <li class="total"><span>Prestige five</span><span>~$272</span></li>
+        </ul>
+        <p class="note" style="margin-top:8px">Fantastic Fest, Brooklyn Horror, Nightmares and Sitges open their 2027 calls in the new year and belong in this tier too.</p>
+      </div>
+      <div class="card">
+        <h3>A random five, quirky</h3>
+        <ul>
+          <li><span>Coney Island</span><span>$40</span></li>
+          <li><span>Crypticon Seattle</span><span>$25</span></li>
+          <li><span>Sin City Horror Fest</span><span>$18</span></li>
+          <li><span>Freak Show</span><span>~$25</span></li>
+          <li><span>Crimson Screen</span><span>$39</span></li>
+          <li class="total"><span>Quirky five</span><span>~$147</span></li>
+        </ul>
+        <p class="note" style="margin-top:8px">Spooky Empire (~$10) and Nashville Horror (~$14) are the cheapest swaps once their calls open.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Read this too</div>
+    <h2>Caveats</h2>
+    <p>Everything was read off FilmFreeway on Sep 29, 2026. Festivals change tiers without notice. Where a festival's 2027 call hadn't opened yet (Portland Horror, Telluride, FilmQuest, Nightmares, Brooklyn Horror, Fantastic Fest, Screamfest, Beyond Fest, Grimmfest, Celluloid Screams, Sitges, Freak Show, Spooky Empire, Buried Alive, Terror in the Bay, Indie Memphis, NYC Horror, Nashville Horror, Knoxville), the fees shown are last cycle's and the timing is inferred from it — marked with "~".</p>
+    <p>Tribeca's 2027 page was still showing 2026 when checked; the Dec 3 / $70 figure is last year's Regular deadline. Currency conversions (€/£) are approximate.</p>
+    <p>Premiere sequencing: Florida Film Festival (April) and Popcorn Frights (August) both want a Florida premiere — enter both, give up Popcorn Frights if Enzian selects. Portland is held for Portland Horror. Chattanooga screens first in Tennessee. SIFF needs a Western Washington premiere; Fantasia a Montreal one; Fantastic Fest a Texas one; Tribeca no prior NY-region screening. Keep the film off public YouTube/Vimeo until the run is done — most of the top tier disfavors or bars films already online. A password-protected screener is fine everywhere.</p>
+  </section>
+
+  <div class="footer">Built Sep 29, 2026. Sources: FilmFreeway festival pages, tribecafilm.com, the Academy's 99th Awards shorts-qualifying list, Oregon ArtsWatch (Portland Panorama), Ruthless Reviews (Las Vegas FF relaunch), Films Gone Wild (Florida Film Festival 2027 call).</div>
+</div>
+</body>
+</html>

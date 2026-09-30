@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monster Spray — Schedule</title>
+<style>
+  :root {
+    --paper: #f6f2ec; --card: #fffdf9; --ink: #1c1917; --ink2: #44403c; --ink3: #78716c; --line: #e7e0d6;
+    --orange: #ea580c; --orange2: #fdba74; --orange-bg: #fff4ec; --blue: #0369a1; --blue-bg: #eef7fc; --green: #166534; --green-bg: #f0fdf4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; background: var(--paper); color: var(--ink); line-height: 1.5; padding: 40px 20px 80px; }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  .sitenav { display: flex; gap: 10px; align-items: baseline; font-size: 14px; margin-bottom: 26px; color: var(--ink3); }
+  .sitenav a { color: var(--ink2); text-decoration: none; font-weight: 600; }
+  .sitenav a:first-child { color: var(--orange); font-weight: 800; letter-spacing: -0.01em; }
+  .sitenav a.on { color: var(--ink); border-bottom: 2px solid var(--orange); }
+  .sitenav a:hover { color: var(--orange); }
+  h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  h1 span { color: var(--orange); }
+  .sub { font-size: 15px; color: var(--ink3); margin-top: 8px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 24px 14px; margin-top: 28px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); font-weight: 700; padding: 12px 12px 10px; border-bottom: 2px solid var(--line); }
+  th.who { color: var(--ink); font-size: 14px; letter-spacing: .04em; }
+  td { padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.wk { white-space: nowrap; width: 150px; }
+  td.wk b { display: block; font-size: 16px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  td.wk span { font-size: 13px; color: var(--ink3); }
+  td.goal { color: var(--ink2); }
+  td.goal .item { display: block; padding-left: 16px; position: relative; }
+  td.goal .item + .item { margin-top: 4px; }
+  td.goal .item::before { content: ''; position: absolute; left: 0; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--orange2); }
+  td.goal .none { color: #c8c0b5; }
+  .cut { display: inline-block; font-weight: 700; color: var(--ink); background: var(--orange-bg); border: 1px solid var(--orange2); border-radius: 999px; padding: 0 9px; font-size: 14px; }
+  .vfx { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink); }
+  .vfx .bar { width: 90px; height: 7px; border-radius: 4px; background: #efe9e0; overflow: hidden; }
+  .vfx .bar div { height: 100%; background: var(--orange); border-radius: 4px; }
+  tr.now td { background: var(--orange-bg); }
+  tr.now td.wk b { color: var(--orange); }
+  tr.now td:first-child { box-shadow: inset 4px 0 0 var(--orange); }
+  tr.past td.wk b, tr.past td.goal { color: var(--ink3); }
+  tr.final td { background: var(--ink); color: #f5f5f4; border-bottom: none; }
+  tr.final td.wk b, tr.final td .vfx, tr.final td.goal { color: #fff; }
+  tr.final td.wk span { color: #a8a29e; }
+  tr.final .cut { background: #292524; border-color: #57534e; color: #fff; }
+  tr.final td.goal .item::before { background: var(--orange); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 16px; font-size: 14px; color: var(--ink2); }
+  .legend b { color: var(--ink); }
+  .footer { margin-top: 40px; font-size: 13px; color: var(--ink3); border-top: 1px solid var(--line); padding-top: 14px; }
+  @media (max-width: 700px) {
+    html { font-size: 14px; } h1 { font-size: 28px; }
+    .card { padding: 6px 12px 10px; }
+    th, td { padding: 10px 8px; }
+    td.wk { width: auto; }
+    .vfx .bar { width: 60px; }
+  }
+  @media print { body { background: #fff; padding: 0; } tr.now td { background: #fff4ec; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="sitenav"><a href="./">Monster Spray</a><span>·</span><a href="festivals.html">Festivals</a><span>·</span><a href="schedule.html" class="on">Schedule</a></nav>
+
+  <h1>Monster Spray — <span>post schedule</span></h1>
+  <div class="sub">Weekly deliverables from the Aug 1 rough cut to the Dec 1 final cut. Each row is the week ending that Sunday.</div>
+
+  <div class="card">
+    <table id="sched">
+      <thead>
+        <tr><th>Week ending</th><th class="who">Kevin</th><th class="who">Nick</th></tr>
+      </thead>
+      <tbody>
+        <tr data-end="2026-10-04"><td class="wk"><b>Oct 4</b><span>Sep 28 – Oct 4</span></td>
+          <td class="goal"><span class="item">Notes to Nick on the Aug 1, 2026 rough cut</span><span class="item">Count the total number of VFX shots</span></td>
+          <td class="goal"><span class="none">—</span></td></tr>
+        <tr data-end="2026-10-11"><td class="wk"><b>Oct 11</b><span>Oct 5 – 11</span></td>
+          <td class="goal"><span class="item"><span class="vfx">VFX 50%<span class="bar"><div style="width:50%"></div></span></span></span></td>
+          <td class="goal"><span class="item">Incorporate notes into the rough cut</span></td></tr>
+        <tr data-end="2026-10-18"><td class="wk"><b>Oct 18</b><span>Oct 12 – 18</span></td>
+          <td class="goal"><span class="item"><span class="vfx">VFX 60%<span class="bar"><div style="width:60%"></div></span></span></span></td>
+          <td class="goal"><span class="none">—</span></td></tr>
+        <tr data-end="2026-10-25"><td class="wk"><b>Oct 25</b><span>Oct 19 – 25</span></td>
+          <td class="goal"><span class="item"><span class="vfx">VFX 75%<span class="bar"><div style="width:75%"></div></span></span></span></td>
+          <td class="goal"><span class="item"><span class="cut">Fine cut</span> — the Oct 25 cut</span></td></tr>
+        <tr data-end="2026-11-01"><td class="wk"><b>Nov 1</b><span>Oct 26 – Nov 1</span></td>
+          <td class="goal"><span class="item"><span class="vfx">VFX 90%<span class="bar"><div style="width:90%"></div></span></span></span></td>
+          <td class="goal"><span class="none">—</span></td></tr>
+        <tr data-end="2026-11-08"><td class="wk"><b>Nov 8</b><span>Nov 2 – 8</span></td>
+          <td class="goal"><span class="item"><span class="vfx">VFX 100%<span class="bar"><div style="width:100%"></div></span></span></span></td>
+          <td class="goal"><span class="item"><span class="cut">Polish cut</span></span></td></tr>
+        <tr data-end="2026-11-15"><td class="wk"><b>Nov 15</b><span>Nov 9 – 15</span></td>
+          <td class="goal"><span class="item">Credit list</span></td>
+          <td class="goal"><span class="item">Sound effects</span><span class="item">Credit list</span></td></tr>
+        <tr data-end="2026-11-22"><td class="wk"><b>Nov 22</b><span>Nov 16 – 22</span></td>
+          <td class="goal"><span class="item">Notes on sound effects</span></td>
+          <td class="goal"><span class="item">Music</span></td></tr>
+        <tr data-end="2026-12-01" class="final"><td class="wk"><b>Dec 1</b><span>Nov 23 – Dec 1</span></td>
+          <td class="goal"><span class="item"><span class="cut">Final cut</span></span></td>
+          <td class="goal"><span class="item"><span class="cut">Final cut</span></span></td></tr>
+      </tbody>
+    </table>
+    <div class="legend"><span><b>Rough cut</b> Aug 1</span><span><b>Fine cut</b> Oct 25</span><span><b>Polish cut</b> Nov 8</span><span><b>Final cut</b> Dec 1</span><span>Festival deadlines begin Dec 1 — see <a href="festivals.html" style="color:var(--blue)">Festivals</a>.</span></div>
+  </div>
+
+  <div class="footer">Updated Sep 29, 2026.</div>
+</div>
+<script>
+  // Highlight the current week and grey out finished ones. Pure display.
+  (function () {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const rows = [...document.querySelectorAll('#sched tbody tr')];
+    let marked = false;
+    for (const r of rows) {
+      const end = new Date(r.dataset.end + 'T23:59:59');
+      if (end < today) r.classList.add('past');
+      else if (!marked) { r.classList.add('now'); marked = true; }
+    }
+  })();
+</script>
+</body>
+</html>

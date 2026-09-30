@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monster Spray</title>
+<style>
+  :root { --paper: #f6f2ec; --card: #fffdf9; --ink: #1c1917; --ink2: #44403c; --ink3: #78716c; --line: #e7e0d6; --orange: #ea580c; --orange2: #fdba74; --orange-bg: #fff4ec; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; background: var(--paper); color: var(--ink); line-height: 1.5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+  .wrap { max-width: 760px; width: 100%; }
+  .kicker { font-size: 13px; text-transform: uppercase; letter-spacing: .12em; color: var(--orange); font-weight: 700; margin-bottom: 10px; }
+  h1 { font-size: 52px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  .sub { font-size: 17px; color: var(--ink2); margin-top: 14px; max-width: 520px; }
+  .links { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; }
+  .link { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 26px 26px 24px; text-decoration: none; color: inherit; transition: transform .12s, border-color .12s; }
+  .link:hover { transform: translateY(-2px); border-color: var(--orange2); }
+  .link b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+  .link b::after { content: ' →'; color: var(--orange); }
+  .link span { display: block; font-size: 15px; color: var(--ink2); margin-top: 6px; }
+  .foot { margin-top: 36px; font-size: 13px; color: var(--ink3); }
+  @media (max-width: 600px) { h1 { font-size: 40px; } .links { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">A short horror film · 10 min</div>
+  <h1>Monster Spray</h1>
+  <div class="sub">Post-production through the Dec 1 final cut, then the festival run.</div>
+  <div class="links">
+    <a class="link" href="schedule.html"><b>Schedule</b><span>Weekly deliverables for Kevin and Nick, rough cut to final cut.</span></a>
+    <a class="link" href="festivals.html"><b>Festivals</b><span>Every deadline from Dec 1 on, city by city and by tier, with fees.</span></a>
+  </div>
+  <div class="foot">kevintraywick.com/monster</div>
+</div>
+</body>
+</html>
