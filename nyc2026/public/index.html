@@ -214,7 +214,7 @@ a{color:inherit}
 .tile.add .ask .busy{font-size:14px;color:var(--ink-2)}
 
 /* days (horizontal) */
-.days{margin-bottom:12px;padding:10px 34px 10px 0;overflow:hidden}
+.days{margin-bottom:40px;padding:10px 34px 10px 0;overflow:hidden}
 .days .ruler{display:grid;grid-template-columns:186px 1fr;height:22px}
 .days .ruler .ticks{position:relative}
 .days .ruler .tk{position:absolute;top:0;transform:translateX(-50%);font-size:14px;color:var(--ink-2);white-space:nowrap}
@@ -249,7 +249,7 @@ a{color:inherit}
 .dayrow .lab button:hover{color:var(--ink);border-color:var(--ink)}
 
 /* tour: picks | map | picks */
-.tour{display:grid;grid-template-columns:auto 1fr auto;gap:0;height:max(560px,calc(100vh - 60px));border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--paper);box-shadow:var(--shadow);margin-bottom:40px}
+.tour{display:grid;grid-template-columns:auto 1fr auto;gap:0;height:max(560px,calc(100vh - 60px));border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--paper);box-shadow:var(--shadow);margin-bottom:12px}
 .picks{--tile:70px;overflow-x:auto;overflow-y:hidden;border-right:1px solid var(--line);padding:8px;background:var(--bg)}
 .picks.right{border-right:0;border-left:1px solid var(--line)}
 .grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(8,var(--tile));grid-auto-columns:var(--tile);gap:8px;height:100%}
@@ -336,15 +336,15 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
   <!-- ROW 2: weather -->
   <div class="card wxrow" id="wx"></div>
 
-  <!-- ROW 3: the four days -->
-  <div class="card days" id="days"></div>
-
-  <!-- ROW 4: places | map | restaurants -->
+  <!-- ROW 3: places | map | restaurants -->
   <div class="tour">
     <div class="picks"><div class="grid" id="places"></div></div>
     <div id="map"></div>
     <div class="picks right"><div class="grid" id="eats"></div></div>
   </div>
+
+  <!-- ROW 4: the four days -->
+  <div class="card days" id="days"></div>
 
   <div class="syncnote" id="syncnote" style="display:none">Not syncing — changes are staying on this device.</div>
   <div class="foot">Map © OpenStreetMap contributors · Walking routes via OSRM · Forecast via Open-Meteo</div>
