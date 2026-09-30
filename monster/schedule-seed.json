@@ -1,0 +1,14 @@
+{
+  "people": ["Kevin", "Nick"],
+  "weeks": [
+    { "end": "2026-10-04", "label": "Sep 28 – Oct 4", "items": { "Kevin": [{ "id": "k1", "text": "Notes to Nick on the Aug 1, 2026 rough cut" }], "Nick": [] } },
+    { "end": "2026-10-11", "label": "Oct 5 – 11", "items": { "Kevin": [{ "id": "k2", "text": "VFX 50%" }], "Nick": [{ "id": "n1", "text": "Incorporate notes into the rough cut" }] } },
+    { "end": "2026-10-18", "label": "Oct 12 – 18", "items": { "Kevin": [{ "id": "k3", "text": "Credit list to Nick" }], "Nick": [{ "id": "n2", "text": "First cut" }] } },
+    { "end": "2026-10-25", "label": "Oct 19 – 25", "items": { "Kevin": [{ "id": "k4", "text": "VFX 75%" }], "Nick": [] } },
+    { "end": "2026-11-01", "label": "Oct 26 – Nov 1", "items": { "Kevin": [{ "id": "k5", "text": "VFX 90%" }], "Nick": [{ "id": "n3", "text": "Fine cut" }, { "id": "n4", "text": "Credit list" }] } },
+    { "end": "2026-11-08", "label": "Nov 2 – 8", "items": { "Kevin": [{ "id": "k6", "text": "VFX 100%" }], "Nick": [{ "id": "n5", "text": "Polish cut" }] } },
+    { "end": "2026-11-15", "label": "Nov 9 – 15", "items": { "Kevin": [], "Nick": [{ "id": "n6", "text": "Sound effects" }] } },
+    { "end": "2026-11-22", "label": "Nov 16 – 22", "items": { "Kevin": [{ "id": "k7", "text": "Notes on sound effects" }], "Nick": [{ "id": "n7", "text": "Music" }] } },
+    { "end": "2026-12-01", "label": "Nov 23 – Dec 1", "items": { "Kevin": [{ "id": "k8", "text": "Final cut" }], "Nick": [{ "id": "n8", "text": "Final cut" }] } }
+  ]
+}
