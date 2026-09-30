@@ -36,29 +36,17 @@
   td.goal .item + .item { margin-top: 4px; }
   td.goal .item::before { content: ''; position: absolute; left: 0; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--orange2); }
   td.goal .none { color: #c8c0b5; }
-  .cut { display: inline-block; font-weight: 700; color: var(--ink); background: var(--orange-bg); border: 1px solid var(--orange2); border-radius: 999px; padding: 0 9px; font-size: 14px; }
-  .vfx { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink); }
-  .vfx .bar { width: 90px; height: 7px; border-radius: 4px; background: #efe9e0; overflow: hidden; }
-  .vfx .bar div { height: 100%; background: var(--orange); border-radius: 4px; }
   tr.now td { background: var(--orange-bg); }
   tr.now td.wk b { color: var(--orange); }
   tr.now td:first-child { box-shadow: inset 4px 0 0 var(--orange); }
   tr.past td.wk b, tr.past td.goal { color: var(--ink3); }
-  tr.final td { background: var(--ink); color: #f5f5f4; border-bottom: none; }
-  tr.final td.wk b, tr.final td .vfx, tr.final td.goal { color: #fff; }
-  tr.final td.wk span { color: #a8a29e; }
-  tr.final .cut { background: #292524; border-color: #57534e; color: #fff; }
-  tr.final td.goal .item::before { background: var(--orange); }
-  .legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 16px; font-size: 14px; color: var(--ink2); }
-  .legend b { color: var(--ink); }
   .footer { margin-top: 40px; font-size: 13px; color: var(--ink3); border-top: 1px solid var(--line); padding-top: 14px; }
   @media (max-width: 700px) {
     html { font-size: 14px; } h1 { font-size: 28px; }
     .card { padding: 6px 12px 10px; }
     th, td { padding: 10px 8px; }
     td.wk { width: auto; }
-    .vfx .bar { width: 60px; }
-  }
+    }
   @media print { body { background: #fff; padding: 0; } tr.now td { background: #fff4ec; } }
 </style>
 </head>
@@ -67,7 +55,7 @@
   <nav class="sitenav"><a href="./">Monster Spray</a><span>·</span><a href="festivals.html">Festivals</a><span>·</span><a href="schedule.html" class="on">Schedule</a></nav>
 
   <h1>Monster Spray — <span>post schedule</span></h1>
-  <div class="sub">Weekly deliverables from the Aug 1 rough cut to the Dec 1 final cut. Each row is the week ending that Sunday.</div>
+  <div class="sub">Weekly deliverables through the Dec 1 final cut. Each row is the week ending that Sunday.</div>
 
   <div class="card">
     <table id="sched">
@@ -76,35 +64,34 @@
       </thead>
       <tbody>
         <tr data-end="2026-10-04"><td class="wk"><b>Oct 4</b><span>Sep 28 – Oct 4</span></td>
-          <td class="goal"><span class="item">Notes to Nick on the Aug 1, 2026 rough cut</span><span class="item">Count the total number of VFX shots</span></td>
+          <td class="goal"><span class="item">Notes to Nick on the Aug 1, 2026 rough cut</span></td>
           <td class="goal"><span class="none">—</span></td></tr>
         <tr data-end="2026-10-11"><td class="wk"><b>Oct 11</b><span>Oct 5 – 11</span></td>
-          <td class="goal"><span class="item"><span class="vfx">VFX 50%<span class="bar"><div style="width:50%"></div></span></span></span></td>
+          <td class="goal"><span class="item">VFX 50%</span></td>
           <td class="goal"><span class="item">Incorporate notes into the rough cut</span></td></tr>
         <tr data-end="2026-10-18"><td class="wk"><b>Oct 18</b><span>Oct 12 – 18</span></td>
-          <td class="goal"><span class="item"><span class="vfx">VFX 60%<span class="bar"><div style="width:60%"></div></span></span></span></td>
-          <td class="goal"><span class="none">—</span></td></tr>
+          <td class="goal"><span class="item">Credit list to Nick</span></td>
+          <td class="goal"><span class="item">First cut</span></td></tr>
         <tr data-end="2026-10-25"><td class="wk"><b>Oct 25</b><span>Oct 19 – 25</span></td>
-          <td class="goal"><span class="item"><span class="vfx">VFX 75%<span class="bar"><div style="width:75%"></div></span></span></span></td>
-          <td class="goal"><span class="item"><span class="cut">Final cut</span> — the Oct 25 cut</span></td></tr>
-        <tr data-end="2026-11-01"><td class="wk"><b>Nov 1</b><span>Oct 26 – Nov 1</span></td>
-          <td class="goal"><span class="item"><span class="vfx">VFX 90%<span class="bar"><div style="width:90%"></div></span></span></span></td>
+          <td class="goal"><span class="item">VFX 75%</span></td>
           <td class="goal"><span class="none">—</span></td></tr>
+        <tr data-end="2026-11-01"><td class="wk"><b>Nov 1</b><span>Oct 26 – Nov 1</span></td>
+          <td class="goal"><span class="item">VFX 90%</span></td>
+          <td class="goal"><span class="item">Fine cut</span><span class="item">Credit list</span></td></tr>
         <tr data-end="2026-11-08"><td class="wk"><b>Nov 8</b><span>Nov 2 – 8</span></td>
-          <td class="goal"><span class="item"><span class="vfx">VFX 100%<span class="bar"><div style="width:100%"></div></span></span></span></td>
-          <td class="goal"><span class="item"><span class="cut">Polish cut</span></span></td></tr>
+          <td class="goal"><span class="item">VFX 100%</span></td>
+          <td class="goal"><span class="item">Polish cut</span></td></tr>
         <tr data-end="2026-11-15"><td class="wk"><b>Nov 15</b><span>Nov 9 – 15</span></td>
-          <td class="goal"><span class="item">Credit list</span></td>
-          <td class="goal"><span class="item">Sound effects</span><span class="item">Credit list</span></td></tr>
+          <td class="goal"><span class="none">—</span></td>
+          <td class="goal"><span class="item">Sound effects</span></td></tr>
         <tr data-end="2026-11-22"><td class="wk"><b>Nov 22</b><span>Nov 16 – 22</span></td>
           <td class="goal"><span class="item">Notes on sound effects</span></td>
           <td class="goal"><span class="item">Music</span></td></tr>
-        <tr data-end="2026-12-01" class="final"><td class="wk"><b>Dec 1</b><span>Nov 23 – Dec 1</span></td>
-          <td class="goal"><span class="item"><span class="cut">Final cut</span></span></td>
-          <td class="goal"><span class="item"><span class="cut">Final cut</span></span></td></tr>
+        <tr data-end="2026-12-01"><td class="wk"><b>Dec 1</b><span>Nov 23 – Dec 1</span></td>
+          <td class="goal"><span class="item">Final cut</span></td>
+          <td class="goal"><span class="item">Final cut</span></td></tr>
       </tbody>
     </table>
-    <div class="legend"><span><b>Rough cut</b> Aug 1</span><span><b>Final cut</b> Oct 25</span><span><b>Polish cut</b> Nov 8</span><span><b>Final cut</b> Dec 1</span><span>Festival deadlines begin Dec 1 — see <a href="festivals.html" style="color:var(--blue)">Festivals</a>.</span></div>
   </div>
 
   <div class="footer">Updated Sep 29, 2026.</div>
