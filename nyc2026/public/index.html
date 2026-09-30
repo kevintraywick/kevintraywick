@@ -294,18 +294,18 @@ body.alt .tile:hover .rm{display:grid;opacity:1}
         <div class="leg">
           <span class="tag">OUT</span>
           <span class="ap"><b>BNA</b></span>
-          <span class="t">10:58 AM</span>
-          <span class="track"><em>2h 32m</em></span>
-          <span class="t">2:30 PM</span>
+          <span class="t">10:30 AM</span>
+          <span class="track"><em>2h 29m</em></span>
+          <span class="t">1:59 PM</span>
           <span class="ap"><b>JFK</b></span>
           <span class="when">Fri, Dec 4<i>· AA 4561</i></span>
         </div>
         <div class="leg">
           <span class="tag">BACK</span>
           <span class="ap"><b>JFK</b></span>
-          <span class="t">1:23 PM</span>
-          <span class="track"><em>2h 43m</em></span>
-          <span class="t">3:06 PM</span>
+          <span class="t">1:27 PM</span>
+          <span class="track"><em>2h 52m</em></span>
+          <span class="t">3:19 PM</span>
           <span class="ap"><b>BNA</b></span>
           <span class="when">Mon, Dec 7<i>· AA 4350</i></span>
         </div>
@@ -405,8 +405,8 @@ const DAYS = [
 ];
 // Fixed commitments. Times in minutes from midnight. These black out the lane.
 const RESERVATIONS = [
-  {day:'fri', start:8*60,     end:15*60+30, name:'BNA → JFK', sub:'AA 4561 · lands 2:30 · check-in 3:00'},
-  {day:'mon', start:10*60+30, end:22*60,    name:'JFK → BNA', sub:'AA 4350 · departs 1:23'},
+  {day:'fri', start:8*60,     end:15*60+30, name:'BNA → JFK', sub:'AA 4561 · lands 1:59 · check-in 3:00'},
+  {day:'mon', start:10*60+30, end:22*60,    name:'JFK → BNA', sub:'AA 4350 · departs 1:27'},
   {day:'sat', start:19*60, end:22*60, name:'The Lost Boys', sub:'Palace Theatre · curtain 7:30 · Orch O123–O127', lat:40.7590, lon:-73.9847, url:'https://www.palacetheatrenyc.com/'},
 ];
 const LANE_START = 8*60, LANE_END = 22*60;
@@ -666,8 +666,8 @@ async function invoice(who){
     ['The Lost Boys — 3 tickets', 'Broadway.com · 207237762-8633251', SHOW_TOTAL],
   ] : [
     ['American Airlines — round trip', 'Ticket ' + c.tkt, FARE],
-    ['  BNA 10:58a to JFK 2:30p, Fri Dec 4 (AA 4561, Business)', '', null],
-    ['  JFK 1:23p to BNA 3:06p, Mon Dec 7 (AA 4350, Economy)', '', null],
+    ['  BNA 10:30a to JFK 1:59p, Fri Dec 4 (AA 4561, Business)', '', null],
+    ['  JFK 1:27p to BNA 3:19p, Mon Dec 7 (AA 4350, Economy)', '', null],
     ['Seat selection', 'Doc ' + c.emd, SEAT],
     ['The Lost Boys — Palace Theatre', 'Broadway.com', SHARE],
     ['  Sat Dec 5, 7:30 PM · Orchestra O123–O127 · 1 of 3 seats', '', null],
