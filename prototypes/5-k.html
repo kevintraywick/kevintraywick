@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kevin Traywick</title>
+<link rel="stylesheet" href="lib/base.css">
+</head>
+<body>
+<h1 class="sr-only">Kevin Traywick</h1>
+<svg class="sig-stage" aria-hidden="true"></svg>
+<div class="sig-toolbar">
+  <a href="./">← prototypes</a> · 5 · k ·
+  <a id="t-mode" href="#"></a> ·
+  <button id="sig-replay" type="button">replay (r)</button>
+</div>
+<script>
+// A lowercase k built from four limbs that all leave ONE point, J: the stem
+// going up, the stem going down, the arm and the leg. A hairline draws across
+// the screen from left to right exactly through J.
+//
+// Unfold (default): the four limbs start lying flat on the hairline — the two
+// stem halves on the left of J, the arm and leg on the right — so at first there
+// is only the line. Then, one after another, they swing up and down out of it on
+// a spring, like a folded strip of paper opening into the letter.
+// ?mode=grow: the plainer version, the limbs grow straight out of J.
+//
+// Review params: ?mode=grow, ?at=<ms> (freeze at that moment).
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const params = new URLSearchParams(location.search);
+  const GROW_MODE = params.get('mode') === 'grow';
+  const freezeAt = params.has('at') ? +params.get('at') : null;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  // Damped spring: overshoots a little, wobbles once, settles.
+  const spring = t => (t >= 1 ? 1 : 1 - Math.exp(-5 * t) * Math.cos(9 * t));
+  const svg = document.querySelector('svg');
+
+  const toggle = document.getElementById('t-mode');
+  toggle.textContent = GROW_MODE ? 'unfold' : 'plain grow';
+  toggle.onclick = e => {
+    e.preventDefault();
+    const u = new URL(location.href);
+    GROW_MODE ? u.searchParams.delete('mode') : u.searchParams.set('mode', 'grow');
+    u.searchParams.delete('at');
+    location.href = u;
+  };
+
+  // Timeline (ms). The line crosses in LINE; each limb takes SWING to open,
+  // starting STAGGER after the previous one.
+  const LINE = 2400, SWING = 1500, STAGGER = 170;
+  // The line's tip has to be well past J (it supplies the arm and leg) before
+  // the fold opens.
+  const OPEN_AT = 0.62;
+  const DUR = LINE * OPEN_AT + 3 * STAGGER + SWING + 200;
+
+  let scene, raf = 0;
+
+  function el(name, attrs) {
+    const e = document.createElementNS(NS, name);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    svg.appendChild(e);
+    return e;
+  }
+
+  function build() {
+    const W = innerWidth, H = innerHeight;
+    svg.innerHTML = '';
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    // Letter geometry in units of its height h. J sits on the stem a little
+    // below the x-height; every limb starts exactly at J.
+    const h = Math.min(H * 0.3, W * 0.42);
+    const sw = Math.max(1.5, h / 70);
+    const top = H / 2 - h / 2, base = H / 2 + h / 2, xh = top + h * 0.42;
+    const sx = Math.round(W / 2 - h * 0.2);
+    const J = [sx, Math.round(top + h * 0.7) + 0.5];   // .5 keeps the 1px hairline crisp
+    const limb = (x, y) => ({ len: Math.hypot(x - J[0], y - J[1]), angle: Math.atan2(y - J[1], x - J[0]) });
+    // Broad-nib weights: the stem heaviest, the arm a hairline, the leg between.
+    // `from` is the angle each limb lies at while folded: on the line, pointing
+    // left (π) for the stem halves, right (0) for the arm and leg. They open in
+    // this order, rotating the short way to their final angle.
+    const limbs = [
+      { ...limb(J[0] + h * 0.4, xh), w: sw * 0.75, from: 0 },               // arm
+      { ...limb(sx, top), w: sw * 1.35, from: -Math.PI },                    // stem, up
+      { ...limb(J[0] + h * 0.46, base), w: sw * 1.1, from: 0 },             // leg
+      { ...limb(sx, base), w: sw * 1.35, from: Math.PI },                    // stem, down
+    ];
+    const line = el('line', { x1: 0, y1: J[1], x2: 0, y2: J[1], stroke: '#111', 'stroke-width': 1 });
+    for (const l of limbs)
+      l.el = el('line', { x1: J[0], y1: J[1], x2: J[0], y2: J[1], stroke: '#111', 'stroke-width': l.w, 'stroke-linecap': 'round' });
+    return { W, J, line, limbs };
+  }
+
+  function render(t) {
+    const { W, J, line, limbs } = scene;
+    line.setAttribute('x2', W * easeInOut(clamp(t / LINE)));
+    limbs.forEach((l, i) => {
+      const p = (t - LINE * OPEN_AT - i * STAGGER) / SWING;
+      let a = l.angle, len = l.len;
+      if (GROW_MODE) len *= easeOut(clamp(p));
+      else {
+        if (p <= 0) { l.el.setAttribute('opacity', 0); return; }
+        a = l.from + (l.angle - l.from) * spring(p);
+      }
+      l.el.setAttribute('opacity', p > 0 ? 1 : 0);
+      l.el.setAttribute('x2', J[0] + Math.cos(a) * len);
+      l.el.setAttribute('y2', J[1] + Math.sin(a) * len);
+    });
+  }
+
+  function play() {
+    cancelAnimationFrame(raf);
+    scene = build();
+    if (freezeAt !== null) return render(freezeAt);
+    if (reduce) return render(DUR);
+    const start = performance.now();
+    (function frame(now) {
+      render(now - start);
+      if (now - start < DUR) raf = requestAnimationFrame(frame);
+    })(start);
+  }
+
+  let resizeTimer;
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { cancelAnimationFrame(raf); scene = build(); render(DUR); }, 150);
+  });
+  document.getElementById('sig-replay').addEventListener('click', play);
+  addEventListener('keydown', e => { if (e.key === 'r' && !e.metaKey && !e.ctrlKey) play(); });
+  play();
+})();
+</script>
+</body>
+</html>

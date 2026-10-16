@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kevin Traywick</title>
+<link rel="stylesheet" href="lib/base.css">
+<script src="lib/k-sign-path.js"></script>
+</head>
+<body>
+<h1 class="sr-only">Kevin Traywick</h1>
+<svg class="sig-stage" aria-hidden="true"></svg>
+<div class="sig-toolbar">
+  <a href="./">← prototypes</a> · 4 · Signature — one continuous line ·
+  <a id="t-lines" href="#"></a> · <a id="t-dir" href="#"></a> ·
+  <button id="sig-replay" type="button">replay (r)</button>
+</div>
+<script>
+// Kevin's own signature (traced from assets/k_sign.png by tools/trace.html) drawn
+// as ONE stroke: the pen writes it in pen order, then the line carries on out
+// to the right edge. Plays once on load.
+// The pen eases off through tight turns and cusps, the way a hand does.
+//
+// Review params: ?lines=0 (signature only), ?reverse (draw from the other end),
+// ?dur=<ms>, ?at=<ms> (freeze at that moment).
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const params = new URLSearchParams(location.search);
+  const LINES = params.get('lines') !== '0';
+  const REVERSE = params.has('reverse');
+  const DUR = +params.get('dur') || 6000;
+  const freezeAt = params.has('at') ? +params.get('at') : null;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const svg = document.querySelector('svg');
+
+  // Review toolbar toggles (rewrite the query string and reload).
+  const link = (id, text, mutate) => {
+    const a = document.getElementById(id);
+    a.textContent = text;
+    a.onclick = e => { e.preventDefault(); const u = new URL(location.href); mutate(u.searchParams); u.searchParams.delete('at'); location.href = u; };
+  };
+  link('t-lines', LINES ? 'hide exit line' : 'show exit line', q => (LINES ? q.set('lines', '0') : q.delete('lines')));
+  link('t-dir', REVERSE ? 'start at the K' : 'start at the hook', q => (REVERSE ? q.delete('reverse') : q.set('reverse', '')));
+
+  const src = [];
+  for (let k = 0; k < K_SIGN.pts.length; k += 2) src.push([K_SIGN.pts[k], K_SIGN.pts[k + 1]]);
+  if (REVERSE) src.reverse();
+  smooth(src);
+
+  // Iron out tracing jitter (small jogs at crossings) without rounding off the
+  // real cusps: a point whose path turns hard over a few neighbours stays put.
+  function smooth(pts) {
+    const ang = k => {
+      const a = pts[Math.max(0, k - 3)], b = pts[k], c = pts[Math.min(pts.length - 1, k + 3)];
+      const t1 = Math.atan2(b[1] - a[1], b[0] - a[0]), t2 = Math.atan2(c[1] - b[1], c[0] - b[0]);
+      return Math.abs(Math.atan2(Math.sin(t2 - t1), Math.cos(t2 - t1)));
+    };
+    const pinned = pts.map((_, k) => k < 2 || k > pts.length - 3 || ang(k) > 1.6);
+    for (let pass = 0; pass < 4; pass++) {
+      const prev = pts.map(p => p.slice());
+      for (let k = 1; k < pts.length - 1; k++)
+        if (!pinned[k]) pts[k] = [(prev[k - 1][0] + 2 * prev[k][0] + prev[k + 1][0]) / 4, (prev[k - 1][1] + 2 * prev[k][1] + prev[k + 1][1]) / 4];
+    }
+  }
+
+  function heading(pts, fromEnd) {
+    const a = fromEnd ? pts[pts.length - 8] : pts[0], b = fromEnd ? pts[pts.length - 1] : pts[7];
+    const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1;
+    return [dx / l, dy / l];
+  }
+  function cubic(p0, c1, c2, p1, n = 40) {
+    const out = [];
+    for (let k = 1; k <= n; k++) {
+      const t = k / n, u = 1 - t;
+      out.push([u * u * u * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * p1[0],
+                u * u * u * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * p1[1]]);
+    }
+    return out;
+  }
+
+  let scene, raf = 0;
+
+  function build() {
+    const W = innerWidth, H = innerHeight;
+    svg.innerHTML = '';
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const [bx1, by1, bx2, by2] = K_SIGN.bbox;
+    const s = Math.min(W * (W < 700 ? 0.86 : 0.5) / (bx2 - bx1), H * 0.56 / (by2 - by1));
+    const ox = W / 2 - (bx1 + bx2) / 2 * s, oy = H / 2 - (by1 + by2) / 2 * s;
+    const sig = src.map(([x, y]) => [ox + x * s, oy + y * s]);
+
+    let pts = sig, inN = 0;
+    if (LINES) {
+      // The line runs along the foot of the signature (it just kisses the
+      // bottom of the big oval) and bends into and out of the stroke so the
+      // pen's direction never jumps.
+      const yL = Math.round(oy + by2 * s) + 0.5;
+      const D = 230 * s;
+      // No lead-in: the pen starts on the signature itself. Out: the final
+      // flick carries on, then settles onto the baseline to the right edge.
+      const z = sig[sig.length - 1], hz = heading(sig, true);
+      const kneeOut = [Math.min(W, z[0] + 1.6 * D), yL];
+      const exit = [...cubic(z, [z[0] + hz[0] * D * 0.5, z[1] + hz[1] * D * 0.5], [kneeOut[0] - D * 0.6, yL], kneeOut), [W, yL]];
+      pts = [...sig, ...exit];
+    }
+
+    // Time along the route: distance, plus extra for how sharply the pen turns
+    // at each point — so it lingers in cusps and loops and flies on the straights.
+    const cumLen = [0], cumCost = [0];
+    for (let k = 1; k < pts.length; k++) {
+      const len = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
+      let turn = 0;
+      if (k > 1) {
+        const a1 = Math.atan2(pts[k - 1][1] - pts[k - 2][1], pts[k - 1][0] - pts[k - 2][0]);
+        const a2 = Math.atan2(pts[k][1] - pts[k - 1][1], pts[k][0] - pts[k - 1][0]);
+        turn = Math.abs(Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1)));
+      }
+      const onLine = LINES && (k < inN || k > pts.length - 42);
+      cumLen.push(cumLen[k - 1] + len);
+      cumCost.push(cumCost[k - 1] + len * (onLine ? 0.75 : 1) + turn * 14 * s);
+    }
+
+    const total = cumLen[cumLen.length - 1];
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L'));
+    const sw = Math.max(1.4, K_SIGN.strokeWidth * s * 0.95);
+    Object.entries({ fill: 'none', stroke: '#111', 'stroke-width': sw, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+                     'stroke-dasharray': `${total} ${total + 1}` }).forEach(([k, v]) => path.setAttribute(k, v));
+    svg.appendChild(path);
+    const tip = document.createElementNS(NS, 'circle');
+    tip.setAttribute('r', sw * 0.9);
+    tip.setAttribute('fill', '#111');
+    svg.appendChild(tip);
+    return { pts, cumLen, cumCost, total, path, tip };
+  }
+
+  function render(t) {
+    const sc = scene;
+    const p = clamp(t / DUR);
+    const cost = sc.cumCost[sc.cumCost.length - 1] * (0.8 * p + 0.2 * easeInOut(p));
+    let lo = 0, hi = sc.cumCost.length - 1;
+    while (lo < hi - 1) { const m = (lo + hi) >> 1; if (sc.cumCost[m] <= cost) lo = m; else hi = m; }
+    const f = (cost - sc.cumCost[lo]) / ((sc.cumCost[hi] - sc.cumCost[lo]) || 1);
+    const len = sc.cumLen[lo] + (sc.cumLen[hi] - sc.cumLen[lo]) * clamp(f);
+    sc.path.setAttribute('stroke-dashoffset', sc.total - len);
+    const a = sc.pts[lo], b = sc.pts[hi];
+    sc.tip.setAttribute('cx', a[0] + (b[0] - a[0]) * clamp(f));
+    sc.tip.setAttribute('cy', a[1] + (b[1] - a[1]) * clamp(f));
+    sc.tip.setAttribute('opacity', p > 0 && p < 1 ? 1 : 0);
+  }
+
+  function play() {
+    cancelAnimationFrame(raf);
+    scene = build();
+    if (freezeAt !== null) return render(freezeAt);
+    if (reduce) return render(DUR);
+    const start = performance.now();
+    (function frame(now) {
+      render(now - start);
+      if (now - start < DUR) raf = requestAnimationFrame(frame);
+    })(start);
+  }
+
+  let resizeTimer;
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { cancelAnimationFrame(raf); scene = build(); render(DUR); }, 150);
+  });
+  document.getElementById('sig-replay').addEventListener('click', play);
+  addEventListener('keydown', e => { if (e.key === 'r' && !e.metaKey && !e.ctrlKey) play(); });
+  play();
+})();
+</script>
+</body>
+</html>

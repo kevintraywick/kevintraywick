@@ -1,0 +1,134 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Signature tracer</title>
+<!-- One-off tool: follows the single pen line in assets/k_sign.png and writes
+     the ordered points as JSON into <pre id="out"> (read it in a browser, or
+     headless Chrome --dump-dom). Open with ?show to see the trace drawn in red
+     over the original.
+
+     It drives a virtual pen along the ink: look ahead along a fan of headings
+     and take the one that is both inky and straightest — so crossings are
+     passed straight through, as the hand did. When the ink runs out (a cusp,
+     like the V at the bottom of the K), turn onto the nearest ink not yet drawn.
+     When there is none nearby, the signature is finished. -->
+<pre id="out">working</pre>
+<script>
+const START = [1108, 347]; // top of the K's stem — where the signature begins
+(async () => {
+  const img = new Image();
+  img.src = '../assets/k_sign.png';
+  await img.decode();
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const cv = Object.assign(document.createElement('canvas'), { width: w, height: h });
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h); cx.drawImage(img, 0, 0);
+  const px = cx.getImageData(0, 0, w, h).data;
+  const ink = new Uint8Array(w * h);
+  let inkCount = 0;
+  for (let i = 0; i < ink.length; i++) {
+    ink[i] = (px[i * 4] + px[i * 4 + 1] + px[i * 4 + 2]) / 3 < 160 ? 1 : 0;
+    inkCount += ink[i];
+  }
+  const at = (x, y) => { x = Math.round(x); y = Math.round(y); return x >= 0 && y >= 0 && x < w && y < h ? ink[y * w + x] : 0; };
+  const seen = new Uint8Array(w * h);
+  const mark = (x, y, r = 4) => {
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++)
+      if (dx * dx + dy * dy <= r * r) { const X = Math.round(x + dx), Y = Math.round(y + dy); if (X >= 0 && Y >= 0 && X < w && Y < h) seen[Y * w + X] = 1; }
+  };
+  const ray = (x, y, th, r0 = 3, r1 = 14) => {
+    let n = 0, hit = 0;
+    for (let r = r0; r <= r1; r++) { n++; hit += at(x + Math.cos(th) * r, y + Math.sin(th) * r); }
+    return hit / n;
+  };
+  // Share of the ink further ahead that the pen hasn't drawn yet. At a crossing
+  // the right way on is the line still to be written, not the one already done.
+  const fresh = (x, y, th, r0 = 6, r1 = 26) => {
+    let n = 0, hit = 0;
+    for (let r = r0; r <= r1; r++) {
+      const X = Math.round(x + Math.cos(th) * r), Y = Math.round(y + Math.sin(th) * r);
+      if (X < 0 || Y < 0 || X >= w || Y >= h || !ink[Y * w + X]) continue;
+      n++; hit += !seen[Y * w + X];
+    }
+    return n ? hit / n : 0;
+  };
+  // Slide sideways onto the middle of the line (skipped where lines cross).
+  const centre = (x, y, th) => {
+    const nx = -Math.sin(th), ny = Math.cos(th);
+    if (!at(x, y)) return [x, y];
+    let a = 0, b = 0;
+    while (a > -7 && at(x + nx * (a - 1), y + ny * (a - 1))) a--;
+    while (b < 7 && at(x + nx * (b + 1), y + ny * (b + 1))) b++;
+    if (b - a > 6) return [x, y];
+    const m = (a + b) / 2;
+    return [x + nx * m, y + ny * m];
+  };
+
+  // Snap the start onto ink and find the only way out of it.
+  let best = null;
+  for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++)
+    if (at(START[0] + dx, START[1] + dy) && (!best || Math.hypot(dx, dy) < best[2])) best = [START[0] + dx, START[1] + dy, Math.hypot(dx, dy)];
+  let x = best[0], y = best[1], th = 0, bs = -1;
+  for (let a = 0; a < 360; a += 2) { const s = ray(x, y, a * Math.PI / 180, 2, 18); if (s > bs) { bs = s; th = a * Math.PI / 180; } }
+
+  const pts = [[x, y]];
+  let turn = 0; // angular velocity, so curves keep curving through crossings
+  const STEP = 2, cusps = [];
+  for (let iter = 0; iter < 20000; iter++) {
+    const predicted = th + turn;
+    let bt = null, bscore = -Infinity;
+    for (let d = -40; d <= 40; d += 2) {
+      const t = predicted + d * Math.PI / 180;
+      const r = ray(x, y, t);
+      const s = r - 0.006 * Math.abs(d) + (r > 0.5 ? 0.6 * fresh(x, y, t) : 0);
+      if (s > bscore) { bscore = s; bt = t; best = r; }
+    }
+    if (best < 0.55) {
+      // Out of ink ahead: a cusp or the end. Turn to the nearest undrawn ink.
+      let tgt = null;
+      for (let r = 3; r <= 34 && !tgt; r++)
+        for (let a = 0; a < 360; a += 3) {
+          const t = a * Math.PI / 180, X = x + Math.cos(t) * r, Y = y + Math.sin(t) * r;
+          const i = Math.round(Y) * w + Math.round(X);
+          if (at(X, Y) && !seen[i]) { tgt = [X, Y]; break; }
+        }
+      if (!tgt) break;
+      cusps.push([Math.round(x), Math.round(y)]);
+      const nt = Math.atan2(tgt[1] - y, tgt[0] - x);
+      [x, y] = tgt; th = nt; turn = 0;
+      pts.push([x, y]); mark(x, y);
+      continue;
+    }
+    const nt = bt;
+    let dth = Math.atan2(Math.sin(nt - th), Math.cos(nt - th));
+    turn = turn * 0.6 + dth * 0.4;
+    th = nt;
+    [x, y] = centre(x + Math.cos(th) * STEP, y + Math.sin(th) * STEP, th);
+    pts.push([x, y]);
+    mark(x, y);
+  }
+
+  let covered = 0;
+  for (let i = 0; i < ink.length; i++) if (ink[i] && seen[i]) covered++;
+
+  let out = pts.filter((_, k) => k % 2 === 0 || k === pts.length - 1);
+  for (let pass = 0; pass < 2; pass++)
+    out = out.map((p, k) => k === 0 || k === out.length - 1 ? p
+      : [(out[k - 1][0] + 2 * p[0] + out[k + 1][0]) / 4, (out[k - 1][1] + 2 * p[1] + out[k + 1][1]) / 4]);
+
+  const result = {
+    w, h, strokeWidth: 3,
+    stats: { steps: pts.length, coverage: +(covered / inkCount).toFixed(3), cusps, end: pts[pts.length - 1].map(Math.round) },
+    pts: out.map(p => [+p[0].toFixed(1), +p[1].toFixed(1)]),
+  };
+  document.getElementById('out').textContent = JSON.stringify(result);
+
+  if (new URLSearchParams(location.search).has('show')) {
+    document.body.style.margin = 0;
+    document.getElementById('out').remove();
+    cx.strokeStyle = 'rgba(230,0,0,.75)'; cx.lineWidth = 1.5;
+    cx.beginPath(); result.pts.forEach((p, k) => (k ? cx.lineTo(...p) : cx.moveTo(...p))); cx.stroke();
+    cx.fillStyle = 'blue'; for (const c of cusps) { cx.beginPath(); cx.arc(c[0], c[1], 6, 0, 7); cx.fill(); }
+    document.body.appendChild(cv);
+  }
+})().catch(e => { document.getElementById('out').textContent = 'ERROR ' + e.stack; });
+</script>

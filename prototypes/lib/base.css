@@ -1,0 +1,12 @@
+html, body { margin: 0; height: 100%; background: #fff; overflow: hidden; }
+.sig-stage, .sig-particles { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+.sig-particles { pointer-events: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sig-fallback { position: fixed; inset: 0; margin: 0; display: grid; place-items: center;
+  font: italic 400 clamp(40px, 8vw, 110px) Georgia, serif; color: #111; }
+.sig-toolbar { position: fixed; left: 16px; bottom: 14px; font: 12px/1.4 -apple-system, system-ui, sans-serif;
+  color: #aaa; z-index: 2; }
+.sig-toolbar a { color: #999; text-decoration: none; }
+.sig-toolbar a:hover { color: #333; }
+.sig-toolbar select, .sig-toolbar button { font: inherit; color: #888; background: #fff; border: 1px solid #e5e5e5;
+  border-radius: 4px; padding: 1px 4px; cursor: pointer; }
