@@ -40,7 +40,10 @@ function cleanItems(list) {
     if (!id || !/^[\w-]{1,40}$/.test(id) || !text || !text.trim()) return null;
     // ms: the exact day of a milestone that lives on the MoveIt sprint (see syncToMoveIt).
     const ms = typeof it.ms === 'string' && dayRe.test(it.ms) ? it.ms : null;
-    return ms ? { id, text: text.trim(), ms } : { id, text: text.trim() };
+    const out = { id, text: text.trim() };
+    if (ms) out.ms = ms;
+    if (it.done === true) out.done = true;   // checked off on the page (2026-11-03)
+    return out;
   }).filter(Boolean);
 }
 function cleanState(body) {

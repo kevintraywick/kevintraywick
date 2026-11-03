@@ -52,6 +52,15 @@
   .pill .t { outline: none; min-width: 12px; }
   .pill .t:focus { cursor: text; }
   .pill.editing { cursor: text; background: #fff; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(234,88,12,.15); }
+  /* Done circle: empty ring → green check. Shared — saved with the schedule. */
+  .pill .ck { flex: none; width: 18px; height: 18px; margin-left: -6px; border-radius: 50%; border: 1.5px solid var(--ink3); background: #fff; padding: 0; cursor: pointer; display: grid; place-items: center; transition: background .15s, border-color .15s; }
+  .pill .ck:hover { border-color: #16a34a; }
+  .pill .ck:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .pill .ck svg { width: 11px; height: 11px; opacity: 0; transition: opacity .15s; }
+  .pill.done .ck { background: #16a34a; border-color: #16a34a; }
+  .pill.done .ck svg { opacity: 1; }
+  .pill.done { background: #f0fdf4; border-color: #86efac; }
+  .pill.done .t { color: var(--ink3); }
   .pill .x { width: 18px; height: 18px; border-radius: 50%; border: none; background: transparent; color: var(--ink3); font-size: 14px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .12s; }
   .pill:hover .x, .pill.editing .x { opacity: 1; }
   .pill .x:hover { background: #fee2e2; color: var(--red); }
@@ -85,7 +94,7 @@
       <thead><tr id="head"></tr></thead>
       <tbody id="body"></tbody>
     </table>
-    <div class="hint">Drag a pill to another week or the other person. Click a pill to edit its text; ✕ removes it; + adds one. Changes save on their own and everyone with the link sees them.</div>
+    <div class="hint">Drag a pill to another week or the other person. Click the circle to check a task off; click a pill to edit its text; ✕ removes it; + adds one. Changes save on their own and everyone with the link sees them.</div>
   </div>
 
   <div class="footer" id="foot"></div>
@@ -119,7 +128,8 @@
     wire();
   }
   function pillHtml(it) {
-    return `<span class="pill" draggable="true" data-id="${esc(it.id)}"><span class="t" contenteditable="false" spellcheck="false">${esc(it.text)}</span><button class="x" title="Remove">✕</button></span>`;
+    const ck = `<button class="ck" type="button" aria-pressed="${it.done ? 'true' : 'false'}" title="${it.done ? 'Done — click to undo' : 'Mark done'}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.2l2.4 2.4 4.6-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+    return `<span class="pill${it.done ? ' done' : ''}" draggable="true" data-id="${esc(it.id)}">${ck}<span class="t" contenteditable="false" spellcheck="false">${esc(it.text)}</span><button class="x" title="Remove">✕</button></span>`;
   }
 
   // ---- finding things ----
@@ -166,9 +176,15 @@
       pill.addEventListener('dragend', () => { pill.classList.remove('dragging'); drag = null; document.querySelectorAll('td.over').forEach(c => c.classList.remove('over')); });
       // click = edit in place
       pill.addEventListener('click', e => {
-        if (e.target.closest('.x')) return;
+        if (e.target.closest('.x, .ck')) return;
         if (pill.classList.contains('editing')) return;
         startEdit(pill, t, id);
+      });
+      pill.querySelector('.ck').addEventListener('click', e => {
+        e.stopPropagation();
+        const loc = locate(id); if (!loc) return;
+        if (loc.item.done) delete loc.item.done; else loc.item.done = true;
+        render(); save();
       });
       pill.querySelector('.x').addEventListener('click', e => {
         e.stopPropagation();
