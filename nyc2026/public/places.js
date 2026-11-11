@@ -1,0 +1,96 @@
+/* Everything the map shows. `about` is what the information pane reads out, so
+   it is written to be read by someone deciding whether to go, not as a caption. */
+const HOTEL = {
+  id:'hotel', kind:'hotel', name:'Virgin Hotels New York', label:'Our hotel',
+  sub:'1227 Broadway at 30th St · NoMad', lat:40.7470, lon:-73.9885,
+  url:'https://virginhotels.com/new-york/',
+  about:'Home base for all three nights. Check-in is Friday from 3:00 PM and check-out is Monday by 12:00 PM. Every walking time on this map is measured from here.'
+};
+const SHOW = {
+  id:'show', kind:'show', name:'The Lost Boys', label:'Our show · Sat 7:30',
+  sub:'Palace Theatre · Broadway at 47th St', lat:40.7590, lon:-73.9847,
+  url:'https://www.palacetheatrenyc.com/',
+  about:'Our Broadway night: Saturday, December 5. The curtain goes up at 7:30 PM, and our seats are Orchestra O123–O127. Plan to be at the theatre by 7:00.'
+};
+const PLACES = [
+  {id:'firehouse', name:'Hook & Ladder 8', sub:'The Ghostbusters firehouse · Tribeca', lat:40.7196, lon:-74.0066, url:'https://www.nyc.gov/site/fdny/index.page', img:'img/firehouse.webp',
+   about:'The firehouse used as Ghostbusters headquarters in the 1984 film. It is a working fire station, so the visit is a photo from the sidewalk at North Moore and Varick — ten minutes, and worth it.'},
+  {id:'met', name:'The Met', sub:'Metropolitan Museum of Art · Fifth Ave', lat:40.7794, lon:-73.9631, url:'https://www.metmuseum.org/', img:'img/met.webp',
+   about:'One of the great museums of the world: an Egyptian temple, a hall of armor, rooms of European paintings. Give it two or three hours and pick a few wings rather than trying to see it all. In December it usually has a tall Christmas tree with an antique nativity scene.'},
+  {id:'gugg', name:'Guggenheim', sub:'Solomon R. Guggenheim Museum', lat:40.7831, lon:-73.9589, url:'https://www.guggenheim.org/', img:'img/gugg.webp',
+   about:'Frank Lloyd Wright’s white spiral building. You ride the elevator to the top and stroll down one long ramp past the art. Smaller than the Met and a few blocks north of it, so the two pair well in one day.'},
+  {id:'moma', name:'MoMA', sub:'Museum of Modern Art · 53rd St', lat:40.7617, lon:-73.9775, url:'https://www.moma.org/', img:'img/moma.webp',
+   about:'Modern art in midtown: Van Gogh’s Starry Night, Monet’s Water Lilies, Warhol’s soup cans. The famous paintings are on the upper floors. Buy timed tickets ahead to skip the line.'},
+  {id:'tree', name:'Rockefeller Tree', sub:'Rockefeller Center Christmas Tree', lat:40.7586, lon:-73.9783, url:'https://www.rockefellercenter.com/holidays/rockefeller-center-christmas-tree-lighting/', img:'img/tree.webp',
+   about:'The big Christmas tree above the skating rink, lit every evening through the holidays. It is free and very crowded after dark — early morning or late evening is calmer.'},
+  {id:'rock', name:'Top of the Rock', sub:'30 Rockefeller Plaza observation deck', lat:40.7589, lon:-73.9792, url:'https://www.topoftherocknyc.com/', img:'img/rock.webp',
+   about:'The observation deck 70 floors up, with Central Park on one side and the Empire State Building on the other. Tickets are for a set time; just before sunset is the prized slot.'},
+  {id:'highline', name:'The High Line', sub:'Elevated park · Chelsea to Hudson Yards', lat:40.7480, lon:-74.0048, url:'https://www.thehighline.org/', img:'img/highline.webp',
+   about:'A park built on an old elevated freight railway, about a mile and a half long, running above the streets from the Meatpacking District up to Hudson Yards. Free, flat and easy; walk as much or as little as you like.'},
+  {id:'nypl', name:'NY Public Library', sub:'Schwarzman Building · Fifth Ave & 42nd', lat:40.7531, lon:-73.9819, url:'https://www.nypl.org/locations/schwarzman', img:'img/nypl.webp',
+   about:'The grand library with the two stone lions out front. It is free to walk in and see the Rose Main Reading Room. Bryant Park, right behind it, has a holiday market and a skating rink in December.'},
+  {id:'centralpark', name:'Central Park', sub:'Bethesda Terrace · mid-park at 72nd', lat:40.7740, lon:-73.9708, url:'https://www.centralparknyc.org/', img:'img/centralpark.webp',
+   about:'The dot marks Bethesda Terrace and its fountain, the heart of the park. Walk in along the tree-lined Mall from the south and you arrive right at it.'},
+  {id:'brooklynbridge', name:'Brooklyn Bridge', sub:'Walk it from City Hall to DUMBO', lat:40.7061, lon:-73.9969, url:'https://www.nyc.gov/html/dot/html/infrastructure/brooklyn-bridge.shtml', img:'img/brooklynbridge.webp',
+   about:'Walk across on the raised wooden path — a little over a mile, about half an hour — with the skyline behind you. Start at City Hall and finish in DUMBO, Brooklyn. It is windy and cold up there in December, so dress for it.'},
+  {id:'village', name:'Greenwich Village', sub:'Washington Square Park & around', lat:40.7308, lon:-73.9973, url:'https://www.nycgo.com/boroughs-neighborhoods/manhattan/greenwich-village/', img:'img/village.webp',
+   about:'The dot marks Washington Square Park and its arch. Around it are low brick streets, cafés and jazz clubs — a neighborhood for wandering with no plan.'},
+  {id:'chelseamarket', name:'Chelsea Market', sub:'75 Ninth Ave · food hall under the High Line', lat:40.7424, lon:-74.0061, url:'https://www.chelseamarket.com/', img:'img/chelseamarket.webp',
+   about:'An indoor food hall and shops in an old cookie factory. Warm, casual, and good for lunch when nobody can agree on what to eat. It sits right at the south end of the High Line.'},
+];
+const EATS = [
+  {id:'sugarfish', name:'Sugarfish', sub:'Sushi · 33 E 20th St, Flatiron', lat:40.7390, lon:-73.9889, url:'https://sugarfishsushi.com/', img:'img/sugarfish.webp',
+   about:'Relaxed sushi with set menus — the “Trust Me” is the one to order. It does not take reservations: you walk in and put your name down. The easiest meal on this list.'},
+  {id:'perse', name:'Per Se', sub:'Thomas Keller · Columbus Circle · ★★★', lat:40.7687, lon:-73.9829, url:'https://www.thomaskeller.com/perseny', img:'img/perse.webp',
+   about:'Thomas Keller’s tasting-menu restaurant, upstairs in the building at Columbus Circle, looking out over Central Park. A long, formal, dress-up evening. Reservations are essential.'},
+  {id:'bernardin', name:'Le Bernardin', sub:'Seafood · 51st St · ★★★', lat:40.7615, lon:-73.9818, url:'https://www.le-bernardin.com/', img:'img/bernardin.webp',
+   about:'Eric Ripert’s seafood restaurant, long counted among the best in the city. Formal and quiet, and a short walk from the theatre district. Reservations are essential.'},
+  {id:'emp', name:'Eleven Madison Park', sub:'Plant-based tasting · ★★★', lat:40.7417, lon:-73.9872, url:'https://www.elevenmadisonpark.com/', img:'img/emp.webp',
+   about:'A tasting menu served in a grand, high-ceilinged Art Deco room facing Madison Square Park. Only a few blocks from our hotel. Reservations are essential.'},
+  {id:'atomix', name:'Atomix', sub:'Korean tasting counter · NoMad · ★★', lat:40.7447, lon:-73.9814, url:'https://www.atomixnyc.com/', img:'img/atomix.webp',
+   about:'A small Korean tasting counter where everyone is served together, course by course. One of the hardest tables in the city to book, and close to our hotel.'},
+  {id:'cote', name:'Cote', sub:'Korean steakhouse · Flatiron · ★', lat:40.7413, lon:-73.9912, url:'https://www.cotenyc.com/', img:'img/cote.webp',
+   about:'Korean barbecue crossed with an American steakhouse: the beef is grilled at your table. Lively and fun, and easier going than the tasting-menu places.'},
+  {id:'gramercy', name:'Gramercy Tavern', sub:'American · 20th St · ★', lat:40.7385, lon:-73.9884, url:'https://www.gramercytavern.com/', img:'img/gramercy.webp',
+   about:'A warm, much-loved American restaurant. The front Tavern room is casual and takes walk-ins; the dining room behind it is the dressier, reserved meal.'},
+  {id:'jungsik', name:'Jungsik', sub:'Modern Korean · Tribeca · ★★★', lat:40.7188, lon:-74.0091, url:'https://www.jungsik.com/',
+   about:'Polished modern Korean cooking served as a tasting menu, in a calm room in Tribeca. Near the Ghostbusters firehouse, if we are downtown that day.'},
+  {id:'sushisho', name:'Sushi Sho', sub:'Omakase · 3 E 41st St · ★★★', lat:40.7524, lon:-73.9800, url:'https://www.exploretock.com/sushi-sho-nyc',
+   about:'A sushi counter where the chef chooses every course for you. It is next to the Public Library and Bryant Park. Seats are few and are booked online well ahead.'},
+  {id:'aquavit', name:'Aquavit', sub:'Nordic · 65 E 55th St · ★★', lat:40.7608, lon:-73.9735, url:'https://www.aquavit.org/', img:'img/aquavit.webp',
+   about:'Scandinavian cooking in a sleek midtown dining room that has been here for decades. Lunch is a gentler way in than the full dinner tasting menu.'},
+  {id:'aska', name:'Aska', sub:'Nordic tasting · Williamsburg · ★★', lat:40.7113, lon:-73.9657, url:'https://www.askanyc.com/', img:'img/aska.webp',
+   about:'A dark, quiet Scandinavian tasting menu across the river in Brooklyn. This one is a subway or taxi ride, not a walk.'},
+  {id:'atera', name:'Atera', sub:'Tasting counter · 77 Worth St · ★★', lat:40.7165, lon:-74.0046, url:'https://www.ateranyc.com/', img:'img/atera.webp',
+   about:'A small counter around an open kitchen in Tribeca, serving a long tasting menu of many small courses. Reservations are essential.'},
+  {id:'cesar', name:'César', sub:'Seafood tasting · 333 Hudson St · ★★', lat:40.7266, lon:-74.0078, url:'https://www.cesarnyc.com/',
+   about:'Chef César Ramirez’s seafood tasting menu, served at a counter in Hudson Square on the west side. Reservations are essential.'},
+  {id:'brooklynfare', name:'Chef’s Table at Brooklyn Fare', sub:'Tasting counter · 431 W 37th St · ★★', lat:40.7566, lon:-73.9974, url:'https://www.brooklynfare.com/chefs-table', img:'img/brooklynfare.webp',
+   about:'A tasting counter tucked in behind a grocery store on the far west side, near Hudson Yards. Despite the name it is in Manhattan, not Brooklyn.'},
+  {id:'kreuther', name:'Gabriel Kreuther', sub:'Alsatian · 41 W 42nd St · ★★', lat:40.7538, lon:-73.9822, url:'https://www.gknyc.com/', img:'img/kreuther.webp',
+   about:'French cooking from Alsace in a handsome room across the street from Bryant Park. It has its own chocolate shop next door.'},
+  {id:'jeangeorges', name:'Jean-Georges', sub:'French · 1 Central Park West · ★★', lat:40.7690, lon:-73.9815, url:'https://www.jean-georgesrestaurant.com/', img:'img/jeangeorges.webp',
+   about:'Jean-Georges Vongerichten’s flagship, a bright, formal room at the corner of Central Park by Columbus Circle. A good lunch stop before or after the park.'},
+  {id:'jook', name:'Joo Ok', sub:'Korean · 22 W 32nd St, 16th fl · ★★', lat:40.7478, lon:-73.9873, url:'https://www.joo-ok.com/', img:'img/jook.webp',
+   about:'A Korean tasting menu on the 16th floor of a building in Koreatown. It is the closest restaurant to our hotel — just around the corner.'},
+  {id:'masa', name:'Masa', sub:'Sushi · Columbus Circle · ★★', lat:40.7686, lon:-73.9830, url:'https://www.masanyc.com/', img:'img/masa.webp',
+   about:'Chef Masa Takayama’s sushi counter, upstairs at Columbus Circle on the same floor as Per Se. Among the most expensive meals in the country.'},
+  {id:'modern', name:'The Modern', sub:'At MoMA · 9 W 53rd St · ★★', lat:40.7614, lon:-73.9770, url:'https://www.themodernnyc.com/', img:'img/modern.webp',
+   about:'The restaurant inside MoMA, looking onto the museum’s sculpture garden. The Bar Room at the front is more casual and pairs naturally with a museum visit.'},
+  {id:'odo', name:'odo', sub:'Kaiseki · 17 W 20th St · ★★', lat:40.7405, lon:-73.9930, url:'https://www.odo.nyc/', img:'img/odo.webp',
+   about:'A Japanese kaiseki counter — a set sequence of small seasonal courses — hidden at the back of a bar in the Flatiron district.'},
+  {id:'saga', name:'Saga', sub:'Tasting, 63rd floor · 70 Pine St · ★★', lat:40.7063, lon:-74.0078, url:'https://www.saga-nyc.com/',
+   about:'A tasting menu on the 63rd floor of an Art Deco tower in the Financial District, with terraces looking out over the harbor. Go for the view as much as the food.'},
+  {id:'sushinoz', name:'Sushi Noz', sub:'Omakase · 181 E 78th St · ★★', lat:40.7739, lon:-73.9581, url:'https://www.sushinoz.com/', img:'img/sushinoz.webp',
+   about:'A traditional sushi counter on the Upper East Side, built like a small wooden temple. The chef chooses every course. Not far from the Met.'},
+];
+PLACES.forEach(p => p.kind = 'see');
+EATS.forEach(p => p.kind = 'eat');
+
+/* The four days, for the strip across the top. */
+const TRIP = [
+  {k:'fri', d:'2026-12-04', name:'Friday',   date:'Dec 4', lines:['Leave Nashville 10:30 AM', 'Land at JFK 1:59 PM', 'Hotel check-in 3:00 PM']},
+  {k:'sat', d:'2026-12-05', name:'Saturday', date:'Dec 5', lines:['Free until the evening', 'Broadway show 7:30 PM']},
+  {k:'sun', d:'2026-12-06', name:'Sunday',   date:'Dec 6', lines:['A free day']},
+  {k:'mon', d:'2026-12-07', name:'Monday',   date:'Dec 7', lines:['Hotel check-out by noon', 'Leave JFK 1:27 PM', 'Land in Nashville 3:19 PM']},
+];
