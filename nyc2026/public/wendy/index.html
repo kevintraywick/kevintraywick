@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wendy’s Brooklyn weekend · Nov 21–22</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="../nyc.css">
+</head>
+<body class="tiles-gray">
+
+<header class="top">
+  <div class="brand">
+    <h1>Brooklyn</h1>
+    <p>November 21–22 · Wendy’s weekend</p>
+    <p class="wxnote" id="wxnote"></p>
+  </div>
+  <ol class="days two" id="days" aria-label="Your two days"></ol>
+</header>
+
+<main class="stage">
+  <div id="map"></div>
+  <div id="card" hidden></div>
+  <div class="legend">
+    <div><b id="hint">Point at any dot or star to read about it</b></div>
+    <div><span class="ld see"></span>Things to do</div>
+    <div><span class="ld eat"></span>Places to eat</div>
+    <div><span class="lstar"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg></span>Good for Saturday dinner</div>
+    <div><span class="ls"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg></span>Your hotel</div>
+  </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="../subway.js"></script>
+<script src="../places.js"></script>
+<script src="wendy.js"></script>
+<script src="../nyc.js"></script>
+</body>
+</html>

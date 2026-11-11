@@ -7,9 +7,16 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const TOUCH = window.matchMedia && matchMedia('(hover: none)').matches;
 const narrow = () => window.innerWidth <= 760;
-const ITEMS = [...PLACES, ...EATS];
+// A second page (the /wendy map) describes itself in a PAGE object; without one
+// this is the December trip, read straight from places.js.
+const CFG = typeof PAGE !== 'undefined' ? PAGE : {};
+const HOME = CFG.hotel || HOTEL, GIG = CFG.show || SHOW, SEE = CFG.places || PLACES, EAT = CFG.eats || EATS, DAYS = CFG.trip || TRIP;
+const FROM = CFG.from || 'from our hotel', NEAREST = CFG.nearest || 'nearest our hotel first', MONTH = CFG.month || 'December';
+const ITEMS = [...SEE, ...EAT];
+// which places get a star for a marker: the 50 Best ones here, the dinner picks on a PAGE that has them
+const starred = it => CFG.farLabel ? !!it.pick : !!it.best;
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
-const ALL = [HOTEL, SHOW, ...ITEMS];
+const ALL = [HOME, GIG, ...ITEMS];
 const byId = id => ALL.find(i => i.id === id);
 
 /* ================= THE FOUR DAYS + WEATHER ================= */
@@ -31,11 +38,11 @@ const GLYPH = {
   storm:'<path d="M7 15.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6 8a3.75 3.75 0 0 0 1 7.5z"/><path d="M13 15l-2.5 4h3L11 23"/>'
 };
 const glyph = g => `<svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPH[g]}</svg>`;
-const NORMALS = [{h:46,l:36},{h:46,l:36},{h:45,l:35},{h:45,l:35}];   // December normals, Central Park
+const NORMALS = CFG.normals || [{h:46,l:36},{h:46,l:36},{h:45,l:35},{h:45,l:35}];   // December normals, Central Park
 
 function renderDays(daily, mode){   // mode: 'live' | 'lastyear' | null
   const el = $('#days'); if (!el) return;
-  el.innerHTML = TRIP.map((day, i) => {
+  el.innerHTML = DAYS.map((day, i) => {
     const key = mode === 'lastyear' ? day.d.replace('2026', '2025') : day.d;
     const j = daily && daily.time ? daily.time.indexOf(key) : -1;
     const have = j >= 0 && daily.weather_code[j] != null;
@@ -44,7 +51,7 @@ function renderDays(daily, mode){   // mode: 'live' | 'lastyear' | null
     const lo = have ? Math.round(daily.temperature_2m_min[j]) : NORMALS[i].l;
     // Say plainly where the numbers come from: a forecast, last year's actual
     // weather on the same date, or just what December is usually like.
-    const src = mode === 'live' ? desc : mode === 'lastyear' && have ? `${desc} last year` : 'Typical for December';
+    const src = mode === 'live' ? desc : mode === 'lastyear' && have ? `${desc} last year` : `Typical for ${MONTH}`;
     return `<li class="day">
       <div class="dhead"><span class="dn">${day.name}</span><span class="dd">${day.date}</span></div>
       <div class="wx" title="${esc(src)}">${glyph(g)}<span class="t"><b>${hi}°</b> ${lo}°</span><span class="src">${esc(src)}</span></div>
@@ -53,18 +60,18 @@ function renderDays(daily, mode){   // mode: 'live' | 'lastyear' | null
   }).join('');
   const note = $('#wxnote');
   if (note) note.textContent = mode === 'live' ? 'Weather: the current forecast'
-    : mode === 'lastyear' ? 'Weather: what these dates were like last year' : 'Weather: typical for early December';
+    : mode === 'lastyear' ? 'Weather: what these dates were like last year' : `Weather: typical for ${MONTH}`;
 }
 renderDays(null, null);
 (async function(){
   const base = 'latitude=40.7484&longitude=-73.9857&daily=weather_code,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America%2FNew_York';
   try{   // the real forecast, once the trip is inside the 16-day window
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?${base}&start_date=${TRIP[0].d}&end_date=${TRIP[3].d}`);
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?${base}&start_date=${DAYS[0].d}&end_date=${DAYS[DAYS.length-1].d}`);
     const j = await r.json();
     if (j && j.daily && j.daily.weather_code && j.daily.weather_code.some(x => x != null)){ renderDays(j.daily, 'live'); return; }
   }catch(e){}
   try{   // until then: what it actually did on these dates last year
-    const r = await fetch(`https://archive-api.open-meteo.com/v1/archive?${base}&start_date=2025-12-04&end_date=2025-12-07`);
+    const r = await fetch(`https://archive-api.open-meteo.com/v1/archive?${base}&start_date=${DAYS[0].d.replace('2026', '2025')}&end_date=${DAYS[DAYS.length-1].d.replace('2026', '2025')}`);
     const j = await r.json();
     if (j && j.daily && j.daily.weather_code) renderDays(j.daily, 'lastyear');
   }catch(e){}
@@ -86,8 +93,8 @@ function haversine(a, b){ const R = 6371000, r = x => x*Math.PI/180; const dLat 
 // Every place starts with an estimate so nothing ever reads blank; one request
 // to the router then replaces all of them with real street-walking figures.
 const WALK = {};
-for (const it of [SHOW, ...ITEMS]){
-  const m = haversine(HOTEL, it);
+for (const it of [GIG, ...ITEMS]){
+  const m = haversine(HOME, it);
   WALK[it.id] = {min:Math.max(2, Math.round(m/PACE)), mi:m*DETOUR/1609.34, real:false};
 }
 async function timed(url, ms){
@@ -97,12 +104,12 @@ async function timed(url, ms){
   finally{ clearTimeout(t); }
 }
 (async function(){
-  const dest = [SHOW, ...ITEMS];
-  const j = await timed(`${ROUTER}table/v1/foot/${[HOTEL, ...dest].map(i => `${i.lon},${i.lat}`).join(';')}?sources=0&annotations=duration,distance`, 9000);
+  const dest = [GIG, ...ITEMS];
+  const j = await timed(`${ROUTER}table/v1/foot/${[HOME, ...dest].map(i => `${i.lon},${i.lat}`).join(';')}?sources=0&annotations=duration,distance`, 9000);
   if (!j || j.code !== 'Ok' || !j.durations) return;
   dest.forEach((it, n) => {
     const s = j.durations[0][n+1], m = j.distances && j.distances[0][n+1];
-    if (s != null) WALK[it.id] = {min:Math.max(1, Math.round(s/60)), mi:(m != null ? m : haversine(HOTEL, it)*DETOUR)/1609.34, real:true};
+    if (s != null) WALK[it.id] = {min:Math.max(1, Math.round(s/60)), mi:(m != null ? m : haversine(HOME, it)*DETOUR)/1609.34, real:true};
   });
   renderList();
   if (cur) fillCard(cur);
@@ -111,12 +118,12 @@ function walkText(it){
   const w = WALK[it.id]; if (!w) return '';
   const mi = w.mi < 0.15 ? 'just around the corner' : `${w.mi.toFixed(1)} mile${w.mi.toFixed(1) === '1.0' ? '' : 's'}`;
   const far = w.min > 40 ? '<span class="far">A long walk — the subway or a taxi is easier.</span>' : '';
-  return `<b>${w.real ? '' : 'About '}${w.min} minute walk</b> from our hotel · ${mi}${far}`;
+  return `<b>${w.real ? '' : 'About '}${w.min} minute walk</b> ${FROM} · ${mi}${far}`;
 }
 const GEOM = {};
 async function routeTo(it){
   if (GEOM[it.id] !== undefined) return GEOM[it.id];
-  const j = await timed(`${ROUTER}route/v1/foot/${HOTEL.lon},${HOTEL.lat};${it.lon},${it.lat}?overview=full&geometries=geojson`, 6000);
+  const j = await timed(`${ROUTER}route/v1/foot/${HOME.lon},${HOME.lat};${it.lon},${it.lat}?overview=full&geometries=geojson`, 6000);
   const g = j && j.routes && j.routes[0] ? j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]) : null;
   if (g) GEOM[it.id] = g;     // a failure isn't cached, so the next look retries
   return g;
@@ -124,12 +131,14 @@ async function routeTo(it){
 
 /* ================= THE INFORMATION PANE ================= */
 const card = $('#card');
-const KIND = {see:'Place to see', eat:'Restaurant', hotel:'Where we’re staying', show:'Booked · Saturday night'};
+const KIND = Object.assign({see:'Place to see', eat:'Restaurant', hotel:'Where we’re staying', show:'Booked · Saturday night'}, CFG.kind);
 const WALKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4.5" r="1.8"/><path d="M9 21l2.2-6.2L8.8 12l1-5 3.2 1 2.2 3.2 3 1"/><path d="M13.2 14.8L15 21"/><path d="M9.8 7.2L7 9v3"/></svg>';
 let cur = null, pinned = false, intentT = null, routeTok = 0;
+let wide = false; let setWide = () => {};
+const shown = it => wide || !it.far;
 
 function fillCard(it){
-  const dir = `https://www.google.com/maps/dir/?api=1&origin=${HOTEL.lat},${HOTEL.lon}&destination=${it.lat},${it.lon}&travelmode=walking`;
+  const dir = `https://www.google.com/maps/dir/?api=1&origin=${HOME.lat},${HOME.lon}&destination=${it.lat},${it.lon}&travelmode=walking`;
   card.innerHTML =
     `<button class="x" type="button" aria-label="Close">×</button>`
     + (it.img ? `<img src="${esc(it.img)}" alt="" onerror="this.remove()">` : '')
@@ -138,6 +147,7 @@ function fillCard(it){
         <h2>${esc(it.name)}</h2>
         <p class="sub">${esc(it.sub || '')}</p>
         ${it.best ? `<p class="best">${STAR}<span><b>50 Best Restaurants 2026</b>${esc(it.best)}</span></p>` : ''}
+        ${it.pick ? `<p class="best">${STAR}<span><b>${esc(it.pick)}</b>${esc(it.pickwhy || '')}</span></p>` : ''}
         <p class="about">${esc(it.about || '')}</p>
         ${it.kind === 'hotel' ? '' : `<p class="walk">${WALKER}<span>${walkText(it)}</span></p>`}
         <div class="acts">
@@ -148,6 +158,7 @@ function fillCard(it){
 }
 function openCard(it, pin){
   clearTimeout(intentT);
+  if (it.far && !wide) setWide(true);
   if (pin) pinned = true;
   else if (cur !== it) pinned = false;
   if (cur === it){ return; }
@@ -196,12 +207,12 @@ function renderList(){
   const el = $('#list'); if (!el) return;
   const rows = (items) => items.slice().sort((a, b) => WALK[a.id].min - WALK[b.id].min).map(it =>
     `<button type="button" class="row ${cur === it ? 'on' : ''}" data-id="${it.id}">
-       <span class="rdot ${it.kind}${it.best ? ' best' : ''}">${it.best ? STAR : ''}</span>
+       <span class="rdot ${it.kind}${starred(it) ? ' best' : ''}">${starred(it) ? STAR : ''}</span>
        <span class="rn"><b>${esc(it.name)}</b><i>${esc(it.sub || '')}</i></span>
        <span class="rw">${WALK[it.id].min}<small>min walk</small></span>
      </button>`).join('');
-  el.innerHTML = `<h3>Places to see <small>nearest our hotel first</small></h3>${rows(PLACES)}
-                  <h3>Places to eat <small>nearest our hotel first</small></h3>${rows(EATS)}`;
+  el.innerHTML = `<h3>Places to see <small>${NEAREST}</small></h3>${rows(SEE)}
+                  <h3>Places to eat <small>${NEAREST}</small></h3>${rows(EAT)}`;
 }
 (function(){
   const el = $('#list'); if (!el) return;
@@ -247,7 +258,7 @@ map.attributionControl.setPrefix(false).addAttribution('Walking routes: FOSSGIS 
 const PANE = 380 + 16;     // the pane's width and its margin, as in nyc.css
 const padRight = () => narrow() ? 40 : Math.min(PANE + 30, map.getSize().x * .45);
 function showAll(){
-  map.fitBounds(L.latLngBounds(ALL.map(i => [i.lat, i.lon])), {paddingTopLeft:[40, 34], paddingBottomRight:[padRight(), narrow() ? 40 : 30]});
+  map.fitBounds(L.latLngBounds(ALL.filter(shown).map(i => [i.lat, i.lon])), {paddingTopLeft:[40, 34], paddingBottomRight:[padRight(), narrow() ? 40 : 30]});
 }
 showAll();
 if (typeof SUBWAY_DATA !== 'undefined'){
@@ -266,13 +277,20 @@ function addMarker(it){
   const fixed = it.kind === 'hotel' || it.kind === 'show';
   const icon = fixed
     ? L.divIcon({className:`fixedpin ${it.kind}`, html:`<span class="fp">${it.kind === 'hotel' ? STAR : TICKET}</span><span class="fl">${esc(it.label)}</span>`, iconSize:[36, 36], iconAnchor:[18, 18]})
-    : L.divIcon({className:`dotwrap ${it.kind}${it.best ? ' best' : ''}`, html:it.best ? `<span class="star">${STAR}</span>` : '<span class="dot"></span>', iconSize:[40, 40], iconAnchor:[20, 20]});
-  it.marker = L.marker([it.lat, it.lon], {icon, keyboard:true, zIndexOffset:fixed ? 1000 : 0, riseOnHover:true}).addTo(map);
+    : L.divIcon({className:`dotwrap ${it.kind}${starred(it) ? ' best' : ''}`, html:starred(it) ? `<span class="star">${STAR}</span>` : '<span class="dot"></span>', iconSize:[40, 40], iconAnchor:[20, 20]});
+  it.marker = L.marker([it.lat, it.lon], {icon, keyboard:true, zIndexOffset:fixed ? 1000 : 0, riseOnHover:true});
+  if (!shown(it)) return;
+  it.marker.addTo(map);
   it.marker.on('mouseover', () => { if (!TOUCH) intent(it); });
   it.marker.on('mouseout', leave);
   it.marker.on('click', () => openCard(it, true));
+  dress(it);
+}
+// a marker's element only exists while it is on the map, so this runs each time it is put there
+function dress(it){
   const el = it.marker.getElement();
-  if (el){
+  if (el && !el.dataset.done){
+    el.dataset.done = 1;
     el.setAttribute('aria-label', `${it.name} — ${KIND[it.kind]}${it.best ? ', on the 50 Best list' : ''}`);
     el.addEventListener('focus', () => { if (el.matches(':focus-visible')) openCard(it, true); });
   }
@@ -286,7 +304,7 @@ map.on('click', closeCard);
 // rest; zoom in and they settle back onto their real spots.
 function spread(){
   const z = map.getZoom(), GAP = 23, GAP_FIXED = 30;
-  const pts = ALL.map(it => { const p = map.project([it.lat, it.lon], z); return {it, x:p.x, y:p.y, fixed:it.kind === 'hotel' || it.kind === 'show'}; });
+  const pts = ALL.filter(shown).map(it => { const p = map.project([it.lat, it.lon], z); return {it, x:p.x, y:p.y, fixed:it.kind === 'hotel' || it.kind === 'show'}; });
   // the hotel's and the show's name labels sit to the left of their pins, and
   // a dot under a label can't be seen: stand a row of obstacles along each
   for (const f of pts.filter(p => p.fixed)){
@@ -310,6 +328,25 @@ function spread(){
   for (const p of pts) if (!p.fixed) p.it.marker.setLatLng(map.unproject([p.x, p.y], z));
 }
 spread();
+
+// "Include Manhattan": the far places join the map and it zooms out to hold them all
+if (CFG.farLabel){
+  const Far = L.Control.extend({options:{position:'topleft'}, onAdd(){
+    const b = L.DomUtil.create('button', 'farlink'); b.type = 'button'; b.textContent = CFG.farLabel;
+    L.DomEvent.disableClickPropagation(b);
+    b.addEventListener('click', () => setWide(!wide));
+    return b;
+  }});
+  map.addControl(new Far());
+  setWide = function(on){
+    wide = on;
+    if (!on && cur && cur.far) closeCard();
+    for (const it of ALL) if (it.far){ if (on){ it.marker.addTo(map); dress(it); } else it.marker.remove(); }
+    const b = $('.farlink'); if (b) b.textContent = on ? CFG.nearLabel : CFG.farLabel;
+    document.body.classList.toggle('wide', on);
+    showAll(); spread();
+  };
+}
 map.on('zoomend', () => { spread(); if (cur) redrawRouteEnds(); });
 
 /* ---- keeping the chosen dot in view ---- */
@@ -344,7 +381,7 @@ drawRoute = async function(it){
   if (tok !== routeTok) return;                 // they've moved on to another dot
   // dotted along the streets when the router answered; a sparser straight
   // line when it didn't, so it doesn't pretend to be a real route
-  lastGeom = g ? {g, solid:true} : {g:[[HOTEL.lat, HOTEL.lon]], solid:false};
+  lastGeom = g ? {g, solid:true} : {g:[[HOME.lat, HOME.lon]], solid:false};
   paint(ends(lastGeom.g, it), lastGeom.solid);
 };
 
