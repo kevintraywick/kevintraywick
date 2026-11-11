@@ -8,6 +8,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const TOUCH = window.matchMedia && matchMedia('(hover: none)').matches;
 const narrow = () => window.innerWidth <= 760;
 const ITEMS = [...PLACES, ...EATS];
+const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
 const ALL = [HOTEL, SHOW, ...ITEMS];
 const byId = id => ALL.find(i => i.id === id);
 
@@ -136,6 +137,7 @@ function fillCard(it){
         <p class="kind k-${it.kind}">${KIND[it.kind]}</p>
         <h2>${esc(it.name)}</h2>
         <p class="sub">${esc(it.sub || '')}</p>
+        ${it.best ? `<p class="best">${STAR}<span><b>50 Best Restaurants 2026</b>${esc(it.best)}</span></p>` : ''}
         <p class="about">${esc(it.about || '')}</p>
         ${it.kind === 'hotel' ? '' : `<p class="walk">${WALKER}<span>${walkText(it)}</span></p>`}
         <div class="acts">
@@ -194,7 +196,7 @@ function renderList(){
   const el = $('#list'); if (!el) return;
   const rows = (items) => items.slice().sort((a, b) => WALK[a.id].min - WALK[b.id].min).map(it =>
     `<button type="button" class="row ${cur === it ? 'on' : ''}" data-id="${it.id}">
-       <span class="rdot ${it.kind}"></span>
+       <span class="rdot ${it.kind}${it.best ? ' best' : ''}">${it.best ? STAR : ''}</span>
        <span class="rn"><b>${esc(it.name)}</b><i>${esc(it.sub || '')}</i></span>
        <span class="rw">${WALK[it.id].min}<small>min walk</small></span>
      </button>`).join('');
@@ -259,20 +261,19 @@ const routePane = map.createPane('route'); routePane.style.zIndex = 450; routePa
 routeLayer = L.layerGroup().addTo(map);
 
 /* ---- markers ---- */
-const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
 const TICKET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 0 0 6v3h18v-3a2 2 0 0 1 0-6V6H3z"/><path d="M14 6v12" stroke-dasharray="2 2.5"/></svg>';
 function addMarker(it){
   const fixed = it.kind === 'hotel' || it.kind === 'show';
   const icon = fixed
     ? L.divIcon({className:`fixedpin ${it.kind}`, html:`<span class="fp">${it.kind === 'hotel' ? STAR : TICKET}</span><span class="fl">${esc(it.label)}</span>`, iconSize:[36, 36], iconAnchor:[18, 18]})
-    : L.divIcon({className:`dotwrap ${it.kind}`, html:'<span class="dot"></span>', iconSize:[40, 40], iconAnchor:[20, 20]});
+    : L.divIcon({className:`dotwrap ${it.kind}${it.best ? ' best' : ''}`, html:it.best ? `<span class="star">${STAR}</span>` : '<span class="dot"></span>', iconSize:[40, 40], iconAnchor:[20, 20]});
   it.marker = L.marker([it.lat, it.lon], {icon, keyboard:true, zIndexOffset:fixed ? 1000 : 0, riseOnHover:true}).addTo(map);
   it.marker.on('mouseover', () => { if (!TOUCH) intent(it); });
   it.marker.on('mouseout', leave);
   it.marker.on('click', () => openCard(it, true));
   const el = it.marker.getElement();
   if (el){
-    el.setAttribute('aria-label', `${it.name} — ${KIND[it.kind]}`);
+    el.setAttribute('aria-label', `${it.name} — ${KIND[it.kind]}${it.best ? ', on the 50 Best list' : ''}`);
     el.addEventListener('focus', () => { if (el.matches(':focus-visible')) openCard(it, true); });
   }
 }
@@ -347,7 +348,7 @@ drawRoute = async function(it){
   paint(ends(lastGeom.g, it), lastGeom.solid);
 };
 
-const hint = $('#hint'); if (hint) hint.textContent = TOUCH ? 'Tap any dot to read about it' : 'Point at any dot to read about it';
+const hint = $('#hint'); if (hint) hint.textContent = TOUCH ? 'Tap any dot or star to read about it' : 'Point at any dot or star to read about it';
 setTimeout(() => {
   map.invalidateSize(); showAll(); spread();
   // a link can point straight at one place: nyc2026…/#met

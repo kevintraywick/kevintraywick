@@ -7,6 +7,7 @@
   --dot:#f26a1b;            /* the orange */
   --dot-deep:#a83c06;
   --eat:var(--dot);
+  --see:#f6c20a;            /* places to see are yellow, restaurants orange */
   --radius:14px;
   --sans:"Atkinson Hyperlegible",-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
   --serif:"Instrument Serif",Georgia,serif;
@@ -56,6 +57,12 @@ button{font:inherit;color:inherit}
 .dotwrap{display:grid!important;place-items:center;cursor:pointer;border-radius:50%}
 .dot{width:19px;height:19px;border-radius:50%;background:var(--dot);border:3px solid #fffdf8;box-shadow:0 1px 4px rgba(26,23,20,.55);transition:transform .2s var(--ease),box-shadow .2s var(--ease)}
 .dotwrap.eat .dot{background:var(--eat)}
+.dotwrap.see .dot{background:var(--see)}
+/* restaurants on the 50 Best list: an orange star in place of the dot */
+.star{display:grid;place-items:center;color:var(--eat);transition:transform .2s var(--ease)}
+.star svg{width:31px;height:31px;overflow:visible;filter:drop-shadow(0 1px 2px rgba(26,23,20,.6))}
+.star svg path,.legend .lstar svg path{stroke:#fffdf8;stroke-width:2.6;stroke-linejoin:round;paint-order:stroke}
+.dotwrap:hover .star,.dotwrap.on .star,.dotwrap.pulse .star{transform:scale(1.4)}
 .dotwrap:hover .dot,.dotwrap.on .dot,.dotwrap.pulse .dot{transform:scale(1.5)}
 .dotwrap.on .dot,.dotwrap.pulse .dot{box-shadow:0 0 0 5px rgba(26,23,20,.22),0 1px 4px rgba(26,23,20,.55)}
 .dotwrap:focus-visible{outline:3px solid var(--ink);outline-offset:-4px}
@@ -80,6 +87,9 @@ button{font:inherit;color:inherit}
 #card .walk{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;padding:11px 13px;background:var(--bg);border-radius:10px;font-size:16px;line-height:1.4}
 #card .walk svg{width:24px;height:24px;flex:none;margin-top:1px}
 #card .walk b{font-weight:700}
+#card .best{display:flex;align-items:center;gap:9px;margin:10px 0 0;padding:8px 11px;border-radius:10px;background:#fdebdd;color:var(--dot-deep);font-size:15px;line-height:1.3}
+#card .best svg{width:22px;height:22px;flex:none;color:var(--eat)}
+#card .best b{display:block;color:var(--ink)}
 #card .walk .far{display:block;color:var(--dot-deep);font-weight:700;margin-top:2px}
 #card .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border-radius:999px;border:2px solid var(--ink);font-weight:700;font-size:16px;text-decoration:none;background:transparent;color:var(--ink);transition:background .15s,color .15s}
@@ -104,6 +114,9 @@ button{font:inherit;color:inherit}
 .legend div{display:flex;align-items:center;gap:9px}
 .legend .ld{width:15px;height:15px;border-radius:50%;background:var(--dot);border:2.5px solid #fffdf8;box-shadow:0 0 0 1px rgba(26,23,20,.25);flex:none}
 .legend .ld.eat{background:var(--eat)}
+.legend .ld.see{background:var(--see)}
+.legend .lstar{width:20px;height:20px;margin:0 -2.5px;display:grid;place-items:center;color:var(--eat);flex:none}
+.legend .lstar svg{width:20px;height:20px;overflow:visible;filter:drop-shadow(0 0 1px rgba(26,23,20,.45))}
 .legend .ls{width:20px;height:20px;margin:0 -2.5px;border-radius:50%;background:var(--ink);color:#fffdf8;display:grid;place-items:center;flex:none}
 .legend .ls svg{width:12px;height:12px}
 .legend b{font-weight:700}
@@ -143,6 +156,9 @@ button{font:inherit;color:inherit}
 .row:hover,.row.on{background:var(--bg)}
 .rdot{width:13px;height:13px;border-radius:50%;background:var(--dot)}
 .rdot.eat{background:var(--eat)}
+.rdot.see{background:var(--see)}
+.rdot.best{background:none;color:var(--eat);width:17px;height:17px;margin:-2px}
+.rdot.best svg{display:block;width:17px;height:17px}
 .rn b{display:block;font-size:17px;font-weight:700;line-height:1.25}
 .rn i{display:block;font-style:normal;font-size:15px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rw{font:400 26px/1 var(--serif);text-align:right}
