@@ -1,15 +1,32 @@
 /* ================= WHO OWES WHAT ================= */
 // Kevin fronted these. Cents on the two American charges were cut off in the
-// statement screenshot — correct FARE and SEAT here and everything re-totals.
-const FARE = 455.00;        // AA ticket, one per person (tkt 00123781001xx)
-const SEAT = 45.00;         // AA seat selection, one per person (00142105997xx)
-const SHOW_TOTAL = 661.83;  // Broadway.com, 3 tickets, order 207237762-8633251
-const CREW = [
-  // paid:true turns the invoice into a receipt, stamps it, and stands Luigi down
-  {name:'Amy',   tkt:'0012378100111', emd:'0014210599730', paid:true},
-  {name:'Lisa',  tkt:'0012378100112', emd:'0014210599731', paid:true},
-  {name:'Kevin', tkt:'0012378100113', emd:'0014210599732', fronted:true},
-];
+// statement screenshot — correct fare and seat here and everything re-totals.
+// A page can define INVOICE before this script to swap any of it out (the
+// /demo map does, so no real names, ticket numbers or addresses appear there).
+const BILL = Object.assign({
+  fare: 455.00,        // AA ticket, one per person (tkt 00123781001xx)
+  seat: 45.00,         // AA seat selection, one per person (00142105997xx)
+  showTotal: 661.83,   // Broadway.com, 3 tickets
+  crew: [
+    // paid:true turns the invoice into a receipt, stamps it, and stands Luigi down
+    {name:'Amy',   tkt:'0012378100111', emd:'0014210599730', paid:true},
+    {name:'Lisa',  tkt:'0012378100112', emd:'0014210599731', paid:true},
+    {name:'Kevin', tkt:'0012378100113', emd:'0014210599732', fronted:true},
+  ],
+  airline: 'American Airlines',
+  route: 'BNA/JFK · Dec 4 + Dec 7',
+  flights: 'AA 4561 / AA 4350',
+  out:  'BNA 10:30a to JFK 1:59p, Fri Dec 4 (AA 4561, Business)',
+  back: 'JFK 1:27p to BNA 3:19p, Mon Dec 7 (AA 4350, Economy)',
+  show: 'The Lost Boys', venue: 'Palace Theatre',
+  order: 'Broadway.com · 207237762-8633251',
+  seats: 'Sat Dec 5, 7:30 PM · Orchestra O123–O127',
+  due: 'Oct 31, 2026', dueNote: 'Halloween',
+  charged: 'Charges hit the card Sep 16 (Broadway.com) and Sep 18 (American).',
+  mail: '160 Weldon Drive, Martin, TN 38237',
+}, typeof INVOICE !== 'undefined' ? INVOICE : {});
+const FARE = BILL.fare, SEAT = BILL.seat, SHOW_TOTAL = BILL.showTotal, CREW = BILL.crew;
+const PAYEE = (CREW.find(x => x.fronted) || CREW[0]).name;
 const money = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 const SHARE = Math.round(SHOW_TOTAL / CREW.length * 100) / 100;
 const perPerson = () => FARE + SEAT + SHARE;
@@ -82,9 +99,9 @@ async function invoice(who){
   d.setFont('helvetica','normal'); d.setFontSize(10.5);
   d.text(new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), 120, y+9);
   d.setFont('helvetica','bold'); d.setTextColor(...RED);
-  d.text(paid ? 'Paid in full' : settle && allPaid ? 'All square' : 'Oct 31, 2026', 158, y+9);
+  d.text(paid ? 'Paid in full' : settle && allPaid ? 'All square' : BILL.due, 158, y+9);
   d.setFont('helvetica','normal'); d.setFontSize(8.6); d.setTextColor(...GREY);
-  d.text(paid ? 'Luigi has stood down' : settle && allPaid ? 'Everybody paid up' : 'Halloween', 158, y+14);
+  d.text(paid ? 'Luigi has stood down' : settle && allPaid ? 'Everybody paid up' : BILL.dueNote, 158, y+14);
 
   y += 26;
   d.setDrawColor(...INK); d.setLineWidth(0.5); d.line(M, y, W-M, y);
@@ -94,16 +111,16 @@ async function invoice(who){
   y += 3; d.setDrawColor(210,205,196); d.setLineWidth(0.3); d.line(M, y, W-M, y);
 
   const rows = settle ? [
-    ['American Airlines — 3 × round trip', 'BNA/JFK · Dec 4 + Dec 7', CREW.length*FARE],
-    ['Seat selection — 3 passengers', 'AA 4561 / AA 4350', CREW.length*SEAT],
-    ['The Lost Boys — 3 tickets', 'Broadway.com · 207237762-8633251', SHOW_TOTAL],
+    [BILL.airline + ' — ' + CREW.length + ' × round trip', BILL.route, CREW.length*FARE],
+    ['Seat selection — ' + CREW.length + ' passengers', BILL.flights, CREW.length*SEAT],
+    [BILL.show + ' — ' + CREW.length + ' tickets', BILL.order, SHOW_TOTAL],
   ] : [
-    ['American Airlines — round trip', 'Ticket ' + c.tkt, FARE],
-    ['  BNA 10:30a to JFK 1:59p, Fri Dec 4 (AA 4561, Business)', '', null],
-    ['  JFK 1:27p to BNA 3:19p, Mon Dec 7 (AA 4350, Economy)', '', null],
+    [BILL.airline + ' — round trip', 'Ticket ' + c.tkt, FARE],
+    ['  ' + BILL.out, '', null],
+    ['  ' + BILL.back, '', null],
     ['Seat selection', 'Doc ' + c.emd, SEAT],
-    ['The Lost Boys — Palace Theatre', 'Broadway.com', SHARE],
-    ['  Sat Dec 5, 7:30 PM · Orchestra O123–O127 · 1 of 3 seats', '', null],
+    [BILL.show + ' — ' + BILL.venue, BILL.order.split(' · ')[0], SHARE],
+    ['  ' + BILL.seats + ' · 1 of ' + CREW.length + ' seats', '', null],
   ];
   y += 7;
   for (const [desc, ref, amt] of rows){
@@ -173,11 +190,11 @@ async function invoice(who){
   d.setDrawColor(210,205,196); d.setLineWidth(0.3); d.line(M, fy, W-M, fy);
   d.setFont('helvetica','normal'); d.setFontSize(9.5); d.setTextColor(...GREY);
   const foot = settle
-    ? 'Charges hit the card Sep 16 (Broadway.com) and Sep 18 (American). Hotel and meals settle separately.'
-    : paid ? 'Received with thanks by Kevin. Luigi has been reassigned to carrying your bags and will be gentle with them. '
+    ? BILL.charged + ' Hotel and meals settle separately.'
+    : paid ? 'Received with thanks by ' + PAYEE + '. Luigi has been reassigned to carrying your bags and will be gentle with them. '
       + 'Hotel and meals settle separately — he\'ll be in touch.'
-    : 'Remit to Kevin — Zelle, Apple Pay, cash in a plain envelope, or check in the mail '
-      + '(160 Weldon Drive, Martin, TN 38237). Hotel and meals settle separately.';
+    : 'Remit to ' + PAYEE + ' — Zelle, Apple Pay, cash in a plain envelope, or check in the mail '
+      + '(' + BILL.mail + '). Hotel and meals settle separately.';
   d.splitTextToSize(foot, W - M*2).forEach((ln, i) => d.text(ln, M, fy + 7 + i*5.5));
 
   const file = 'NYC2026-' + c.name + (settle ? '-settlement' : paid ? '-receipt-PAID' : '-invoice') + '.pdf';
