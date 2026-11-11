@@ -49,8 +49,6 @@ button{font:inherit;color:inherit}
 .leaflet-bar{border:0!important;box-shadow:0 1px 3px rgba(26,23,20,.3)!important;border-radius:12px!important;overflow:hidden}
 .leaflet-bar a{width:44px!important;height:44px!important;line-height:44px!important;font-size:24px!important;color:var(--ink)!important;background:var(--paper)!important;border-bottom-color:var(--line)!important}
 .leaflet-bar a:hover{background:#fff!important}
-.showall{background:var(--paper);border:0;border-radius:12px;padding:10px 14px;font:700 15px var(--sans);cursor:pointer;box-shadow:0 1px 3px rgba(26,23,20,.3)}
-.showall:hover{background:#fff}
 .leaflet-control-attribution{font-size:11px!important;background:rgba(251,247,239,.8)!important}
 .map-down{margin:0;padding:18px 20px 6px;font-size:17px;color:var(--ink-2)}
 
@@ -106,7 +104,8 @@ button{font:inherit;color:inherit}
 .legend div{display:flex;align-items:center;gap:9px}
 .legend .ld{width:15px;height:15px;border-radius:50%;background:var(--dot);border:2.5px solid #fffdf8;box-shadow:0 0 0 1px rgba(26,23,20,.25);flex:none}
 .legend .ld.eat{background:var(--eat)}
-.legend .ls{width:15px;height:15px;border-radius:50%;background:var(--ink);flex:none}
+.legend .ls{width:20px;height:20px;margin:0 -2.5px;border-radius:50%;background:var(--ink);color:#fffdf8;display:grid;place-items:center;flex:none}
+.legend .ls svg{width:12px;height:12px}
 .legend b{font-weight:700}
 
 /* ---------- narrower screens ---------- */

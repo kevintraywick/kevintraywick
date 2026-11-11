@@ -248,19 +248,6 @@ function showAll(){
   map.fitBounds(L.latLngBounds(ALL.map(i => [i.lat, i.lon])), {paddingTopLeft:[40, 34], paddingBottomRight:[padRight(), narrow() ? 40 : 30]});
 }
 showAll();
-// The one way back when someone has zoomed or dragged themselves lost.
-const Home = L.Control.extend({
-  options:{position:'topleft'},
-  onAdd(){
-    const b = L.DomUtil.create('button', 'showall');
-    b.type = 'button'; b.textContent = 'Show the whole map';
-    L.DomEvent.disableClickPropagation(b);
-    L.DomEvent.on(b, 'click', () => { closeCard(); showAll(); });
-    return b;
-  }
-});
-map.addControl(new Home());
-
 if (typeof SUBWAY_DATA !== 'undefined'){
   try{
     const pane = map.createPane('subway'); pane.style.zIndex = 350; pane.style.pointerEvents = 'none';
