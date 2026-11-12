@@ -1,121 +1,25 @@
-import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Footer from './components/Footer'
-import pastryImg from './assets/pastry.png'
-import bubbleImg from './assets/bubble.png'
-import penImg from './assets/pen.png'
-import blackmoorSplashImg from './assets/blackmoor-splash.webp'
-import windImg from './assets/windstorm.png'
-import darkSkiesImg from './assets/darkskies-purple.jpg'
-import stealThisImg from './assets/steal-this.png'
 import { PhotoPanel } from './components/PhotoPanel'
+import { ThoughtPanel } from './components/ThoughtPanel'
+import { NameFlip } from './components/NameFlip'
 import Blog from './pages/Blog'
 import BlogEntry from './pages/BlogEntry'
 
-const BLACKMOOR_URL = 'https://blackmoor.up.railway.app'
-
-// Jelly UI's display font stack (ui-rounded -> SF Pro Rounded on Apple)
-const kFont = { fontFamily: "ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', sans-serif", fontWeight: 900 } as const
-
+// Three panes, each one cell of the old 3×3 grid: photos, the name, thoughts.
+// Side by side across the middle row on a wide screen; stacked on a phone.
 function Homepage() {
-  const [hoverText, setHoverText] = useState<string | null>(null)
-  const hover = (text: string) => ({ onMouseEnter: () => setHoverText(text), onMouseLeave: () => setHoverText(null) })
-
   return (
-    <div className="grid h-screen w-screen bg-white" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)' }}>
-      {/* Photos — position 1 (r1c1) */}
-      <div className="relative overflow-hidden bg-black" {...hover('My photos')}>
+    <div className="grid h-dvh w-screen bg-white grid-cols-1 grid-rows-3 pb-8 md:pb-0 md:grid-cols-3">
+      <section aria-label="Photos" className="relative overflow-hidden bg-black md:row-start-2">
         <PhotoPanel />
+      </section>
+      <div className="flex items-center justify-center md:row-start-2">
+        <NameFlip />
       </div>
-      {/* Text Me — position 2 (r1c2) */}
-      <a href="sms:+12068608292" className="overflow-hidden" {...hover('Text me here')}>
-        <img src={bubbleImg} alt="Text Me" className="w-full h-full object-cover" />
-      </a>
-      {/* Steal This — position 3 (r1c3) */}
-      <div className="relative overflow-hidden" {...hover('coming soon')}>
-        <img src={stealThisImg} alt="Steal This" className="w-full h-full object-cover" />
-      </div>
-
-      {/* Blackmoor — position 4 (r2c1) */}
-      <div className="relative overflow-hidden">
-        <a href={BLACKMOOR_URL} target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('D&D')}>
-          {/* Live splash: Blackmoor redirects this to whatever art its home page
-              is currently showing, so a splash drop there updates this panel on
-              the next load — no cron, no rebuild. Falls back to the committed
-              image if Blackmoor is unreachable (e.g. mid-redeploy). */}
-          <img
-            src={`${BLACKMOOR_URL}/api/splash/current`}
-            onError={(e) => { if (!e.currentTarget.src.endsWith(blackmoorSplashImg)) e.currentTarget.src = blackmoorSplashImg }}
-            alt="Blackmoor" className="w-full h-full object-cover" style={{ objectPosition: 'center 22%' }}
-          />
-        </a>
-      </div>
-      {/* K — position 5 (center) */}
-      <div className="relative flex items-center justify-center">
-        <span style={{ ...kFont, fontSize: 'clamp(120px, 18vw, 280px)', lineHeight: 1, opacity: hoverText ? 0 : 1, transition: 'opacity 0.3s' }}>
-          K
-        </span>
-        {hoverText && (
-          <span className="absolute inset-[5%] flex items-center justify-center text-center" style={{ ...kFont, fontSize: 'clamp(28px, 5vw, 72px)', lineHeight: 1.1, opacity: 1, transition: 'opacity 0.3s', whiteSpace: 'pre-line' }}>
-            {hoverText}
-          </span>
-        )}
-      </div>
-      {/* JustEdit — position 6 (r2c3) */}
-      <div className="relative overflow-hidden">
-        <a href="/justedit/justedit.html" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Write me here')}>
-          <img src={penImg} alt="JustEdit" className="w-full h-full object-cover" />
-        </a>
-      </div>
-
-      {/* Dark Skies — position 7 (r3c1) */}
-      <div className="relative overflow-hidden">
-        <a href="https://darkskies.kevintraywick.com" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Dark Skies,\nWest Texas 2026')}>
-          <img src={darkSkiesImg} alt="Dark Skies — West Texas 2026" className="w-full h-full object-cover" />
-        </a>
-      </div>
-      {/* Fast French — position 8 (r3c2) */}
-      <div className="relative overflow-hidden">
-        <a href="/fast-french/" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('French.\nFast.')}>
-          <img src={pastryImg} alt="Fast French" className="w-full h-full object-cover" />
-        </a>
-        {/* relocated nav dots — bottom-left */}
-        <a
-          href="/blog"
-          aria-label="Go to blog"
-          className="absolute z-10 w-5 h-5 rounded-full flex items-center justify-center text-white leading-none"
-          style={{ background: '#999', opacity: 0.4, left: '8px', bottom: '8px', fontSize: '16px' }}
-        >
-          +
-        </a>
-        <a
-          href="/design"
-          aria-label="Design language builder"
-          className="absolute z-10 w-5 h-5 rounded-full flex items-center justify-center text-white leading-none"
-          style={{ background: '#999', opacity: 0.4, left: '34px', bottom: '8px', fontSize: '11px' }}
-        >
-          D
-        </a>
-        {/* /cc and /me dots — bottom-right of this pane */}
-        <a
-          href="/cc"
-          aria-label="cc"
-          className="absolute z-10 w-5 h-5 rounded-full block"
-          style={{ background: '#999', opacity: 0.4, right: '34px', bottom: '8px' }}
-        />
-        <a
-          href="/me"
-          aria-label="me"
-          className="absolute z-10 w-5 h-5 rounded-full block"
-          style={{ background: '#5af', opacity: 0.4, right: '8px', bottom: '8px' }}
-        />
-      </div>
-      {/* Wind — position 9 (r3c3) */}
-      <div className="relative overflow-hidden">
-        <a href="https://meticulous-eagerness-production-411f.up.railway.app" target="_blank" rel="noopener noreferrer" className="block w-full h-full" {...hover('Windy.')}>
-          <img src={windImg} alt="Wind" className="w-full h-full object-cover" />
-        </a>
-      </div>
+      <section aria-label="Thoughts" className="relative overflow-hidden md:row-start-2">
+        <ThoughtPanel />
+      </section>
     </div>
   )
 }

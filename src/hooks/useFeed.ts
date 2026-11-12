@@ -25,18 +25,23 @@ export interface EntryDetail extends Omit<Entry, 'comment_count'> {
   comments: Comment[]
 }
 
-export function useFeed() {
+export type EntryKind = 'photo' | 'note'
+
+// `kind` asks the API for just photos or just written notes, so each homepage
+// box pages through its own history (unfiltered, the API returns the 20 newest
+// of everything and one kind can crowd out the other).
+export function useFeed(kind?: EntryKind) {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    fetch(`${API_URL}/entries`)
+    fetch(`${API_URL}/entries${kind ? `?kind=${kind}` : ''}`)
       .then(r => r.json())
       .then(setEntries)
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [])
+  }, [kind])
 
   async function postEntry(title: string, link?: string, note?: string, imageUrl?: string): Promise<Entry> {
     const secret = import.meta.env.VITE_POST_SECRET

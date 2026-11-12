@@ -3,3 +3,41 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.font-instrument {
+  font-family: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  font-weight: 400;
+}
+
+/* Name ⇄ phone number: a card that turns over on its horizontal axis. */
+.name-flip {
+  perspective: 900px;
+  font-size: clamp(34px, 11vw, 64px);
+  line-height: 1.1;
+}
+@media (min-width: 768px) {
+  .name-flip { font-size: clamp(26px, 4.3vw, 88px); }
+}
+.name-flip-card {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.name-flip-card[data-flipped='true'] { transform: rotateX(180deg); }
+.name-flip-face {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.name-flip-back {
+  transform: rotateX(180deg);
+  font-size: 0.8em;
+  letter-spacing: 0.01em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .name-flip-card { transition: none; }
+}

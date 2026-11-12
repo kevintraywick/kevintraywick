@@ -40,7 +40,7 @@ async function downscaleImage(file: File): Promise<File> {
 }
 
 export function PhotoPanel() {
-  const { entries, postEntry, updateEntryPan } = useFeed()
+  const { entries, postEntry, updateEntryPan } = useFeed('photo')
   const navigate = useNavigate()
   const [index, setIndex] = useState(0)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -160,13 +160,13 @@ export function PhotoPanel() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Current photo */}
+      {/* Current photo — black and white until the cursor is over the box */}
       {photo ? (
         <img
           src={photo.image_url}
           alt={photo.title}
           draggable={false}
-          className="absolute inset-0 w-full h-full object-cover select-none cursor-grab active:cursor-grabbing"
+          className="absolute inset-0 w-full h-full object-cover select-none cursor-grab active:cursor-grabbing grayscale group-hover:grayscale-0 transition-[filter] duration-500"
           style={{
             objectPosition: `${pan.x}% ${pan.y}%`,
             touchAction: 'none',
