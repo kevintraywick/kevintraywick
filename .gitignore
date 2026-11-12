@@ -4,5 +4,8 @@ TextMe_Bubble.svg
 .env.local
 .env*.local
 
+# Personal tax documents - never commit
+quarterly-taxes/
+
 # Local build output - GitHub Actions builds its own
 dist/
