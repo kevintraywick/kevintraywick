@@ -39,11 +39,11 @@ test('shows the newest post with a date and time, skipping photos and links', ()
   expect(screen.getByText(/Nov 2, 2026 · \d{1,2}:\d\d/)).toBeInTheDocument()
 })
 
-test('"+ new entry" is offered on every post, not just the newest', () => {
+test('+ is offered only on the newest post', () => {
   render(<ThoughtPanel />)
   expect(screen.getByLabelText('New entry')).toBeInTheDocument()
   fireEvent.click(screen.getByLabelText('Older post'))
-  expect(screen.getByLabelText('New entry')).toBeInTheDocument()
+  expect(screen.queryByLabelText('New entry')).not.toBeInTheDocument()
 })
 
 test('arrows step back and forward in time', () => {
