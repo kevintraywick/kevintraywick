@@ -3,3 +3,6 @@ TextMe_Bubble.svg
 *.svg
 .env.local
 .env*.local
+
+# Local build output - GitHub Actions builds its own
+dist/
