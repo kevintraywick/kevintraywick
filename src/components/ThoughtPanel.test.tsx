@@ -39,6 +39,13 @@ test('shows the newest post with a date and time, skipping photos and links', ()
   expect(screen.getByText(/Nov 2, 2026 · \d{1,2}:\d\d/)).toBeInTheDocument()
 })
 
+test('"+ new entry" is offered on every post, not just the newest', () => {
+  render(<ThoughtPanel />)
+  expect(screen.getByLabelText('New entry')).toBeInTheDocument()
+  fireEvent.click(screen.getByLabelText('Older post'))
+  expect(screen.getByLabelText('New entry')).toBeInTheDocument()
+})
+
 test('arrows step back and forward in time', () => {
   render(<ThoughtPanel />)
   expect(screen.queryByLabelText('Newer post')).not.toBeInTheDocument()
@@ -85,12 +92,12 @@ test('a post that has replies shows its thread', async () => {
   expect(fetchEntry).toHaveBeenCalledWith('6')
 })
 
-test('+ opens a blank page, and writing there makes a new post', async () => {
+test('"+ new entry" opens a blank page ready to type, and writing there makes a new post', async () => {
   render(<ThoughtPanel />)
-  fireEvent.click(screen.getByLabelText('New post'))
+  fireEvent.click(screen.getByLabelText('New entry'))
   expect(screen.queryByText('Newest thought')).not.toBeInTheDocument()
-  fireEvent.click(screen.getByText('click to write'))
   const box = screen.getByLabelText('Write a post')
+  expect(box).toHaveFocus()
   fireEvent.change(box, { target: { value: 'one two three four five six seven' } })
   fireEvent.keyDown(box, { key: 'Enter' })
   expect(mockPostEntry).toHaveBeenCalledWith('one two three four five six…', undefined, 'one two three four five six seven')
@@ -100,7 +107,7 @@ test('+ opens a blank page, and writing there makes a new post', async () => {
 
 test('the blank page steps back to the newest post', () => {
   render(<ThoughtPanel />)
-  fireEvent.click(screen.getByLabelText('New post'))
+  fireEvent.click(screen.getByLabelText('New entry'))
   fireEvent.click(screen.getByLabelText('Older post'))
   expect(screen.getByText('Newest thought')).toBeInTheDocument()
 })

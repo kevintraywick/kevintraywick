@@ -7,7 +7,7 @@ function titleFrom(text: string) {
   return words.slice(0, 6).join(' ') + (words.length > 6 ? '…' : '')
 }
 
-// -1 is the blank page past the newest post, where writing starts a new post.
+// -1 is the blank page ("+ new entry"), where writing starts a new post.
 const NEW_PAGE = -1
 
 const arrowClass =
@@ -84,9 +84,9 @@ export function ThoughtPanel() {
     }
   }
 
-  function go(to: number) {
+  function go(to: number, startWriting = false) {
     setIndex(to)
-    setWriting(false)
+    setWriting(startWriting)
     setDraft('')
     setSaveState('idle')
   }
@@ -165,8 +165,7 @@ export function ThoughtPanel() {
         </div>
       </div>
 
-      {/* Same arrows as the photo box: back in time on the left, forward on the right.
-          At the newest post the right-hand control becomes +, the blank page for a new post. */}
+      {/* Same arrows as the photo box: back in time on the left, forward on the right */}
       {hasOlder && (
         <button
           aria-label="Older post"
@@ -182,9 +181,14 @@ export function ThoughtPanel() {
           ›
         </button>
       )}
-      {index === 0 && thoughts.length > 0 && (
-        <button aria-label="New post" onClick={() => go(NEW_PAGE)} className={`${arrowClass} right-2`} style={arrowStyle}>
-          +
+      {/* Always visible, on every post — a new entry shouldn't depend on finding a hover control */}
+      {!onNewPage && (
+        <button
+          aria-label="New entry"
+          onClick={() => go(NEW_PAGE, true)}
+          className="absolute top-2 right-3 px-1.5 py-0.5 rounded font-sans text-[11px] tracking-wide text-black/50 hover:text-black hover:bg-black/5 focus-visible:text-black cursor-pointer transition-colors"
+        >
+          + new entry
         </button>
       )}
     </div>
