@@ -72,7 +72,7 @@ export function ThoughtPanel() {
           <article className="my-auto">
             <p
               className="font-instrument text-black whitespace-pre-wrap break-words"
-              style={{ fontSize: 'clamp(18px, 1.7vw, 28px)', lineHeight: 1.25 }}
+              style={{ fontSize: 'clamp(16px, calc(1.7vw - 2px), 26px)', lineHeight: 1.25 }}
             >
               {thought.note}
             </p>
@@ -101,7 +101,7 @@ export function ThoughtPanel() {
             onChange={e => { setDraft(e.target.value); if (saveState === 'error') setSaveState('idle') }}
             onKeyDown={handleKeyDown}
             className="block w-full resize-none bg-transparent border-0 border-t border-black/15 pt-2 font-instrument text-black placeholder:text-black/30 outline-none focus:border-black/50 disabled:opacity-50"
-            style={{ fontSize: '17px', lineHeight: 1.25 }}
+            style={{ fontSize: '15px', lineHeight: 1.25 }}
           />
           {saveState === 'error' && (
             <p role="alert" className="font-sans text-[11px] text-red-700">
