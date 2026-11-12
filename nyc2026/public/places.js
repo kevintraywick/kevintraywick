@@ -10,7 +10,7 @@ const SHOW = {
   id:'show', kind:'show', name:'The Lost Boys', label:'Our show · Sat 7:30',
   sub:'Palace Theatre · Broadway at 47th St', lat:40.7590, lon:-73.9847,
   url:'https://www.palacetheatrenyc.com/',
-  about:'Our Broadway night: Saturday, December 5. The curtain goes up at 7:30 PM, and our seats are Orchestra O123–O127. Plan to be at the theatre by 7:00.'
+  about:'Our Broadway night: Saturday, December 5. The curtain goes up at 7:30 PM, and our seats are in the Orchestra. Plan to be at the theatre by 7:00.'
 };
 const PLACES = [
   {id:'firehouse', name:'Hook & Ladder 8', sub:'The Ghostbusters firehouse · Tribeca', lat:40.7196, lon:-74.0066, url:'https://www.nyc.gov/site/fdny/index.page', img:'img/firehouse.webp',
