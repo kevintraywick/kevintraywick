@@ -10,8 +10,9 @@ function titleFrom(text: string) {
 // -1 is the blank page ("+ new entry"), where writing starts a new post.
 const NEW_PAGE = -1
 
-const arrowClass =
-  'absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-black/70 cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity'
+const circleClass =
+  'absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-black/70 cursor-pointer'
+const arrowClass = `${circleClass} opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity`
 const arrowStyle = { background: 'rgba(0,0,0,0.08)', fontSize: '20px', lineHeight: 1, paddingBottom: '2px' } as const
 const stampClass = 'block mt-1 font-sans text-[11px] tracking-wide text-black/45'
 
@@ -181,14 +182,17 @@ export function ThoughtPanel() {
           ›
         </button>
       )}
-      {/* Always visible, on every post — a new entry shouldn't depend on finding a hover control */}
+      {/* New entry: the same circle as the arrows, on the right border. Always visible, on every
+          post, so starting an entry never depends on finding a hover control. When the newer
+          arrow has the centre spot, it sits just beneath it. */}
       {!onNewPage && (
         <button
           aria-label="New entry"
           onClick={() => go(NEW_PAGE, true)}
-          className="absolute top-2 right-3 px-1.5 py-0.5 rounded font-sans text-[11px] tracking-wide text-black/50 hover:text-black hover:bg-black/5 focus-visible:text-black cursor-pointer transition-colors"
+          className={`${circleClass} right-2 ${hasNewer ? 'mt-10' : ''}`}
+          style={arrowStyle}
         >
-          + new entry
+          +
         </button>
       )}
     </div>
