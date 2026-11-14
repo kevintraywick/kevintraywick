@@ -9,3 +9,6 @@ quarterly-taxes/
 
 # Local build output - GitHub Actions builds its own
 dist/
+
+# Nightly blog backup (photos + content snapshots) - local only, never commit
+blog-backup/
