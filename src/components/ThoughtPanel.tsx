@@ -120,7 +120,7 @@ export function ThoughtPanel() {
                     <li key={reply.id}>
                       <p
                         className="font-instrument text-black/85 whitespace-pre-wrap break-words"
-                        style={{ fontSize: '13px', lineHeight: 1.25 }}
+                        style={{ fontSize: '15px', lineHeight: 1.25 }}
                       >
                         {reply.body}
                       </p>
@@ -153,7 +153,7 @@ export function ThoughtPanel() {
                 onKeyDown={handleKeyDown}
                 onBlur={() => { if (!draft.trim() && saveState !== 'saving') setWriting(false) }}
                 className="block w-full resize-none bg-transparent border-0 p-0 font-instrument text-black placeholder:text-black/30 outline-none disabled:opacity-50"
-                style={{ fontSize: thought ? '13px' : 'clamp(14px, calc(1.7vw - 4px), 24px)', lineHeight: 1.25 }}
+                style={{ fontSize: thought ? '15px' : 'clamp(14px, calc(1.7vw - 4px), 24px)', lineHeight: 1.25 }}
               />
               {saveState === 'error' && (
                 <p role="alert" className="font-sans text-[11px] text-red-700">
