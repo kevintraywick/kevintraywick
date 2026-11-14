@@ -1,27 +1,33 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ThoughtPanel } from './ThoughtPanel'
-import { fetchEntry } from '../hooks/useFeed'
+import { fetchEntry, uploadImage } from '../hooks/useFeed'
 
 const mockPostEntry = vi.fn()
 const mockPostComment = vi.fn()
 
+const baseEntries = [
+  { id: 9, title: 'A photo', created_at: '2026-11-03 10:00:00', comment_count: 0, image_url: 'https://cdn.example.com/p.jpg' },
+  { id: 8, title: 'Newest', note: 'Newest thought', created_at: '2026-11-02 18:05:00', comment_count: 0 },
+  { id: 7, title: 'A link', note: 'link note', link: 'https://example.com', created_at: '2026-11-01 10:00:00', comment_count: 0 },
+  { id: 6, title: 'Older', note: 'Older thought', created_at: '2026-10-01 09:30:00', comment_count: 1 },
+]
+const feed = vi.hoisted(() => ({ entries: [] as Record<string, unknown>[] }))
+
 vi.mock('../hooks/useFeed', () => ({
   useFeed: () => ({
-    entries: [
-      { id: 9, title: 'A photo', created_at: '2026-11-03 10:00:00', comment_count: 0, image_url: 'https://cdn.example.com/p.jpg' },
-      { id: 8, title: 'Newest', note: 'Newest thought', created_at: '2026-11-02 18:05:00', comment_count: 0 },
-      { id: 7, title: 'A link', note: 'link note', link: 'https://example.com', created_at: '2026-11-01 10:00:00', comment_count: 0 },
-      { id: 6, title: 'Older', note: 'Older thought', created_at: '2026-10-01 09:30:00', comment_count: 1 },
-    ],
+    entries: feed.entries,
     loading: false,
     error: false,
     postEntry: mockPostEntry,
     postComment: mockPostComment,
   }),
   fetchEntry: vi.fn(),
+  uploadImage: vi.fn(),
 }))
 
 beforeEach(() => {
+  feed.entries = [...baseEntries]
+  vi.mocked(uploadImage).mockReset()
   mockPostEntry.mockReset()
   mockPostEntry.mockResolvedValue({})
   mockPostComment.mockReset()
@@ -131,4 +137,65 @@ test('a failed save keeps the draft and says so', async () => {
   fireEvent.keyDown(box, { key: 'Enter' })
   expect(await screen.findByRole('alert')).toHaveTextContent(/didn’t save/i)
   expect(box.value).toBe('keep me')
+})
+
+const imageFile = () => new File(['data'], 'pic.jpg', { type: 'image/jpeg' })
+const dropOn = (el: HTMLElement, files: File[]) =>
+  fireEvent.drop(el, { dataTransfer: { files, types: ['Files'], getData: () => '' } })
+
+test('dropping an image posts it as a blog entry, not a photo', async () => {
+  vi.mocked(uploadImage).mockResolvedValueOnce('https://cdn.example.com/up.jpg')
+  const { container } = render(<ThoughtPanel />)
+  dropOn(container.firstChild as HTMLElement, [imageFile()])
+  expect(screen.getByText('Posting…')).toBeInTheDocument()
+  await waitFor(() => expect(mockPostEntry).toHaveBeenCalled())
+  const [title, link, note, imageUrl, kind] = mockPostEntry.mock.calls[0]
+  expect(title).toBeTruthy()
+  expect(link).toBeUndefined()
+  expect(note).toBeUndefined()
+  expect(imageUrl).toBe('https://cdn.example.com/up.jpg')
+  expect(kind).toBe('note')
+  await waitFor(() => expect(screen.queryByText('Posting…')).not.toBeInTheDocument())
+})
+
+test('text waiting on the blank page goes along as the caption', async () => {
+  vi.mocked(uploadImage).mockResolvedValueOnce('https://cdn.example.com/up.jpg')
+  const { container } = render(<ThoughtPanel />)
+  fireEvent.click(screen.getByLabelText('New entry'))
+  fireEvent.change(screen.getByLabelText('Write a post'), { target: { value: 'the view from here' } })
+  dropOn(container.firstChild as HTMLElement, [imageFile()])
+  await waitFor(() => expect(mockPostEntry).toHaveBeenCalled())
+  expect(mockPostEntry.mock.calls[0]).toEqual(['the view from here', undefined, 'the view from here', 'https://cdn.example.com/up.jpg', 'note'])
+})
+
+test('dragging a file over says what a drop will do', () => {
+  const { container } = render(<ThoughtPanel />)
+  fireEvent.dragOver(container.firstChild as HTMLElement, { dataTransfer: { types: ['Files'], files: [] } })
+  expect(screen.getByText('Drop image to post')).toBeInTheDocument()
+})
+
+test('a dropped file that is not an image is refused out loud', () => {
+  const { container } = render(<ThoughtPanel />)
+  dropOn(container.firstChild as HTMLElement, [new File(['x'], 'notes.pdf', { type: 'application/pdf' })])
+  expect(screen.getByText('Images only')).toBeInTheDocument()
+  expect(uploadImage).not.toHaveBeenCalled()
+})
+
+test('a failed upload says so and posts nothing', async () => {
+  vi.mocked(uploadImage).mockRejectedValueOnce(new Error('Upload failed'))
+  const { container } = render(<ThoughtPanel />)
+  dropOn(container.firstChild as HTMLElement, [imageFile()])
+  expect(await screen.findByText('Didn’t post — try again')).toBeInTheDocument()
+  expect(mockPostEntry).not.toHaveBeenCalled()
+})
+
+test('an image post shows its picture, with the caption when there is one', () => {
+  feed.entries = [
+    { id: 11, title: 'Nov 14, 2026', image_url: 'https://cdn.example.com/blog.jpg', kind: 'note', created_at: '2026-11-14 10:00:00', comment_count: 0 },
+    ...baseEntries,
+  ]
+  render(<ThoughtPanel />)
+  expect(screen.getByAltText('Nov 14, 2026')).toHaveAttribute('src', 'https://cdn.example.com/blog.jpg')
+  fireEvent.click(screen.getByLabelText('Older post'))
+  expect(screen.getByText('Newest thought')).toBeInTheDocument()
 })

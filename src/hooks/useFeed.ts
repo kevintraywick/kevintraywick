@@ -8,6 +8,8 @@ export interface Entry {
   link?: string
   note?: string
   image_url?: string
+  // 'note' = a blog post even though it has an image (shown in the thoughts box)
+  kind?: 'note' | null
   pan_x?: number | null
   pan_y?: number | null
   created_at: string
@@ -43,7 +45,7 @@ export function useFeed(kind?: EntryKind) {
       .finally(() => setLoading(false))
   }, [kind])
 
-  async function postEntry(title: string, link?: string, note?: string, imageUrl?: string): Promise<Entry> {
+  async function postEntry(title: string, link?: string, note?: string, imageUrl?: string, kind?: 'note'): Promise<Entry> {
     const secret = import.meta.env.VITE_POST_SECRET
     const res = await fetch(`${API_URL}/entries`, {
       method: 'POST',
@@ -56,6 +58,7 @@ export function useFeed(kind?: EntryKind) {
         link: link || undefined,
         note: note || undefined,
         image_url: imageUrl || undefined,
+        kind,
       }),
     })
     if (!res.ok) throw new Error('Post failed')

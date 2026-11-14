@@ -2,9 +2,7 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFeed, uploadImage, type Entry } from '../hooks/useFeed'
 import { formatDate, hostname } from '../utils/format'
-
-const MAX_DIMENSION = 2400
-const RESIZE_THRESHOLD_BYTES = 4 * 1024 * 1024
+import { downscaleImage } from '../utils/image'
 
 const CENTER = { x: 50, y: 50 }
 
@@ -18,27 +16,6 @@ function clampPercent(n: number) {
   return Math.min(100, Math.max(0, n))
 }
 
-// Photos.app and modern cameras can hand us files past the API's 10MB cap;
-// downscale client-side and fall back to the original if decoding fails (e.g. jsdom, odd formats).
-async function downscaleImage(file: File): Promise<File> {
-  try {
-    const bitmap = await createImageBitmap(file)
-    const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height))
-    if (scale === 1 && file.size < RESIZE_THRESHOLD_BYTES) return file
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.round(bitmap.width * scale)
-    canvas.height = Math.round(bitmap.height * scale)
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return file
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85))
-    if (!blob) return file
-    return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' })
-  } catch {
-    return file
-  }
-}
-
 export function PhotoPanel() {
   const { entries, postEntry, updateEntryPan } = useFeed('photo')
   const navigate = useNavigate()
@@ -47,7 +24,8 @@ export function PhotoPanel() {
   const [isFileDragOver, setIsFileDragOver] = useState(false)
   const [uploadState, setUploadState] = useState<'idle' | 'loading' | 'error'>('idle')
 
-  const photos = entries.filter(e => e.image_url)
+  // An image posted to the blog (kind 'note') belongs to the thoughts box
+  const photos = entries.filter(e => e.image_url && e.kind !== 'note')
   const photo = photos[index] ?? photos[photos.length - 1]
 
   // Pan: object-cover crops tall/wide photos; dragging the image adjusts

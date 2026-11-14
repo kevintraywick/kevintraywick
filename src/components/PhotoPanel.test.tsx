@@ -15,6 +15,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 vi.mock('../hooks/useFeed', () => ({
   useFeed: () => ({
     entries: [
+      { id: 5, title: 'Blog picture', created_at: '2026-07-15T00:00:00', comment_count: 0, image_url: 'https://cdn.example.com/blog.jpg', kind: 'note' },
       { id: 4, title: 'Text-only entry', note: 'no image', created_at: '2026-07-14T00:00:00', comment_count: 0 },
       { id: 3, title: 'Newest photo', created_at: '2026-07-12T00:00:00', comment_count: 0, image_url: 'https://cdn.example.com/new.jpg', pan_x: 50, pan_y: 85 },
       { id: 2, title: 'Middle photo', created_at: '2026-06-01T00:00:00', comment_count: 0, image_url: 'https://cdn.example.com/mid.jpg' },
@@ -194,4 +195,10 @@ test('dropping a URL still opens the blog composer', () => {
   expect(mockNavigate).toHaveBeenCalledWith('/blog', {
     state: { title: 'example.com', link: 'https://example.com' },
   })
+})
+
+test('an image posted to the blog stays out of the photo box', () => {
+  renderPanel()
+  expect(screen.getByAltText('Newest photo')).toBeInTheDocument()
+  expect(screen.queryByAltText('Blog picture')).not.toBeInTheDocument()
 })

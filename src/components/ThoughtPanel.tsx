@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useFeed, fetchEntry, type Comment } from '../hooks/useFeed'
-import { formatDateTime } from '../utils/format'
+import { useFeed, fetchEntry, uploadImage, type Comment } from '../hooks/useFeed'
+import { formatDate, formatDateTime } from '../utils/format'
+import { downscaleImage } from '../utils/image'
 
 function titleFrom(text: string) {
   const words = text.split(/\s+/)
@@ -17,7 +18,9 @@ const stampClass = 'block mt-1 font-sans text-[11px] tracking-wide text-black/45
 
 // One post at a time. Clicking the box opens a write line: on a post it adds a
 // reply under it (a thread), on the blank page it starts a new post. Enter
-// commits either one — there is no editing afterwards.
+// commits either one — there is no editing afterwards. Dropping an image
+// anywhere on the box posts it as a new entry (kind 'note', so it stays out of
+// the photo box); text waiting on the blank page goes along as its caption.
 export function ThoughtPanel() {
   const { entries, loading, error, postEntry, postComment } = useFeed('note')
   const [index, setIndex] = useState(0)
@@ -25,9 +28,10 @@ export function ThoughtPanel() {
   const [draft, setDraft] = useState('')
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle')
   const [threads, setThreads] = useState<Record<number, Comment[]>>({})
+  const [dropState, setDropState] = useState<'idle' | 'over' | 'posting' | 'error' | 'not-image'>('idle')
   const scroller = useRef<HTMLDivElement>(null)
 
-  const thoughts = entries.filter(e => !e.image_url && !e.link && e.note)
+  const thoughts = entries.filter(e => e.kind === 'note' || (!e.image_url && !e.link && e.note))
   const onNewPage = index === NEW_PAGE || thoughts.length === 0
   const thought = onNewPage ? undefined : thoughts[Math.min(index, thoughts.length - 1)]
   const replies = thought ? threads[thought.id] : undefined
@@ -84,6 +88,40 @@ export function ThoughtPanel() {
     }
   }
 
+  function handleDragOver(e: React.DragEvent) {
+    if (!e.dataTransfer.types.includes('Files')) return
+    e.preventDefault()
+    if (dropState === 'idle') setDropState('over')
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    if (dropState === 'over' && !e.currentTarget.contains(e.relatedTarget as Node)) setDropState('idle')
+  }
+
+  async function handleDrop(e: React.DragEvent) {
+    if (!e.dataTransfer.types.includes('Files')) return
+    e.preventDefault()
+    if (dropState === 'posting') return
+    const flash = (state: 'error' | 'not-image') => {
+      setDropState(state)
+      setTimeout(() => setDropState('idle'), 1800)
+    }
+    const file = e.dataTransfer.files[0]
+    if (!file?.type.startsWith('image/')) return flash('not-image')
+    // Text waiting on the blank page becomes the caption (a reply in progress never does)
+    const caption = thought ? '' : draft.trim()
+    setDropState('posting')
+    try {
+      const imageUrl = await uploadImage(await downscaleImage(file))
+      const title = caption ? titleFrom(caption) : formatDate(new Date().toISOString(), true)
+      await postEntry(title, undefined, caption || undefined, imageUrl, 'note')
+      go(0)
+      setDropState('idle')
+    } catch {
+      flash('error')
+    }
+  }
+
   function go(to: number, startWriting = false) {
     setIndex(to)
     setWriting(startWriting)
@@ -94,7 +132,10 @@ export function ThoughtPanel() {
   return (
     <div
       className="group absolute inset-0 flex flex-col cursor-text"
-      style={{ background: '#f4f2ec' }}
+      style={{ background: '#f4f2ec', containerType: 'size' }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       role="group"
       aria-label={thought ? 'Post — click to reply' : 'Click to write a post'}
       tabIndex={0}
@@ -105,12 +146,24 @@ export function ThoughtPanel() {
         <div className="my-auto">
           {thought ? (
             <article>
-              <p
-                className="font-instrument text-black whitespace-pre-wrap break-words"
-                style={{ fontSize: 'clamp(14px, calc(1.7vw - 4px), 24px)', lineHeight: 1.25 }}
-              >
-                {thought.note}
-              </p>
+              {thought.image_url && (
+                // Capped to the box's own height so the picture and its date fit without scrolling
+                <img
+                  src={thought.image_url}
+                  alt={thought.note ? '' : thought.title}
+                  draggable={false}
+                  className={`block max-w-full w-auto h-auto select-none ${thought.note ? 'mb-2' : ''}`}
+                  style={{ maxHeight: '68cqh' }}
+                />
+              )}
+              {thought.note && (
+                <p
+                  className="font-instrument text-black whitespace-pre-wrap break-words"
+                  style={{ fontSize: 'clamp(14px, calc(1.7vw - 4px), 22px)', lineHeight: 1.25 }}
+                >
+                  {thought.note}
+                </p>
+              )}
               <time dateTime={thought.created_at} className={stampClass}>
                 {formatDateTime(thought.created_at)}
               </time>
@@ -153,7 +206,7 @@ export function ThoughtPanel() {
                 onKeyDown={handleKeyDown}
                 onBlur={() => { if (!draft.trim() && saveState !== 'saving') setWriting(false) }}
                 className="block w-full resize-none bg-transparent border-0 p-0 font-instrument text-black placeholder:text-black/30 outline-none disabled:opacity-50"
-                style={{ fontSize: thought ? '15px' : 'clamp(14px, calc(1.7vw - 4px), 24px)', lineHeight: 1.25 }}
+                style={{ fontSize: thought ? '15px' : 'clamp(14px, calc(1.7vw - 4px), 22px)', lineHeight: 1.25 }}
               />
               {saveState === 'error' && (
                 <p role="alert" className="font-sans text-[11px] text-red-700">
@@ -164,6 +217,23 @@ export function ThoughtPanel() {
           )}
         </div>
       </div>
+
+      {/* Drop overlay — says what a drop will do, and what happened to it */}
+      {dropState !== 'idle' && (
+        <div
+          role="status"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          style={{ background: 'rgba(244,242,236,0.88)' }}
+        >
+          <div className="absolute rounded-lg" style={{ inset: '10px', border: '2px dashed rgba(0,0,0,0.35)' }} />
+          <span className={`font-sans text-sm ${dropState === 'error' || dropState === 'not-image' ? 'text-red-700' : 'text-black/70'}`}>
+            {dropState === 'over' && 'Drop image to post'}
+            {dropState === 'posting' && 'Posting…'}
+            {dropState === 'error' && 'Didn’t post — try again'}
+            {dropState === 'not-image' && 'Images only'}
+          </span>
+        </div>
+      )}
 
       {/* Same arrows as the photo box: back in time on the left, forward on the right */}
       {hasOlder && (
