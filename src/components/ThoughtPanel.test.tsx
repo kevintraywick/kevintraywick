@@ -4,6 +4,7 @@ import { fetchEntry, uploadImage } from '../hooks/useFeed'
 
 const mockPostEntry = vi.fn()
 const mockPostComment = vi.fn()
+const mockUpdateEntryText = vi.fn()
 
 const baseEntries = [
   { id: 9, title: 'A photo', created_at: '2026-11-03 10:00:00', comment_count: 0, image_url: 'https://cdn.example.com/p.jpg' },
@@ -20,6 +21,7 @@ vi.mock('../hooks/useFeed', () => ({
     error: false,
     postEntry: mockPostEntry,
     postComment: mockPostComment,
+    updateEntryText: mockUpdateEntryText,
   }),
   fetchEntry: vi.fn(),
   uploadImage: vi.fn(),
@@ -32,6 +34,8 @@ beforeEach(() => {
   mockPostEntry.mockResolvedValue({})
   mockPostComment.mockReset()
   mockPostComment.mockResolvedValue({ id: 50, entry_id: 8, body: 'a reply', created_at: '2026-11-05 12:00:00' })
+  mockUpdateEntryText.mockReset()
+  mockUpdateEntryText.mockResolvedValue(undefined)
   vi.mocked(fetchEntry).mockReset()
   vi.mocked(fetchEntry).mockResolvedValue({
     id: 6, title: 'Older', created_at: '2026-10-01 09:30:00',
@@ -197,5 +201,82 @@ test('an image post shows its picture, with the caption when there is one', () =
   render(<ThoughtPanel />)
   expect(screen.getByAltText('Nov 14, 2026')).toHaveAttribute('src', 'https://cdn.example.com/blog.jpg')
   fireEvent.click(screen.getByLabelText('Older post'))
+  expect(screen.getByText('Newest thought')).toBeInTheDocument()
+})
+
+test('the pencil turns the post into a write line holding its words, and Enter saves them in place', async () => {
+  render(<ThoughtPanel />)
+  fireEvent.click(screen.getByLabelText('Edit this post'))
+  const box = screen.getByRole('textbox', { name: 'Edit this post' }) as HTMLTextAreaElement
+  expect(box.value).toBe('Newest thought')
+  expect(box).toHaveFocus()
+  // no reply line alongside, and no second pencil
+  expect(screen.queryByLabelText('Reply to this post')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Edit this post' })).not.toBeInTheDocument()
+  fireEvent.change(box, { target: { value: 'one two three four five six seven' } })
+  fireEvent.keyDown(box, { key: 'Enter' })
+  expect(mockUpdateEntryText).toHaveBeenCalledWith(8, 'one two three four five six…', 'one two three four five six seven')
+  expect(mockPostEntry).not.toHaveBeenCalled()
+  expect(mockPostComment).not.toHaveBeenCalled()
+  await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument())
+})
+
+test('Escape leaves the post as it was', () => {
+  render(<ThoughtPanel />)
+  fireEvent.click(screen.getByLabelText('Edit this post'))
+  const box = screen.getByRole('textbox', { name: 'Edit this post' })
+  fireEvent.change(box, { target: { value: 'changed my mind' } })
+  fireEvent.keyDown(box, { key: 'Escape' })
+  expect(mockUpdateEntryText).not.toHaveBeenCalled()
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  expect(screen.getByText('Newest thought')).toBeInTheDocument()
+})
+
+test('clicking the box while editing does not open a reply line', () => {
+  render(<ThoughtPanel />)
+  fireEvent.click(screen.getByLabelText('Edit this post'))
+  fireEvent.click(screen.getByRole('textbox', { name: 'Edit this post' }))
+  expect(screen.getAllByRole('textbox')).toHaveLength(1)
+})
+
+test('a post of words cannot be saved empty, and unchanged words are not sent', () => {
+  render(<ThoughtPanel />)
+  fireEvent.click(screen.getByLabelText('Edit this post'))
+  const box = screen.getByRole('textbox', { name: 'Edit this post' })
+  fireEvent.change(box, { target: { value: '   ' } })
+  fireEvent.keyDown(box, { key: 'Enter' })
+  expect(mockUpdateEntryText).not.toHaveBeenCalled()
+  expect(box).toBeInTheDocument()
+  fireEvent.change(box, { target: { value: 'Newest thought' } })
+  fireEvent.keyDown(box, { key: 'Enter' })
+  expect(mockUpdateEntryText).not.toHaveBeenCalled()
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+})
+
+test('a failed edit keeps what was typed and says so', async () => {
+  mockUpdateEntryText.mockRejectedValue(new Error('nope'))
+  render(<ThoughtPanel />)
+  fireEvent.click(screen.getByLabelText('Edit this post'))
+  const box = screen.getByRole('textbox', { name: 'Edit this post' }) as HTMLTextAreaElement
+  fireEvent.change(box, { target: { value: 'keep me' } })
+  fireEvent.keyDown(box, { key: 'Enter' })
+  expect(await screen.findByRole('alert')).toHaveTextContent(/didn’t save/i)
+  expect(box.value).toBe('keep me')
+})
+
+test('an image post can be given a caption, and stepping to another post drops the edit', () => {
+  feed.entries = [
+    { id: 11, title: 'Nov 14, 2026', image_url: 'https://cdn.example.com/blog.jpg', kind: 'note', created_at: '2026-11-14 10:00:00', comment_count: 0 },
+    ...baseEntries,
+  ]
+  render(<ThoughtPanel />)
+  fireEvent.click(screen.getByLabelText('Edit this post'))
+  const box = screen.getByRole('textbox', { name: 'Edit this post' })
+  fireEvent.change(box, { target: { value: 'the view' } })
+  fireEvent.keyDown(box, { key: 'Enter' })
+  expect(mockUpdateEntryText).toHaveBeenCalledWith(11, 'the view', 'the view')
+  fireEvent.click(screen.getByLabelText('Edit this post'))
+  fireEvent.click(screen.getByLabelText('Older post'))
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   expect(screen.getByText('Newest thought')).toBeInTheDocument()
 })

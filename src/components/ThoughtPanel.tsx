@@ -11,25 +11,30 @@ function titleFrom(text: string) {
 // -1 is the blank page ("+ new entry"), where writing starts a new post.
 const NEW_PAGE = -1
 
-const arrowClass =
-  'absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-black/70 cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity'
+const circleClass =
+  'absolute w-8 h-8 rounded-full flex items-center justify-center text-black/70 cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity'
+const arrowClass = `${circleClass} top-1/2 -translate-y-1/2`
 const arrowStyle = { background: 'rgba(0,0,0,0.08)', fontSize: '20px', lineHeight: 1, paddingBottom: '2px' } as const
 const stampClass = 'block mt-1 font-sans text-[11px] tracking-wide text-black/45'
 
 // One post at a time. Clicking the box opens a write line: on a post it adds a
 // reply under it (a thread), on the blank page it starts a new post. Enter
-// commits either one — there is no editing afterwards. Dropping an image
+// commits either one. The pencil in the top corner turns the post's own words
+// into the write line: Enter saves them in place (same date, same replies),
+// Escape puts them back. Replies are not editable. Dropping an image
 // anywhere on the box posts it as a new entry (kind 'note', so it stays out of
 // the photo box); text waiting on the blank page goes along as its caption.
 export function ThoughtPanel() {
-  const { entries, loading, error, postEntry, postComment } = useFeed('note')
+  const { entries, loading, error, postEntry, postComment, updateEntryText } = useFeed('note')
   const [index, setIndex] = useState(0)
   const [writing, setWriting] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle')
   const [threads, setThreads] = useState<Record<number, Comment[]>>({})
   const [dropState, setDropState] = useState<'idle' | 'over' | 'posting' | 'error' | 'not-image'>('idle')
   const scroller = useRef<HTMLDivElement>(null)
+  const editBox = useRef<HTMLTextAreaElement>(null)
 
   const thoughts = entries.filter(e => e.kind === 'note' || (!e.image_url && !e.link && e.note))
   const onNewPage = index === NEW_PAGE || thoughts.length === 0
@@ -57,12 +62,42 @@ export function ThoughtPanel() {
     if (el && (writing || replyCount > 0)) el.scrollTop = el.scrollHeight
   }, [writing, replyCount, thoughtId])
 
+  // The edit box is as tall as the words in it
+  useEffect(() => {
+    const el = editBox.current
+    if (!editing || !el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [editing, draft])
+
+  function startEdit() {
+    if (!thought) return
+    setDraft(thought.note ?? '')
+    setWriting(false)
+    setEditing(true)
+    setSaveState('idle')
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+    setDraft('')
+    setSaveState('idle')
+  }
+
   async function save() {
     const text = draft.trim()
-    if (!text || saveState === 'saving') return
+    if (saveState === 'saving') return
+    // Only a picture's caption may be emptied; a post of words needs words
+    if (!text && !(editing && thought?.image_url)) return
+    if (editing && thought && text === (thought.note ?? '')) return cancelEdit()
     setSaveState('saving')
     try {
-      if (thought) {
+      if (editing && thought) {
+        // An image post with no caption is titled by its date, as when it was posted
+        const title = text ? titleFrom(text) : formatDateTime(thought.created_at).split(' · ')[0]
+        await updateEntryText(thought.id, title, text)
+        setEditing(false)
+      } else if (thought) {
         const reply = await postComment(thought.id, text)
         setThreads(t => ({ ...t, [thought.id]: [...(t[thought.id] ?? []), reply] }))
       } else {
@@ -83,6 +118,8 @@ export function ThoughtPanel() {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       save()
+    } else if (e.key === 'Escape' && editing) {
+      cancelEdit()
     } else if (e.key === 'Escape' && !draft.trim()) {
       setWriting(false)
     }
@@ -125,6 +162,7 @@ export function ThoughtPanel() {
   function go(to: number, startWriting = false) {
     setIndex(to)
     setWriting(startWriting)
+    setEditing(false)
     setDraft('')
     setSaveState('idle')
   }
@@ -139,8 +177,8 @@ export function ThoughtPanel() {
       role="group"
       aria-label={thought ? 'Post — click to reply' : 'Click to write a post'}
       tabIndex={0}
-      onClick={e => { if (!(e.target as HTMLElement).closest('button')) setWriting(true) }}
-      onKeyDown={e => { if (e.key === 'Enter' && e.target === e.currentTarget) { e.preventDefault(); setWriting(true) } }}
+      onClick={e => { if (!editing && !(e.target as HTMLElement).closest('button')) setWriting(true) }}
+      onKeyDown={e => { if (e.key === 'Enter' && e.target === e.currentTarget && !editing) { e.preventDefault(); setWriting(true) } }}
     >
       <div ref={scroller} className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-12 py-5 flex flex-col">
         <div className="my-auto">
@@ -156,7 +194,30 @@ export function ThoughtPanel() {
                   style={{ maxHeight: '68cqh' }}
                 />
               )}
-              {thought.note && (
+              {editing ? (
+                <>
+                  <textarea
+                    ref={editBox}
+                    autoFocus
+                    aria-label="Edit this post"
+                    placeholder={thought.image_url ? 'Caption, then press Enter' : 'Write, then press Enter'}
+                    rows={1}
+                    value={draft}
+                    disabled={saveState === 'saving'}
+                    onChange={e => { setDraft(e.target.value); if (saveState === 'error') setSaveState('idle') }}
+                    onKeyDown={handleKeyDown}
+                    onFocus={e => e.currentTarget.setSelectionRange(e.currentTarget.value.length, e.currentTarget.value.length)}
+                    className="block w-full resize-none overflow-hidden bg-transparent border-0 p-0 font-instrument text-black placeholder:text-black/30 outline-none disabled:opacity-50"
+                    style={{ fontSize: 'clamp(14px, calc(1.7vw - 4px), 22px)', lineHeight: 1.25 }}
+                  />
+                  <p className="font-sans text-[11px] text-black/45">Enter saves · Esc cancels</p>
+                  {saveState === 'error' && (
+                    <p role="alert" className="font-sans text-[11px] text-red-700">
+                      Didn’t save — press Enter to try again.
+                    </p>
+                  )}
+                </>
+              ) : thought.note && (
                 <p
                   className="font-instrument text-black whitespace-pre-wrap break-words"
                   style={{ fontSize: 'clamp(14px, calc(1.7vw - 4px), 22px)', lineHeight: 1.25 }}
@@ -249,6 +310,12 @@ export function ThoughtPanel() {
       {hasNewer && (
         <button aria-label="Newer post" onClick={() => go(index - 1)} className={`${arrowClass} right-2`} style={arrowStyle}>
           ›
+        </button>
+      )}
+      {/* Edit: the same circle, in the top corner so it never sits under an arrow or the + */}
+      {thought && !editing && (
+        <button aria-label="Edit this post" onClick={startEdit} className={`${circleClass} top-2 right-2`} style={{ ...arrowStyle, fontSize: '15px', paddingBottom: 0 }}>
+          ✎
         </button>
       )}
       {/* New entry: on the newest post only, where the newer arrow would be — same circle, same hover */}

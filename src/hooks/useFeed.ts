@@ -97,7 +97,26 @@ export function useFeed(kind?: EntryKind) {
     ))
   }
 
-  return { entries, loading, error, postEntry, postComment, updateEntryPan }
+  // Rewrites a post's words in place: same id, same date, same replies.
+  // An empty note clears an image post's caption.
+  async function updateEntryText(entryId: number, title: string, note: string): Promise<void> {
+    const secret = import.meta.env.VITE_POST_SECRET
+    const res = await fetch(`${API_URL}/entries/${entryId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${secret}`,
+      },
+      body: JSON.stringify({ title, note }),
+    })
+    if (!res.ok) throw new Error('Edit failed')
+    const saved: Entry = await res.json()
+    setEntries(prev => prev.map(e =>
+      e.id === entryId ? { ...e, title: saved.title, note: saved.note ?? undefined } : e
+    ))
+  }
+
+  return { entries, loading, error, postEntry, postComment, updateEntryPan, updateEntryText }
 }
 
 export async function fetchEntry(id: string): Promise<EntryDetail> {
